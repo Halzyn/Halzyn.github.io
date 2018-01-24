@@ -156,7 +156,6 @@ function accessCallback(response){
 					var date_added = song_names[j]["added_at"]
 					var song_id = song_names[j]["track"]["id"]
 					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
-					valence = features[20]["valence"]
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
