@@ -71,10 +71,10 @@ function accessCallback(response){
 			{ id: "artist", alias: "Artist", dataType : tableau.dataTypeEnum.string },
 			{ id: "date_added", alias: "Date Added", dataType : tableau.dataTypeEnum.datetime},
 			{ id: "playlist", alias: "Playlist Name", dataType : tableau.dataTypeEnum.string },
-			{ id: "valence", alias: "Valence", dataType : tableau.dataTypeEnum.int},
-			{ id: "danceability", alias: "Danceability", dataType : tableau.dataTypeEnum.int},
-			{ id: "energy", alias: "Energy", dataType : tableau.dataTypeEnum.int},
-			{ id: "mode", alias: "Mode", dataType : tableau.dataTypeEnum.int},
+			{ id: "valence", alias: "Valence", dataType : tableau.dataTypeEnum.float},
+			{ id: "danceability", alias: "Danceability", dataType : tableau.dataTypeEnum.float},
+			{ id: "energy", alias: "Energy", dataType : tableau.dataTypeEnum.float},
+			{ id: "mode", alias: "Mode", dataType : tableau.dataTypeEnum.string},
 			{ id: "isrc", alias: "isrc", dataType : tableau.dataTypeEnum.string},
 
 		];
