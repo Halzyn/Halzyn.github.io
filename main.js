@@ -130,7 +130,7 @@ function accessCallback(response){
 		// loop through all songs and create an AJAX call object for each to retrieve features
 		for(i in songs){
 			var id = songs[i]['items']["track"]["id"];
-			var furl = 'https://api.spotify.com/v1/audio-features/21451j1KhjAiaYKflxBjr1';
+			var furl = 'https://api.spotify.com/v1/audio-features/' + id;
 			async_request.push(
 				$.ajax({
 					url: furl,
@@ -145,8 +145,7 @@ function accessCallback(response){
 		};
 		// once the AJAX creation is complete, send them all over - LOOPED AJAX WOO
 		$.when.apply(null, async_request).done( function(){
-			var playlist_name; 
-			var valence, danceability, energy, mode;
+			var playlist_name;
 			for (i in songs){
 				var song_names = songs[i]["items"]
 				var playlist_id = songs[i]["href"].match(/([^/]*\/){8}/)[1].slice(0, -1)
@@ -167,10 +166,10 @@ function accessCallback(response){
 					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc})
 				}
 				for (m in features){
-					valence = features[m]["valence"]
-					danceability = features[m]["danceability"]
-					energy = features[m]["energy"]
-					mode = features[m]["mode"]
+					var valence = features[m]["valence"]
+					var danceability = features[m]["danceability"]
+					var energy = features[m]["energy"]
+					var mode = features[m]["mode"]
 					tableData.push({"valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
 				}
 			}
