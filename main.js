@@ -156,23 +156,19 @@ function accessCallback(response){
 					var date_added = song_names[j]["added_at"]
 					var song_id = song_names[j]["track"]["id"]
 					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
+					valence = features[j]["valence"]
+					tableau.log(valence)
+					danceability = features[j]["danceability"]
+					tableau.log(danceability)
+					energy = features[j]["energy"]
+					tableau.log(energy)
+					mode = features[j]["mode"]
+					tableau.log(mode)
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
 							playlist_name = playlistData[k]["playlist"]
 							tableau.log(playlist_name)
-						}
-					}
-					for (m in features){
-						if (song_id == features[m]["id"]){
-							valence = features[m]["valence"]
-							tableau.log(valence)
-							danceability = features[m]["danceability"]
-							tableau.log(danceability)
-							energy = features[m]["energy"]
-							tableau.log(energy)
-							mode = features[m]["mode"]
-							tableau.log(mode)
 						}
 					}
 					// add the song data to tableData
