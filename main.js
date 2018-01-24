@@ -156,14 +156,6 @@ function accessCallback(response){
 					var date_added = song_names[j]["added_at"]
 					var song_id = song_names[j]["track"]["id"]
 					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
-					valence = features[j]["valence"]
-					tableau.log(valence)
-					danceability = features[j]["danceability"]
-					tableau.log(danceability)
-					energy = features[j]["energy"]
-					tableau.log(energy)
-					mode = features[j]["mode"]
-					tableau.log(mode)
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
@@ -172,7 +164,18 @@ function accessCallback(response){
 						}
 					}
 					// add the song data to tableData
-					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode, "isrc" : isrc})
+					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc})
+				}
+				for (m in features){
+					valence = features[m]["valence"]
+					tableau.log(valence)
+					danceability = features[m]["danceability"]
+					tableau.log(danceability)
+					energy = features[m]["energy"]
+					tableau.log(energy)
+					mode = features[m]["mode"]
+					tableau.log(mode)
+					tableData.push({"valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
 				}
 			}
 			table.appendRows(tableData);
