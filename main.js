@@ -129,7 +129,7 @@ function accessCallback(response){
 		};
 		// loop through all songs and create an AJAX call object for each to retrieve features
 		for(i in songs){
-			var id = songs[i]['items']["track"]["id"];
+			var id = songs[i]["items"]["track"]["id"];
 			var furl = 'https://api.spotify.com/v1/audio-features/' + id;
 			async_request.push(
 				$.ajax({
