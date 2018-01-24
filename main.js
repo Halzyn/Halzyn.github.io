@@ -74,7 +74,7 @@ function accessCallback(response){
 			{ id: "valence", alias: "Valence", dataType : tableau.dataTypeEnum.float},
 			{ id: "danceability", alias: "Danceability", dataType : tableau.dataTypeEnum.float},
 			{ id: "energy", alias: "Energy", dataType : tableau.dataTypeEnum.float},
-			{ id: "mode", alias: "Mode", dataType : tableau.dataTypeEnum.string},
+			{ id: "mode", alias: "Mode", dataType : tableau.dataTypeEnum.int},
 			{ id: "isrc", alias: "isrc", dataType : tableau.dataTypeEnum.string},
 
 		];
@@ -130,7 +130,7 @@ function accessCallback(response){
 		// loop through all songs and create an AJAX call object for each to retrieve features
 		for(i in songs){
 			var id = songs[i]['items']["track"]["id"];
-			var furl = 'https://api.spotify.com/v1/audio-features/' + id;
+			var furl = 'https://api.spotify.com/v1/audio-features/21451j1KhjAiaYKflxBjr1';
 			async_request.push(
 				$.ajax({
 					url: furl,
@@ -168,13 +168,9 @@ function accessCallback(response){
 				}
 				for (m in features){
 					valence = features[m]["valence"]
-					tableau.log(valence)
 					danceability = features[m]["danceability"]
-					tableau.log(danceability)
 					energy = features[m]["energy"]
-					tableau.log(energy)
 					mode = features[m]["mode"]
-					tableau.log(mode)
 					tableData.push({"valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
 				}
 			}
