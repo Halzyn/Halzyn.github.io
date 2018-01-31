@@ -181,8 +181,8 @@ function accessCallback(response){
 						tableData.push({"valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
 					}
 				}
-				table.appendRows(tableData);
 			});
+			table.appendRows(tableData);
 			doneCallback();
 		});
 	};
