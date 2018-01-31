@@ -154,6 +154,10 @@ function accessCallback(response){
 								features.push(data);
 						}
 					});
+					var valence = features["valence"]
+					var danceability = features["danceability"]
+					var energy = features["energy"]
+					var mode = features["mode"]
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
@@ -163,12 +167,6 @@ function accessCallback(response){
 					}
 					// add the song data to tableData
 					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity})
-				}
-				for (m in features){
-					var valence = features[m]["valence"]
-					var danceability = features[m]["danceability"]
-					var energy = features[m]["energy"]
-					var mode = features[m]["mode"]
 					tableData.push({"valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
 				}
 			}
