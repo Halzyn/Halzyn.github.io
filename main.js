@@ -133,12 +133,11 @@ function accessCallback(response){
 		
 		// once the AJAX creation is complete, send them all over - LOOPED AJAX WOO
 		$.when.apply(null, async_request).done( function(){
-			var playlist_name;
 			for(i in songs){
 				var songies = songs[i]["items"];
 				for (j in songies){
 					var id = songies[j]["track"]["id"]
-					var furl = 'https://api.spotify.com/v1/audio-features/' + id;
+					var furl = 'https://api.spotify.com/v1/audio-features/06AKEBrKUckW0KREUWRnvT';
 					bsync_request.push(
 						$.ajax({
 							url: furl,
@@ -153,6 +152,7 @@ function accessCallback(response){
 				}
 			};
 			$.when.apply(null, bsync_request).done( function(){
+				var playlist_name;
 				for (i in songs){
 					var song_names = songs[i]["items"]
 					var playlist_id = songs[i]["href"].match(/([^/]*\/){8}/)[1].slice(0, -1)
