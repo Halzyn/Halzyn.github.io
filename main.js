@@ -151,13 +151,12 @@ function accessCallback(response){
 							'Authorization' : 'Bearer ' + accessToken
 						},
 						success: function(data){
-								features.push(data);
+							var valence = data["valence"]
+							var danceability = data["danceability"]
+							var energy = data["energy"]
+							var mode = data["mode"]
 						}
 					});
-					var valence = features[j]["valence"]
-					var danceability = features[j]["danceability"]
-					var energy = features[j]["energy"]
-					var mode = features[j]["mode"]
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
