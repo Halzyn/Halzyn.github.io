@@ -133,24 +133,6 @@ function accessCallback(response){
 		
 		// once the AJAX creation is complete, send them all over - LOOPED AJAX WOO
 		$.when.apply(null, async_request).done( function(){
-			for(i in songs){
-				var songies = songs[i]["items"];
-				for (j in songies){
-					var id = songies[j]["track"]["id"]
-					var furl = 'https://api.spotify.com/v1/audio-features/06AKEBrKUckW0KREUWRnvT';
-					async_request.push(
-						$.ajax({
-							url: furl,
-							headers: {
-								'Authorization' : 'Bearer ' + accessToken
-							},
-							success: function(data){
-									features.push(data);
-							}
-						})
-					);
-				}
-			};
 			var playlist_name;
 			for (i in songs){
 				var song_names = songs[i]["items"]
@@ -162,6 +144,15 @@ function accessCallback(response){
 					var song_id = song_names[j]["track"]["id"]
 					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
 					var popularity = song_names[j]["track"]["popularity"]
+					var furl = 'https://api.spotify.com/v1/audio-features/' + song_id;
+					$.ajax({
+						url: furl,
+						headers: {
+							'Authorization' : 'Bearer ' + accessToken
+						},
+						success: function(data){
+								features.push(data);
+						});
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
