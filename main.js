@@ -138,7 +138,7 @@ function accessCallback(response){
 				for (j in songies){
 					var id = songies[j]["track"]["id"]
 					var furl = 'https://api.spotify.com/v1/audio-features/06AKEBrKUckW0KREUWRnvT';
-					bsync_request.push(
+					async_request.push(
 						$.ajax({
 							url: furl,
 							headers: {
