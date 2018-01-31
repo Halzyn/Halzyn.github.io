@@ -134,19 +134,21 @@ function accessCallback(response){
 		$.when.apply(null, async_request).done( function(){
 			for(i in songs){
 				var songthing = songs[i]["items"];
-				var id = songthing[i]["track"]["id"];
-				var furl = 'https://api.spotify.com/v1/audio-features/' + id;
-				bsync_request.push(
-					$.ajax({
-						url: furl,
-						headers: {
-							'Authorization' : 'Bearer ' + accessToken
-						},
-						success: function(data){
-								features.push(data);
-						}
-					})
-				);
+				for (j in songthing){
+					var id = songthing[j]["track"]["id"];
+					var furl = 'https://api.spotify.com/v1/audio-features/' + id;
+					bsync_request.push(
+						$.ajax({
+							url: furl,
+							headers: {
+								'Authorization' : 'Bearer ' + accessToken
+							},
+							success: function(data){
+									features.push(data);
+							}
+						})
+					);
+				}
 			};
 			$.when.apply(null, bsync_request).done( function(){
 				var playlist_name;
