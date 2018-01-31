@@ -183,6 +183,7 @@ function accessCallback(response){
 				table.appendRows(tableData);
 				doneCallback();
 			});
+			doneCallback();
 		});
 	};
 	
