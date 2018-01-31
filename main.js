@@ -75,7 +75,8 @@ function accessCallback(response){
 			{ id: "danceability", alias: "Danceability", dataType : tableau.dataTypeEnum.float},
 			{ id: "energy", alias: "Energy", dataType : tableau.dataTypeEnum.float},
 			{ id: "mode", alias: "Mode", dataType : tableau.dataTypeEnum.int},
-			{ id: "isrc", alias: "isrc", dataType : tableau.dataTypeEnum.string},
+			{ id: "isrc", alias: "isrc", dataType : tableau.dataTypeEnum.string}
+			{ id: "popularity", alias: "Popularity", dataType : tableau.dataTypeEnum.int},
 
 		];
 		
@@ -155,6 +156,7 @@ function accessCallback(response){
 					var date_added = song_names[j]["added_at"]
 					var song_id = song_names[j]["track"]["id"]
 					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
+					var popularity = song_names[j]["track"]["popularity"]
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
@@ -163,7 +165,7 @@ function accessCallback(response){
 						}
 					}
 					// add the song data to tableData
-					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc})
+					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity})
 				}
 				for (m in features){
 					var valence = features[m]["valence"]
