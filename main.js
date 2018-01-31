@@ -152,7 +152,8 @@ function accessCallback(response){
 						},
 						success: function(data){
 								features.push(data);
-						});
+						}
+					});
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
