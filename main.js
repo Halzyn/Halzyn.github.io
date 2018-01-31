@@ -105,6 +105,7 @@ function accessCallback(response){
 
 		var cd = JSON.parse(tableau.connectionData);
 		var async_request = [];
+		var bsync_request = [];
 		var songs = [];
 		var features = [];
 		var user_id = cd[1];
@@ -129,53 +130,59 @@ function accessCallback(response){
 			
 		};
 		// loop through all songs and create an AJAX call object for each to retrieve features
-		for(i in songs){
-			var id = songs[i]["items"]["track"]["id"];
-			var furl = 'https://api.spotify.com/v1/audio-features/' + id;
-			async_request.push(
-				$.ajax({
-					url: furl,
-					headers: {
-						'Authorization' : 'Bearer ' + accessToken
-					},
-					success: function(data){
-							features.push(data);
-					}
-				})
-			);
-		};
+		
 		// once the AJAX creation is complete, send them all over - LOOPED AJAX WOO
 		$.when.apply(null, async_request).done( function(){
 			var playlist_name;
-			for (i in songs){
-				var song_names = songs[i]["items"]
-				var playlist_id = songs[i]["href"].match(/([^/]*\/){8}/)[1].slice(0, -1)
-				for (j in song_names){
-					var song_title = song_names[j]["track"]["name"]
-					var artist = song_names[j]["track"]["artists"][0]["name"]
-					var date_added = song_names[j]["added_at"]
-					var song_id = song_names[j]["track"]["id"]
-					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
-					var popularity = song_names[j]["track"]["popularity"]
-					// get the playlist name (super inefficient)
-					for (k in playlistData){
-						if (playlist_id == playlistData[k]["id"]){
-							playlist_name = playlistData[k]["playlist"]
-							tableau.log(playlist_name)
+			for(i in songs){
+				var songies = songs[i]["items"];
+				for (j in songies){
+					var id = songies[j]["track"]["id"]
+					var furl = 'https://api.spotify.com/v1/audio-features/' + id;
+					bsync_request.push(
+						$.ajax({
+							url: furl,
+							headers: {
+								'Authorization' : 'Bearer ' + accessToken
+							},
+							success: function(data){
+									features.push(data);
+							}
+						})
+					);
+				}
+			};
+			$.when.apply(null, bsync_request).done( function(){
+				for (i in songs){
+					var song_names = songs[i]["items"]
+					var playlist_id = songs[i]["href"].match(/([^/]*\/){8}/)[1].slice(0, -1)
+					for (j in song_names){
+						var song_title = song_names[j]["track"]["name"]
+						var artist = song_names[j]["track"]["artists"][0]["name"]
+						var date_added = song_names[j]["added_at"]
+						var song_id = song_names[j]["track"]["id"]
+						var isrc = song_names[j]["track"]["external_ids"]["isrc"]
+						var popularity = song_names[j]["track"]["popularity"]
+						// get the playlist name (super inefficient)
+						for (k in playlistData){
+							if (playlist_id == playlistData[k]["id"]){
+								playlist_name = playlistData[k]["playlist"]
+								tableau.log(playlist_name)
+							}
 						}
+						// add the song data to tableData
+						tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity})
 					}
-					// add the song data to tableData
-					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity})
+					for (m in features){
+						var valence = features[m]["valence"]
+						var danceability = features[m]["danceability"]
+						var energy = features[m]["energy"]
+						var mode = features[m]["mode"]
+						tableData.push({"valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
+					}
 				}
-				for (m in features){
-					var valence = features[m]["valence"]
-					var danceability = features[m]["danceability"]
-					var energy = features[m]["energy"]
-					var mode = features[m]["mode"]
-					tableData.push({"valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
-				}
+				table.appendRows(tableData);
 			}
-			table.appendRows(tableData);
 			doneCallback();
 		});
 	};
