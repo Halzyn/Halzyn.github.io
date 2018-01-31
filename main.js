@@ -146,18 +146,20 @@ function accessCallback(response){
 					var popularity = song_names[j]["track"]["popularity"]
 					var furl = 'https://api.spotify.com/v1/audio-features/' + song_id
 					var valence, danceability, energy, mode
-					$.ajax({
-						url: furl,
-						headers: {
-							'Authorization' : 'Bearer ' + accessToken
-						},
-						success: function(data){
-							valence = data["valence"]
-							danceability = data["danceability"]
-							energy = data["energy"]
-							mode = data["mode"]
-						}
-					});
+					bsync_request.push(
+						$.ajax({
+							url: furl,
+							headers: {
+								'Authorization' : 'Bearer ' + accessToken
+							},
+							success: function(data){
+								valence = data["valence"]
+								danceability = data["danceability"]
+								energy = data["energy"]
+								mode = data["mode"]
+							}
+						})
+					);
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
@@ -166,7 +168,9 @@ function accessCallback(response){
 						}
 					}
 					// add the song data to tableData
-					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity, "valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
+					$.when.apply(null, bsync_request).done( function(){
+						tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity, "valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
+					});
 				}
 			}
 			table.appendRows(tableData);
