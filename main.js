@@ -14,7 +14,6 @@ var accessToken = "";
 var tableData = [];
 var playlistData = [];
 var songData = []
-var featureData = [];
 
 // AJAX call: user accessToken to return user_id
 function get_user_info(token,accessCallback) {
@@ -71,10 +70,6 @@ function accessCallback(response){
 			{ id: "artist", alias: "Artist", dataType : tableau.dataTypeEnum.string },
 			{ id: "date_added", alias: "Date Added", dataType : tableau.dataTypeEnum.datetime},
 			{ id: "playlist", alias: "Playlist Name", dataType : tableau.dataTypeEnum.string },
-			{ id: "valence", alias: "Valence", dataType : tableau.dataTypeEnum.float},
-			{ id: "danceability", alias: "Danceability", dataType : tableau.dataTypeEnum.float},
-			{ id: "energy", alias: "Energy", dataType : tableau.dataTypeEnum.float},
-			{ id: "mode", alias: "Mode", dataType : tableau.dataTypeEnum.int},
 			{ id: "isrc", alias: "isrc", dataType : tableau.dataTypeEnum.string},
 			{ id: "popularity", alias: "Popularity", dataType : tableau.dataTypeEnum.int}
 
@@ -105,9 +100,7 @@ function accessCallback(response){
 
 		var cd = JSON.parse(tableau.connectionData);
 		var async_request = [];
-		var bsync_request = [];
 		var songs = [];
-		var features = [];
 		var user_id = cd[1];
 		var accessToken = cd[2];
 		var playlistData = cd[0];
@@ -144,20 +137,7 @@ function accessCallback(response){
 					var song_id = song_names[j]["track"]["id"]
 					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
 					var popularity = song_names[j]["track"]["popularity"]
-					var furl = 'https://api.spotify.com/v1/audio-features/' + song_id;
-					$.ajax({
-						url: furl,
-						headers: {
-							'Authorization' : 'Bearer ' + accessToken
-						},
-						success: function(data){
-								features.push(data);
-						}
-					});
-					var valence = features["valence"]
-					var danceability = features["danceability"]
-					var energy = features["energy"]
-					var mode = features["mode"]
+
 					// get the playlist name (super inefficient)
 					for (k in playlistData){
 						if (playlist_id == playlistData[k]["id"]){
@@ -166,7 +146,7 @@ function accessCallback(response){
 						}
 					}
 					// add the song data to tableData
-					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity, "valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
+					tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity})
 				}
 			}
 			table.appendRows(tableData);
