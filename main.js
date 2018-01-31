@@ -167,7 +167,6 @@ function accessCallback(response){
 							tableau.log(playlist_name)
 						}
 					}
-					valence = 10;
 					// add the song data to tableData
 					$.when.apply(null, bsync_request).done( function(){
 						tableData.push({"playlist" : playlist_name, "song" : song_title, "date_added": date_added, "artist" : artist, "isrc" : isrc, "popularity" : popularity, "valence" : valence, "danceability" : danceability, "energy": energy, "mode" : mode})
