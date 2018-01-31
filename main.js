@@ -144,17 +144,18 @@ function accessCallback(response){
 					var song_id = song_names[j]["track"]["id"]
 					var isrc = song_names[j]["track"]["external_ids"]["isrc"]
 					var popularity = song_names[j]["track"]["popularity"]
-					var furl = 'https://api.spotify.com/v1/audio-features/' + song_id;
+					var furl = 'https://api.spotify.com/v1/audio-features/' + song_id
+					var valence, danceability, energy, mode
 					$.ajax({
 						url: furl,
 						headers: {
 							'Authorization' : 'Bearer ' + accessToken
 						},
 						success: function(data){
-							var valence = data["valence"]
-							var danceability = data["danceability"]
-							var energy = data["energy"]
-							var mode = data["mode"]
+							valence = data["valence"]
+							danceability = data["danceability"]
+							energy = data["energy"]
+							mode = data["mode"]
 						}
 					});
 					// get the playlist name (super inefficient)
