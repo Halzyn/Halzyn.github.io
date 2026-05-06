@@ -1269,6 +1269,11 @@ html[data-theme='light'] .banner.warn {
   border: 1px solid var(--border);
   border-radius: 10px;
 }
+
+.table-wrap:has(.rankings-table) {
+  border-radius: 0;
+}
+
 .table-wrap.scroll {
   max-height: 70vh;
   overflow: auto;
