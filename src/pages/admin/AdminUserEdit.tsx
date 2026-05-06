@@ -1,0 +1,206 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import type { Session } from '@supabase/supabase-js'
+import { pageTitle } from '../../lib/pageTitle'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { getSupabase } from '../../lib/supabase'
+import type { Profile } from '../../lib/types'
+
+const SUBMISSION_UUID_RE = /^[0-9a-f-]{36}$/i
+
+export function AdminUserEdit() {
+  const supabase = getSupabase()
+  const { id: userId } = useParams()
+  const navigate = useNavigate()
+
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [username, setUsername] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [bio, setBio] = useState('')
+  const [submissionIdInput, setSubmissionIdInput] = useState('')
+  const [pageError, setPageError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [sessionLoaded, setSessionLoaded] = useState(false)
+
+  const clearFeedback = useCallback(() => {
+    setPageError(null)
+    setSuccessMessage(null)
+  }, [])
+
+  const documentTitle = useMemo(
+    () =>
+      profile
+        ? pageTitle('Admin', 'User', profile.username ?? userId ?? '')
+        : pageTitle('Admin', 'User'),
+    [profile, userId],
+  )
+
+  useDocumentTitle(documentTitle)
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null)
+      setSessionLoaded(true)
+    })
+  }, [supabase])
+
+  useEffect(() => {
+    if (!userId) return
+
+    async function loadProfile() {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+      if (error || !data) {
+        setPageError(error?.message ?? 'Not found')
+        return
+      }
+      const row = data as Profile
+      setProfile(row)
+      setUsername(row.username ?? '')
+      setDisplayName(row.display_name ?? '')
+      setBio(row.bio ?? '')
+    }
+
+    void loadProfile()
+  }, [userId, supabase])
+
+  async function saveProfile(event: FormEvent) {
+    event.preventDefault()
+    if (!profile) return
+    clearFeedback()
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        username: username.trim() || null,
+        display_name: displayName.trim() || null,
+        bio: bio.trim() || null,
+      })
+      .eq('id', profile.id)
+    if (error) {
+      setPageError(error.message)
+      return
+    }
+    setSuccessMessage('Saved.')
+  }
+
+  async function assignSubmission(event: FormEvent) {
+    event.preventDefault()
+    if (!profile) return
+    clearFeedback()
+    const submissionUuid = submissionIdInput.trim()
+    if (!SUBMISSION_UUID_RE.test(submissionUuid)) {
+      setPageError('Enter a valid submission UUID.')
+      return
+    }
+    const { error } = await supabase.rpc('admin_assign_submission_owner', {
+      p_submission_id: submissionUuid,
+      p_user_id: profile.id,
+    })
+    if (error) {
+      setPageError(error.message)
+      return
+    }
+    setSuccessMessage('Submission assigned.')
+    setSubmissionIdInput('')
+  }
+
+  const isEditingOwnProfile =
+    sessionLoaded && session !== null && session.user.id === profile?.id
+
+  async function deleteUser() {
+    if (!profile || isEditingOwnProfile) return
+    const confirmLabel = displayName.trim() || username.trim() || profile.id
+    if (
+      !window.confirm(
+        `Permanently delete account "${confirmLabel}"? Their auth login, profile, and moderator assignments will be removed. Submissions stay but unlink from this user. This cannot be undone.`,
+      )
+    ) {
+      return
+    }
+    clearFeedback()
+    const { error } = await supabase.rpc('admin_delete_auth_user', {
+      p_target_user_id: profile.id,
+    })
+    if (error) {
+      setPageError(error.message)
+      return
+    }
+    navigate('/admin/users')
+  }
+
+  if (!userId) return null
+  if (pageError && !profile) return <p className="banner warn">{pageError}</p>
+  if (!profile) return <p className="muted">Loading...</p>
+
+  return (
+    <div className="page">
+      <p className="muted small">
+        <Link to="/admin/users">← Users</Link>
+      </p>
+      <h1>Edit user</h1>
+      <p className="muted small">
+        Player #{profile.player_number ?? '—'} · id <code>{profile.id}</code>
+      </p>
+      {pageError ? <p className="banner warn">{pageError}</p> : null}
+      {successMessage ? <p className="banner">{successMessage}</p> : null}
+
+      <section className="section">
+        <h2>Profile</h2>
+        <form className="form" onSubmit={saveProfile}>
+          <label className="field">
+            <span>Username</span>
+            <input value={username} onChange={(event) => setUsername(event.target.value)} />
+          </label>
+          <label className="field">
+            <span>Display name</span>
+            <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+          </label>
+          <label className="field">
+            <span>Bio</span>
+            <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={3} />
+          </label>
+          <button type="submit" className="button primary">
+            Save
+          </button>
+        </form>
+      </section>
+
+      <section className="section">
+        <h2>Assign submission</h2>
+        <p className="muted small">
+          Paste a submission UUID to attach this contest entry to the user.
+        </p>
+        <form className="form" onSubmit={assignSubmission}>
+          <label className="field">
+            <span>Submission id</span>
+            <input
+              value={submissionIdInput}
+              onChange={(event) => setSubmissionIdInput(event.target.value)}
+              placeholder="uuid"
+            />
+          </label>
+          <button type="submit" className="button">
+            Assign owner
+          </button>
+        </form>
+      </section>
+
+      <section className="section">
+        <h2>Danger zone OH NOES!!!!!</h2>
+        <p className="muted small">
+          Deletes the Supabase auth account and profile. Contest submissions remain with no linked player.
+        </p>
+        {!sessionLoaded ? (
+          <p className="muted small">Loading...</p>
+        ) : isEditingOwnProfile ? (
+          <p className="muted small">What are you doing you dumbass</p>
+        ) : (
+          <button type="button" className="button danger" onClick={() => void deleteUser()}>
+            Delete user
+          </button>
+        )}
+      </section>
+    </div>
+  )
+}

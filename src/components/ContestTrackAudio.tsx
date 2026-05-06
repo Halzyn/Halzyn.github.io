@@ -1,0 +1,265 @@
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { Link } from 'react-router-dom'
+import type { Track } from '../lib/types'
+import {
+  applyGlobalVolumeToAudioElement,
+  publicAudioUrl,
+  readAutoplayPreference,
+  writeAutoplayPreference,
+} from '../lib/audio'
+import { trackLineLabel } from '../lib/trackDisplay'
+import { useAudioVolumeSync } from '../hooks/useAudioVolumeSync'
+
+export type ListContestLink = { title: string; slug: string }
+
+export type ContestTrackAudioHandle = {
+  playTrack: (trackId: string) => void
+}
+
+type Props = {
+  tracks: Track[]
+  listRowContests?: ListContestLink[][]
+}
+
+export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(function ContestTrackAudio(
+  { tracks, listRowContests },
+  ref,
+) {
+  const listMode = Boolean(listRowContests && listRowContests.length === tracks.length)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const playIntentRef = useRef(false)
+  const didRevealRef = useRef(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [autoplayNext, setAutoplayNext] = useState(readAutoplayPreference)
+  const [revealed, setRevealed] = useState(false)
+
+  const urlById = useMemo(() => {
+    const map = new Map<string, string | null>()
+    for (const track of tracks) map.set(track.id, publicAudioUrl(track.audio_path))
+    return map
+  }, [tracks])
+
+  useEffect(() => {
+    if (tracks.length === 0) {
+      setActiveId(null)
+      return
+    }
+    if (activeId && urlById.get(activeId)) return
+    setActiveId(tracks.find((track) => urlById.get(track.id))?.id ?? null)
+  }, [tracks, urlById, activeId])
+
+  const activeSrc = activeId ? (urlById.get(activeId) ?? null) : null
+
+  useAudioVolumeSync(audioRef, Boolean(activeSrc))
+
+  useLayoutEffect(() => {
+    const audioElement = audioRef.current
+    if (!audioElement || !activeSrc) return
+
+    audioElement.pause()
+    audioElement.src = activeSrc
+    audioElement.load()
+    applyGlobalVolumeToAudioElement(audioElement)
+
+    if (!didRevealRef.current) {
+      didRevealRef.current = true
+      setRevealed(true)
+    }
+
+    if (playIntentRef.current) {
+      playIntentRef.current = false
+      void audioElement.play().catch(() => {})
+    }
+  }, [activeSrc])
+
+  useLayoutEffect(() => {
+    const audioElement = audioRef.current
+    if (!audioElement || !activeSrc || !revealed) return
+    applyGlobalVolumeToAudioElement(audioElement)
+  }, [activeSrc, revealed])
+
+  useEffect(() => {
+    const audioElement = audioRef.current
+    if (!audioElement || !autoplayNext || !activeSrc) return
+
+    const onEnded = () => {
+      setActiveId((previous) => {
+        if (!previous) return previous
+        const index = tracks.findIndex((track) => track.id === previous)
+        if (index < 0) return previous
+        for (let i = index + 1; i < tracks.length; i++) {
+          const track = tracks[i]!
+          if (urlById.get(track.id)) {
+            playIntentRef.current = true
+            return track.id
+          }
+        }
+        return previous
+      })
+    }
+
+    audioElement.addEventListener('ended', onEnded)
+    return () => audioElement.removeEventListener('ended', onEnded)
+  }, [autoplayNext, activeSrc, tracks, urlById])
+
+  const selectTrack = useCallback(
+    (track: Track) => {
+      const url = urlById.get(track.id)
+      if (!url) return
+      const audioElement = audioRef.current
+      if (activeId === track.id && audioElement) {
+        if (audioElement.paused) void audioElement.play().catch(() => {})
+        else audioElement.pause()
+        return
+      }
+      playIntentRef.current = true
+      setActiveId(track.id)
+    },
+    [activeId, urlById],
+  )
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      playTrack: (trackId: string) => {
+        if (!urlById.get(trackId)) return
+        playIntentRef.current = true
+        setActiveId(trackId)
+      },
+    }),
+    [urlById],
+  )
+
+  if (tracks.length === 0) return null
+
+  const wrapHidden = Boolean(activeSrc && !revealed)
+
+  const audioElement = activeSrc ? (
+    <audio ref={audioRef} className="tracks-universal-audio" controls preload="metadata" />
+  ) : (
+    <p className="muted small">Audio unavailable wtf!</p>
+  )
+
+  return (
+    <div className={listMode ? 'tracks-player-shell tracks-player-shell--list' : 'tracks-player-shell'}>
+      {listMode ? (
+        <ul className="game-track-line-list" role="list">
+          {tracks.map((track, index) => {
+            const url = urlById.get(track.id)
+            const active = track.id === activeId
+            const contests = listRowContests![index]!
+            const difficulty = track.difficulty ?? ''
+            const label = trackLineLabel(track)
+            return (
+              <li key={track.id} className={`game-track-line${active ? ' game-track-line-active' : ''}`}>
+                <button
+                  type="button"
+                  className="game-track-line-play"
+                  disabled={!url}
+                  aria-label={url ? `Play ${label}` : 'Audio unavailable'}
+                  aria-pressed={active}
+                  onClick={() => selectTrack(track)}
+                >
+                  <span aria-hidden>▷</span>
+                </button>
+                <span className="game-track-line-title">{label}</span>
+                <span className="game-track-line-sep" aria-hidden>
+                  ·
+                </span>
+                <span className="game-track-line-contest">
+                  {contests.map((contest, contestIndex) => (
+                    <span key={contest.slug} className="game-track-line-contest-item">
+                      {contestIndex > 0 ? (
+                        <span className="game-track-line-sep game-track-line-sep--in-contest" aria-hidden>
+                          {' / '}
+                        </span>
+                      ) : null}
+                      <Link className="game-track-line-contest-link" to={`/contests/${contest.slug}`}>
+                        {contest.title}
+                      </Link>
+                    </span>
+                  ))}
+                </span>
+                {difficulty ? (
+                  <>
+                    <span className="game-track-line-sep" aria-hidden>
+                      ·
+                    </span>
+                    <span className="game-track-line-diff muted">{difficulty}</span>
+                  </>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <div className="track-pick-grid" role="list">
+          {tracks.map((track) => {
+            const url = urlById.get(track.id)
+            const active = track.id === activeId
+            return (
+              <div
+                key={track.id}
+                className={`track-pick-cell${active ? ' track-pick-cell-active' : ''}`}
+                role="listitem"
+              >
+                <span className="track-pick-num">#{track.sort_order}</span>
+                {track.difficulty ? (
+                  <span className="track-pick-diff muted tiny" title={track.difficulty}>
+                    {track.difficulty}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  className="track-pick-play"
+                  disabled={!url}
+                  aria-label={url ? `Play track ${track.sort_order}` : 'Audio unavailable'}
+                  aria-pressed={active}
+                  onClick={() => selectTrack(track)}
+                >
+                  <span className="track-pick-play-icon" aria-hidden>
+                    ▶
+                  </span>
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="tracks-universal-audio-row">
+        <div
+          className="tracks-universal-audio-wrap"
+          style={wrapHidden ? { visibility: 'hidden', pointerEvents: 'none' } : undefined}
+          aria-hidden={wrapHidden || undefined}
+        >
+          {audioElement}
+        </div>
+        <label
+          className="contest-autoplay-label"
+          title="When on, the next track plays after the current one finishes."
+        >
+          <input
+            type="checkbox"
+            checked={autoplayNext}
+            onChange={(e) => {
+              const next = e.target.checked
+              setAutoplayNext(next)
+              writeAutoplayPreference(next)
+            }}
+          />
+          <span>Autoplay</span>
+        </label>
+      </div>
+    </div>
+  )
+})
