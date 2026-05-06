@@ -401,7 +401,7 @@ html[data-theme='light'] .theme-toggle--floating {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 6px;
+  border-radius: 0px;
   border: 1px solid var(--border);
 }
 .game-page-igdb-facts {
@@ -450,7 +450,7 @@ html[data-theme='light'] .theme-toggle--floating {
   margin-top: 1rem;
   padding: 0.85rem 1rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0px;
   background: var(--surface);
 }
 .admin-igdb-preview-banner {
@@ -903,7 +903,7 @@ h2 {
   width: 64px;
   height: 64px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 0px;
   border: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -921,7 +921,7 @@ h2 {
   max-height: 14rem;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0px;
 }
 
 .profile-edit-game-option {
@@ -1037,7 +1037,7 @@ h2 {
 
 .banner {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: 0px;
   margin: 1rem 0;
 }
 .banner.warn {
@@ -1069,7 +1069,7 @@ html[data-theme='light'] .banner.warn {
   padding: 0.85rem 1rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0px;
   color: inherit;
   text-decoration: none;
 }
@@ -1164,7 +1164,7 @@ html[data-theme='light'] .banner.warn {
   gap: 0.2rem;
   min-width: 4.25rem;
   padding: 0.35rem 0.45rem 0.45rem;
-  border-radius: 8px;
+  border-radius: 0px;
   border: 1px solid var(--border);
   background: var(--surface);
 }
@@ -1243,7 +1243,7 @@ html[data-theme='light'] .banner.warn {
 .spoiler {
   margin: 0.35rem 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0px;
   padding: 0.35rem 0.75rem;
   background: var(--surface);
 }
@@ -1267,11 +1267,7 @@ html[data-theme='light'] .banner.warn {
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: 10px;
-}
-
-.table-wrap:has(.rankings-table) {
-  border-radius: 0;
+  border-radius: 0px;
 }
 
 .table-wrap.scroll {
@@ -1371,7 +1367,7 @@ input,
 textarea {
   font: inherit;
   padding: 0.5rem 0.65rem;
-  border-radius: 8px;
+  border-radius: 0px;
   border: 1px solid var(--border);
   background: var(--input-bg);
   color: var(--input-text);
@@ -1391,7 +1387,7 @@ textarea {
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 0px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--heading);
@@ -1467,7 +1463,7 @@ textarea {
 .panel {
   padding: 1rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0px;
   background: var(--surface);
 }
 
