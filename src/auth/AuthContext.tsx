@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [ready, setReady] = useState(false)
   const trackedAuthUserIdRef = useRef<string | null>(null)
+  const profileLoadedForUserIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     let providerUnmounted = false
@@ -46,11 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!nextUserId) {
         setProfile(null)
         setReady(true)
+        profileLoadedForUserIdRef.current = null
         return
       }
 
-      setReady(false)
-      setProfile((prev) => (prev?.id === nextUserId ? prev : null))
+      const sameUserAlreadyLoaded = profileLoadedForUserIdRef.current === nextUserId
+
+      if (!sameUserAlreadyLoaded) {
+        setReady(false)
+        setProfile((prev) => (prev?.id === nextUserId ? prev : null))
+      }
 
       const loaded = await fetchProfileRow(supabase, nextUserId)
 
@@ -61,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setProfile(loaded)
       setReady(true)
+      profileLoadedForUserIdRef.current = nextUserId
     }
 
     void supabase.auth.getSession().then(({ data: { session: initial } }) => {
