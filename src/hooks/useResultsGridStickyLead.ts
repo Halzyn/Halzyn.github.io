@@ -31,7 +31,7 @@ function nearestScrollHostForTable(table: HTMLTableElement): HTMLElement | null 
 
 function setStickyVars(host: HTMLElement, leftPx: readonly number[]): void {
   for (let i = 0; i < STICKY_COLS; i++) {
-    host.style.setProperty(`--rg-sticky-left-${i}`, `${Math.round(leftPx[i])}px`)
+    host.style.setProperty(`--rg-sticky-left-${i}`, `${leftPx[i]}px`)
   }
 }
 
@@ -42,24 +42,40 @@ function clearStickyVars(host: HTMLElement | null): void {
   }
 }
 
-function cumulativeLeftOffsets(widths: readonly number[]): number[] {
-  const left: number[] = []
-  let acc = 0
-  for (let i = 0; i < STICKY_COLS; i++) {
-    left.push(acc)
-    acc += widths[i]!
+function leadStickyCells(table: HTMLTableElement): HTMLTableCellElement[] | null {
+  const bodyRow = table.querySelector('tbody tr:first-child')
+  if (bodyRow) {
+    const tds = bodyRow.querySelectorAll<HTMLTableCellElement>('td')
+    if (tds.length >= STICKY_COLS) {
+      return Array.from(tds).slice(0, STICKY_COLS)
+    }
   }
-  return left
-}
-
-function measureStickyLeftPixels(table: HTMLTableElement): number[] | null {
   const ths = table.querySelectorAll<HTMLTableCellElement>(HEADER_CELLS)
   if (ths.length < STICKY_COLS) return null
+  return Array.from(ths).slice(0, STICKY_COLS)
+}
 
-  const widths = Array.from({ length: STICKY_COLS }, (_, i) => ths[i]!.getBoundingClientRect().width)
-  if (widths.some((w) => w < 1)) return null
+function measureStickyLeftPixels(table: HTMLTableElement, scrollHost: HTMLElement): number[] | null {
+  const cells = leadStickyCells(table)
+  if (!cells) return null
 
-  return cumulativeLeftOffsets(widths)
+  const rects = cells.map((c) => c.getBoundingClientRect())
+  if (rects.some((r) => !Number.isFinite(r.left) || r.width < 0.5)) return null
+
+  const scrollPortLeft = scrollHost.getBoundingClientRect().left + scrollHost.clientLeft
+  const scrollLeft = scrollHost.scrollLeft
+
+  const base = rects[0]!.left - scrollPortLeft + scrollLeft
+  const leftPx: number[] = [base]
+  for (let i = 1; i < STICKY_COLS; i++) {
+    leftPx.push(leftPx[i - 1]! + rects[i - 1]!.width)
+  }
+
+  if (leftPx.some((x) => !Number.isFinite(x)) || leftPx.some((_, i) => i > 0 && leftPx[i]! < leftPx[i - 1]!)) {
+    return null
+  }
+
+  return leftPx
 }
 
 function applyStickyToHosts(root: HTMLElement, table: HTMLTableElement, leftPx: readonly number[]): void {
@@ -88,7 +104,8 @@ export function useResultsGridStickyLead(
     function measure(host: HTMLElement): void {
       const table = host.querySelector<HTMLTableElement>(GRID_SELECTOR)
       if (!table) return
-      const leftPx = measureStickyLeftPixels(table)
+      const scrollHost = nearestScrollHostForTable(table) ?? host
+      const leftPx = measureStickyLeftPixels(table, scrollHost)
       if (!leftPx) return
       applyStickyToHosts(host, table, leftPx)
     }
