@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
-import type { Contest } from '../lib/types'
+import type { Contest, ScheduledContestTeaser } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
 
 export function Home() {
@@ -12,6 +12,7 @@ export function Home() {
   const supabase = getSupabase()
   const { ready, userId, isAdmin } = useAuth()
   const [contests, setContests] = useState<Contest[]>([])
+  const [scheduledTeasers, setScheduledTeasers] = useState<ScheduledContestTeaser[]>([])
   const [modContestIds, setModContestIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -30,15 +31,22 @@ export function Home() {
       }
       setModContestIds(moderatedContestIds)
 
-      const { data, error } = await supabase
-        .from('contests')
-        .select('*')
-        .order('deadline', { ascending: false })
-      if (error) {
+      const [contestsResult, teaserResult] = await Promise.all([
+        supabase.from('contests').select('*').order('deadline', { ascending: false }),
+        supabase.rpc('scheduled_contests_teaser'),
+      ])
+
+      if (contestsResult.error) {
         setContests([])
-        return
+      } else {
+        setContests((contestsResult.data ?? []) as Contest[])
       }
-      setContests((data ?? []) as Contest[])
+
+      if (teaserResult.error) {
+        setScheduledTeasers([])
+      } else {
+        setScheduledTeasers((teaserResult.data ?? []) as ScheduledContestTeaser[])
+      }
     }
 
     void loadHomeData()
@@ -54,6 +62,10 @@ export function Home() {
     [contests, modContestIds, isAdmin],
   )
 
+  const showCurrentContests =
+    scheduledTeasers.length <= 0 || (scheduledTeasers.length > 0 && openContests.length > 0)
+  const showScheduledContests = scheduledTeasers.length > 0
+
   return (
     <div className="page">
       <section className="hero site-announce">
@@ -68,7 +80,7 @@ export function Home() {
         </p>
       </section>
 
-      <section className="section">
+      {showCurrentContests && (<section className="section">
         <h2>Current contests</h2>
         {openContests.length === 0 ? (
           <p className="muted">No open contests right now. Check back soon.</p>
@@ -84,7 +96,31 @@ export function Home() {
             ))}
           </ul>
         )}
-      </section>
+      </section>)}
+
+      {showScheduledContests && (
+        <section className="section">
+          <h2>Coming soon</h2>
+          <ul className="scheduled-contest-list">
+            {scheduledTeasers.map((row) => {
+              const liveAt = row.scheduled_publish_at
+              return (
+                <li key={row.id} className="scheduled-contest-item">
+                  <span className="scheduled-contest-title">{row.title}</span>
+                  {liveAt ? (
+                    <span className="muted small scheduled-contest-live">
+                      Goes live {new Date(liveAt).toLocaleString()}
+                    </span>
+                  ) : null}
+                  {row.schedule_tagline?.trim() ? (
+                    <p className="scheduled-contest-tagline">{row.schedule_tagline.trim()}</p>
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       <p className="muted small">
         <Link to="/contests">Browse all contests</Link>

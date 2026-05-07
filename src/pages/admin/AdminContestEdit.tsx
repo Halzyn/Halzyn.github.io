@@ -104,6 +104,8 @@ export function AdminContestEdit() {
   const [deadline, setDeadline] = useState('')
   const [description, setDescription] = useState('')
   const [published, setPublished] = useState(false)
+  const [scheduledPublishAt, setScheduledPublishAt] = useState('')
+  const [scheduleTagline, setScheduleTagline] = useState('')
   const [resultsPublished, setResultsPublished] = useState(false)
   const [pageError, setPageError] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState('')
@@ -164,6 +166,20 @@ export function AdminContestEdit() {
       .toISOString()
       .slice(0, 16)
     setDeadline(deadlineForDatetimeLocal)
+
+    const scheduleIso = loadedContest.scheduled_publish_at
+    if (scheduleIso) {
+      const scheduleUtc = new Date(scheduleIso)
+      const scheduleForDatetimeLocal = new Date(
+        scheduleUtc.getTime() - scheduleUtc.getTimezoneOffset() * 60000,
+      )
+        .toISOString()
+        .slice(0, 16)
+      setScheduledPublishAt(scheduleForDatetimeLocal)
+    } else {
+      setScheduledPublishAt('')
+    }
+    setScheduleTagline(loadedContest.schedule_tagline ?? '')
 
     const trackList = (tracksResult.data ?? []) as Track[]
     setTracks(trackList)
@@ -288,6 +304,9 @@ export function AdminContestEdit() {
         deadline: new Date(deadline).toISOString(),
         published,
         results_published: resultsPublished,
+        scheduled_publish_at:
+          published ? null : scheduledPublishAt.trim() ? new Date(scheduledPublishAt).toISOString() : null,
+        schedule_tagline: published ? null : scheduleTagline.trim() || null,
       })
       .eq('id', contest.id)
     if (error) {
@@ -486,11 +505,40 @@ export function AdminContestEdit() {
             <span>Description</span>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
           </label>
+          <label className="field">
+            <span>Scheduled go-live</span>
+            <input
+              type="datetime-local"
+              value={scheduledPublishAt}
+              onChange={(e) => setScheduledPublishAt(e.target.value)}
+              disabled={published}
+            />
+          </label>
+          <p className="muted small">
+            Contest will automatically go live at this time.
+          </p>
+          <label className="field">
+            <span>Tagline</span>
+            <textarea
+              value={scheduleTagline}
+              onChange={(e) => setScheduleTagline(e.target.value)}
+              rows={2}
+              disabled={published}
+              placeholder="A little blurb about the contest to get people hyped"
+            />
+          </label>
           <label className="field row">
             <input
               type="checkbox"
               checked={published}
-              onChange={(e) => setPublished(e.target.checked)}
+              onChange={(e) => {
+                const next = e.target.checked
+                setPublished(next)
+                if (next) {
+                  setScheduledPublishAt('')
+                  setScheduleTagline('')
+                }
+              }}
             />
             <span>Published contest</span>
           </label>

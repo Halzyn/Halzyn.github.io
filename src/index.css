@@ -1061,6 +1061,38 @@ html[data-theme='light'] .banner.warn {
   gap: 0.65rem;
 }
 
+.scheduled-contest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scheduled-contest-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.scheduled-contest-title {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.scheduled-contest-live {
+  display: block;
+}
+
+.scheduled-contest-tagline {
+  margin: 0;
+  line-height: 1.45;
+}
+
 .card a {
   display: flex;
   flex-wrap: wrap;

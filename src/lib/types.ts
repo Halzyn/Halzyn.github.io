@@ -6,7 +6,17 @@ export type Contest = {
   deadline: string
   published: boolean
   results_published: boolean
+  scheduled_publish_at?: string | null
+  schedule_tagline?: string | null
   created_at: string
+}
+
+/** Public home-page teaser rows from `scheduled_contests_teaser()` RPC. */
+export type ScheduledContestTeaser = {
+  id: string
+  title: string
+  scheduled_publish_at: string
+  schedule_tagline: string | null
 }
 
 export type Track = {

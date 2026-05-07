@@ -126,6 +126,9 @@ export function AdminContests() {
                 <span className="card-title">{contest.title}</span>
                 <span className="muted small">{contest.slug}</span>
                 <span className="pill">{contest.published ? 'published' : 'draft'}</span>
+                {!contest.published && contest.scheduled_publish_at ? (
+                  <span className="pill">scheduled</span>
+                ) : null}
               </Link>
             </li>
           ))}
