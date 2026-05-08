@@ -1080,6 +1080,7 @@ html[data-theme='light'] .banner.warn {
 }
 
 .scheduled-contest-title {
+  font-family: var(--heading-font);
   font-weight: 600;
   font-size: 1.05rem;
 }
