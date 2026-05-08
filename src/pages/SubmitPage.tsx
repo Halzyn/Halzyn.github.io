@@ -480,7 +480,7 @@ export function SubmitPage() {
               </label>
             ))}
             {saveNotice ? (
-              <p className="banner" role="status">
+              <p className="banner success" role="status">
                 {saveNotice}
               </p>
             ) : null}

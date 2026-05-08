@@ -86,6 +86,8 @@ export type Submission = {
   user_id?: string | null
 }
 
+export type SiteBackgroundPattern = 'none' | 'dk64'
+
 export type Profile = {
   id: string
   is_admin: boolean
@@ -97,6 +99,7 @@ export type Profile = {
   player_number: number | null
   avatar_path?: string | null
   favorite_soundtrack_game_id?: string | null
+  site_background_pattern?: SiteBackgroundPattern | null
 }
 
 export type PublicProfile = {

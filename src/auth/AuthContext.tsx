@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -17,6 +18,7 @@ export type AuthContextValue = {
   ready: boolean
   userId: string | null
   isAdmin: boolean
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -86,11 +88,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase])
 
+  const refreshProfile = useCallback(async () => {
+    const uid = session?.user?.id ?? null
+    if (!uid) {
+      setProfile(null)
+      return
+    }
+    const loaded = await fetchProfileRow(supabase, uid)
+    if (trackedAuthUserIdRef.current !== uid) return
+    setProfile(loaded)
+  }, [session?.user?.id, supabase])
+
   const value = useMemo<AuthContextValue>(() => {
     const userId = session?.user?.id ?? null
     const isAdmin = Boolean(profile?.is_admin)
-    return { session, profile, ready, userId, isAdmin }
-  }, [session, profile, ready])
+    return { session, profile, ready, userId, isAdmin, refreshProfile }
+  }, [session, profile, ready, refreshProfile])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

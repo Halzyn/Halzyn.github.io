@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { Layout } from './components/Layout'
+import { SiteBackgroundSync } from './components/SiteBackgroundSync'
 import { Home } from './pages/Home'
 import { ContestList } from './pages/ContestList'
 import { ContestPage } from './pages/ContestPage'
@@ -29,6 +30,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+      <SiteBackgroundSync />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />

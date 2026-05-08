@@ -149,7 +149,7 @@ export function AdminContestSubmissions({
       </p>
 
       {resetLinkBanner ? (
-        <div className="banner admin-reset-link-banner" role="status">
+        <div className="banner success admin-reset-link-banner" role="status">
           <p>
             New edit link for {resetLinkBanner.name}. Send this URL to them, as the old
             link no longer works:

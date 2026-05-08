@@ -68,7 +68,9 @@ export function ResetPasswordPage() {
   if (passwordUpdated) {
     return (
       <div className="page">
-        <p>Password updated.</p>
+        <p className="banner success" role="status">
+          Password updated.
+        </p>
         <p>
           <Link to="/">Home</Link>
         </p>

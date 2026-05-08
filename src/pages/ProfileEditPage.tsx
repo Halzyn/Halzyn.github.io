@@ -6,10 +6,12 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { avatarPublicUrl, resizeImageFileToAvatarJpeg } from '../lib/avatar'
 import { compareGameTitles } from '../lib/gamesIndex'
-import type { Game, Profile } from '../lib/types'
+import type { Game, Profile, SiteBackgroundPattern } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
+import { useAuth } from '../auth/AuthContext'
+import { parseSiteBackgroundPattern } from '../theme/siteBackground'
 
-type EditTab = 'basic' | 'private' | 'submissions' | 'fun' | 'moderation'
+type EditTab = 'basic' | 'private' | 'submissions' | 'appearance' | 'fun' | 'moderation'
 
 type MyContestSubmissionRow = {
   submission_id: string
@@ -28,6 +30,7 @@ const PROFILE_SECTION_TABS: { tab: EditTab; label: string }[] = [
   { tab: 'basic', label: 'Basic info' },
   { tab: 'private', label: 'Private info' },
   { tab: 'submissions', label: 'Submissions' },
+  { tab: 'appearance', label: 'Appearance' },
   { tab: 'fun', label: 'Fun' },
 ]
 
@@ -57,6 +60,7 @@ function collectModeratedContestsFromRows(
 export function ProfileEditPage() {
   useDocumentTitle(pageTitle('Your profile'))
   const supabase = getSupabase()
+  const { refreshProfile } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -83,6 +87,8 @@ export function ProfileEditPage() {
   const [notifyEmailBusy, setNotifyEmailBusy] = useState(false)
   const [mySubmissions, setMySubmissions] = useState<MyContestSubmissionRow[] | null>(null)
   const [submissionsLoadError, setSubmissionsLoadError] = useState<string | null>(null)
+  const [siteBackgroundPattern, setSiteBackgroundPattern] = useState<SiteBackgroundPattern>('none')
+  const [appearanceBusy, setAppearanceBusy] = useState(false)
 
   const clearFeedback = useCallback(() => {
     setPageError(null)
@@ -115,6 +121,7 @@ export function ProfileEditPage() {
       setBio(loaded.bio ?? '')
       setFavoriteGameId(loaded.favorite_soundtrack_game_id ?? null)
       setNotifyNewContestEmail(Boolean(loaded.notify_new_contest_email))
+      setSiteBackgroundPattern(parseSiteBackgroundPattern(loaded.site_background_pattern))
       setSessionReady(true)
     }
     void loadSessionAndProfile()
@@ -226,6 +233,26 @@ export function ProfileEditPage() {
     const closed = mySubmissions.filter((row) => contestClosed(row.deadline))
     return { openSubmissions: open, closedSubmissions: closed }
   }, [mySubmissions])
+
+  const saveAppearance = useCallback(async () => {
+    if (!profile) return
+    clearFeedback()
+    setAppearanceBusy(true)
+    const { data: updated, error } = await supabase
+      .from('profiles')
+      .update({ site_background_pattern: siteBackgroundPattern })
+      .eq('id', profile.id)
+      .select('*')
+      .single()
+    setAppearanceBusy(false)
+    if (error) {
+      setPageError(error.message)
+      return
+    }
+    setProfile(updated as Profile)
+    await refreshProfile()
+    setSuccessMessage('Appearance saved.')
+  }, [clearFeedback, profile, refreshProfile, siteBackgroundPattern, supabase])
 
   const saveFavorite = useCallback(async () => {
     if (!profile) return
@@ -439,7 +466,7 @@ export function ProfileEditPage() {
         <h1>Your profile</h1>
       </header>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
-      {successMessage ? <p className="banner">{successMessage}</p> : null}
+      {successMessage ? <p className="banner success">{successMessage}</p> : null}
 
       <div className="row tight site-toolbar profile-edit-tabs" role="tablist" aria-label="Profile sections">
         {PROFILE_SECTION_TABS.map(({ tab, label }) => (
@@ -659,6 +686,40 @@ export function ProfileEditPage() {
               )}
             </>
           )}
+        </section>
+      </div>
+
+      <div
+        id="profile-panel-appearance"
+        role="tabpanel"
+        aria-labelledby="profile-tab-appearance"
+        hidden={editTab !== 'appearance'}
+        className="profile-edit-tab-panel"
+      >
+        <section className="section">
+          <h2 id="profile-appearance-bg-heading">Theme</h2>
+          <label className="field">
+            <span>Background</span>
+            <select
+              id="profile-appearance-bg-select"
+              value={siteBackgroundPattern}
+              disabled={!profile || appearanceBusy}
+              onChange={(event) =>
+                setSiteBackgroundPattern(parseSiteBackgroundPattern(event.target.value))
+              }
+            >
+              <option value="none">No background</option>
+              <option value="dk64">Donkey Kong 64</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="button primary profile-edit-appearance-save"
+            disabled={appearanceBusy || !profile}
+            onClick={() => void saveAppearance()}
+          >
+            Save appearance
+          </button>
         </section>
       </div>
 

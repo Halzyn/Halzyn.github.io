@@ -171,7 +171,7 @@ export function AuthPage() {
       </div>
 
       {pageError ? <p className="banner warn">{pageError}</p> : null}
-      {noticeMessage ? <p className="banner">{noticeMessage}</p> : null}
+      {noticeMessage ? <p className="banner success">{noticeMessage}</p> : null}
 
       {mode === 'signIn' ? (
         <form className="form auth-form" onSubmit={handleSignIn}>
