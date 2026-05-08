@@ -264,7 +264,7 @@ export function ContestPage() {
           open={tracksFoldOpen}
           onToggle={(event) => setTracksFoldOpen(event.currentTarget.open)}
         >
-          <summary className="tracks-fold-summary">Listen &amp; browse clips</summary>
+          <summary className="tracks-fold-summary">Show tracks</summary>
           <div className="tracks-fold-body">
             {tracks.length === 0 ? (
               <p className="muted">Loading tracks...</p>
