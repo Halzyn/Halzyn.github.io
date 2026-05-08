@@ -86,7 +86,15 @@ export type Submission = {
   user_id?: string | null
 }
 
-export type SiteBackgroundPattern = 'none' | 'dk64'
+export type SiteBackgroundPattern =
+  | 'none'
+  | 'dk64'
+  | 'furnacefun'
+  | 'smwc'
+  | 'candycavios'
+  | 'cutestripes'
+  | 'miningmelancholy'
+  | 'outer_wall'
 
 export type Profile = {
   id: string

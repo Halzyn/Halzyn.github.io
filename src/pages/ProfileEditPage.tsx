@@ -34,6 +34,19 @@ const PROFILE_SECTION_TABS: { tab: EditTab; label: string }[] = [
   { tab: 'fun', label: 'Fun' },
 ]
 
+const SITE_BACKGROUND_OPTIONS: {
+  value: Exclude<SiteBackgroundPattern, 'none'>
+  label: string
+}[] = [
+  { value: 'candycavios', label: 'Candy Mountain / Planet Cavios' },
+  { value: 'cutestripes', label: 'Cute Stripes' },
+  { value: 'dk64', label: 'Donkey Kong 64' },
+  { value: 'furnacefun', label: "Grunty's Furnace Fun" },
+  { value: 'miningmelancholy', label: 'Mining Melancholy' },
+  { value: 'outer_wall', label: 'Outer Wall' },
+  { value: 'smwc', label: 'SMWCentral' },
+]
+
 function tabButtonClass(selected: boolean): string {
   return selected ? 'button small primary' : 'button small ghost'
 }
@@ -709,7 +722,11 @@ export function ProfileEditPage() {
               }
             >
               <option value="none">No background</option>
-              <option value="dk64">Donkey Kong 64</option>
+              {SITE_BACKGROUND_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
           <button

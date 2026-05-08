@@ -51,7 +51,7 @@ html[data-theme='light'] {
   color-scheme: light;
 
   --bg: #d4e6f5;
-  --surface: #ffffff;
+  --surface: #f4f5f7;
   --border: #919191;
   --text: #111111;
   --muted: #4a4a4a;
@@ -93,6 +93,88 @@ html[data-site-bg='dk64'] body {
   background-color: var(--bg);
   background-image: url('/dk64.png');
   background-repeat: repeat;
+}
+
+html[data-site-bg='furnacefun'],
+html[data-site-bg='furnacefun'] body {
+  background-color: var(--bg);
+  background-image: url('/furnacefun.png');
+  background-repeat: repeat;
+}
+
+html[data-site-bg='smwc'],
+html[data-site-bg='smwc'] body {
+  background-color: var(--bg);
+  background-image: url('/smwc.png');
+  background-repeat: repeat;
+}
+
+html[data-site-bg='cutestripes'],
+html[data-site-bg='cutestripes'] body {
+  background-color: var(--bg);
+  background-image: url('/cutestripes.png');
+  background-repeat: repeat;
+}
+
+html[data-site-bg='miningmelancholy'],
+html[data-site-bg='miningmelancholy'] body {
+  background-color: var(--bg);
+  background-image: url('/miningmelancholy.png');
+  background-repeat: repeat;
+}
+
+html[data-site-bg='candycavios'],
+html[data-site-bg='candycavios'] body {
+  background-color: var(--bg);
+  background-repeat: repeat-x;
+  background-size: auto 100svh;
+  background-position: center bottom;
+  background-attachment: fixed;
+}
+
+html[data-site-bg='candycavios'][data-theme='light'],
+html[data-site-bg='candycavios'][data-theme='light'] body {
+  background-image: url('/kss-candy-mountain.png');
+}
+
+html[data-site-bg='candycavios'][data-theme='dark'],
+html[data-site-bg='candycavios'][data-theme='dark'] body {
+  background-image: url('/kss-planet-cavios.png');
+}
+
+html[data-site-bg='outer_wall'],
+html[data-site-bg='outer_wall'] body {
+  background-color: var(--bg);
+  background-repeat: repeat-x;
+  background-size: auto 100svh;
+  background-position: center bottom;
+  background-attachment: fixed;
+}
+
+html[data-site-bg='outer_wall'][data-theme='light'],
+html[data-site-bg='outer_wall'][data-theme='light'] body {
+  background-image: url('/outer-wall-light.png');
+}
+
+html[data-site-bg='outer_wall'][data-theme='dark'],
+html[data-site-bg='outer_wall'][data-theme='dark'] body {
+  background-image: url('/outer-wall-dark.png');
+}
+
+html[data-site-bg='dk64'],
+html[data-site-bg='dk64'] body,
+html[data-site-bg='furnacefun'],
+html[data-site-bg='furnacefun'] body,
+html[data-site-bg='smwc'],
+html[data-site-bg='smwc'] body,
+html[data-site-bg='miningmelancholy'],
+html[data-site-bg='miningmelancholy'] body,
+html[data-site-bg='candycavios'],
+html[data-site-bg='candycavios'] body,
+html[data-site-bg='outer_wall'],
+html[data-site-bg='outer_wall'] body {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 h1,
