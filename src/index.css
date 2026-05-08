@@ -1,12 +1,4 @@
 @font-face {
-  font-family: 'Toxigenesis BD';
-  src: url('../toxigenesis-bd.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
   font-family: 'Reactor7';
   src: url('../Reactor7.otf') format('opentype');
   font-weight: 400;
@@ -15,7 +7,7 @@
 }
 
 :root {
-  --heading-font: 'Toxigenesis BD', Verdana, Geneva, sans-serif;
+  --heading-font: 'Orbitron', Verdana, Geneva, sans-serif;
   --sans: Verdana, Geneva, 'Segoe UI', system-ui, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 }
