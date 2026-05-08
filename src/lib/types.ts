@@ -95,6 +95,7 @@ export type SiteBackgroundPattern =
   | 'cutestripes'
   | 'miningmelancholy'
   | 'outer_wall'
+  | 'supermariokart'
 
 export type Profile = {
   id: string

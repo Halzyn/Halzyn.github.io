@@ -8,6 +8,7 @@ export function parseSiteBackgroundPattern(value: unknown): SiteBackgroundPatter
   if (value === 'cutestripes') return 'cutestripes'
   if (value === 'miningmelancholy') return 'miningmelancholy'
   if (value === 'outer_wall') return 'outer_wall'
+  if (value === 'supermariokart') return 'supermariokart'
   return 'none'
 }
 

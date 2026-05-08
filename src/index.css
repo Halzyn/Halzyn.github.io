@@ -161,6 +161,25 @@ html[data-site-bg='outer_wall'][data-theme='dark'] body {
   background-image: url('/outer-wall-dark.png');
 }
 
+html[data-site-bg='supermariokart'],
+html[data-site-bg='supermariokart'] body {
+  background-color: var(--bg);
+  background-repeat: repeat-x;
+  background-size: auto 100svh;
+  background-position: center bottom;
+  background-attachment: fixed;
+}
+
+html[data-site-bg='supermariokart'][data-theme='light'],
+html[data-site-bg='supermariokart'][data-theme='light'] body {
+  background-image: url('/supermariokart-light.png');
+}
+
+html[data-site-bg='supermariokart'][data-theme='dark'],
+html[data-site-bg='supermariokart'][data-theme='dark'] body {
+  background-image: url('/supermariokart-dark.png');
+}
+
 html[data-site-bg='dk64'],
 html[data-site-bg='dk64'] body,
 html[data-site-bg='furnacefun'],
@@ -172,7 +191,9 @@ html[data-site-bg='miningmelancholy'] body,
 html[data-site-bg='candycavios'],
 html[data-site-bg='candycavios'] body,
 html[data-site-bg='outer_wall'],
-html[data-site-bg='outer_wall'] body {
+html[data-site-bg='outer_wall'] body,
+html[data-site-bg='supermariokart'],
+html[data-site-bg='supermariokart'] body {
   image-rendering: crisp-edges;
   image-rendering: pixelated;
 }

@@ -45,6 +45,7 @@ const SITE_BACKGROUND_OPTIONS: {
   { value: 'miningmelancholy', label: 'Mining Melancholy' },
   { value: 'outer_wall', label: 'Outer Wall' },
   { value: 'smwc', label: 'SMWCentral' },
+  { value: 'supermariokart', label: 'Super Mario Kart' },
 ]
 
 function tabButtonClass(selected: boolean): string {
