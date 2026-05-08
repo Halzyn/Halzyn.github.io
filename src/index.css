@@ -536,6 +536,8 @@ html[data-theme='light'] .theme-toggle--floating {
   height: auto;
   border-radius: 0px;
   border: 1px solid var(--border);
+  image-rendering: auto;
+  filter: blur(0.28px);
 }
 .game-page-igdb-facts {
   flex: 1 1 16rem;
@@ -1039,6 +1041,8 @@ h2 {
   width: 64px;
   height: 64px;
   object-fit: cover;
+  image-rendering: auto;
+  filter: blur(0.24px);
   border-radius: 0px;
   border: 1px solid var(--border);
   flex-shrink: 0;
