@@ -136,7 +136,7 @@ export function AdminContestSubmissions({
   }
 
   return (
-    <section className="section">
+    <section className="section panel">
       <h2>Submissions</h2>
       <p className="muted small">
         Open the grid to start grading a submission. When submissions are ready to be reviewed, they will be marked as Open.\n

@@ -75,7 +75,7 @@ export function AdminContests() {
       <h1>Contests</h1>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
 
-      <section className="section">
+      <section className="section panel">
         <h2>Create contest</h2>
         <form className="form" onSubmit={createContest}>
           <label className="field">
@@ -117,7 +117,7 @@ export function AdminContests() {
         </form>
       </section>
 
-      <section className="section">
+      <section className="section panel">
         <h2>All contests</h2>
         <ul className="card-list">
           {contests.map((contest) => (

@@ -33,7 +33,7 @@ export function ContestResults({
     <section className="section contest-results-section">
       <h2>Results</h2>
       <p className="muted small contest-results-intro">
-        Open to reveal the full results grid and rankings.
+        SPOILERS AHEAD!
       </p>
       <details className="spoiler spoiler-all">
         <summary className="spoiler-all-summary">Show results and rankings</summary>

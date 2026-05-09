@@ -2293,7 +2293,7 @@ html[data-theme='dark'] .site-shell .pill {
 .site-shell .section > h2,
 .site-shell .profile-rpg-stats-row .profile-totals-column--rpg-row > h2,
 .site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row > h2 {
-  margin: 0;
+  margin: 0 0 1rem;
   padding: 0.35rem 0.55rem;
   font-family: var(--heading-font);
   font-size: 12px;
@@ -2301,12 +2301,7 @@ html[data-theme='dark'] .site-shell .pill {
   color: #ffffff;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
   border: 1px solid var(--site-category-border);
-  border-bottom: none;
   background: var(--site-category-bg);
-}
-
-.site-shell .section > h2.games-index-head {
-  margin-bottom: 1rem;
 }
 
 .site-shell .section {
@@ -2316,6 +2311,7 @@ html[data-theme='dark'] .site-shell .pill {
 .site-shell .contest-tracks-section > h2,
 .site-shell .contest-results-section > h2 {
   margin-bottom: 0;
+  border-bottom: none;
 }
 
 .site-shell .contest-tracks-section > h2 .muted {
@@ -2349,8 +2345,11 @@ html[data-theme='dark'] .site-shell .pill {
   margin: 0;
   padding: 0.45rem 0.65rem 0.55rem;
   border: 1px solid var(--border);
-  border-top: none;
   background: var(--site-row-b);
+}
+
+.site-shell .contest-results-intro {
+  border-top: none;
 }
 
 .site-shell .contest-results-section > .spoiler-all {
@@ -2370,7 +2369,6 @@ html[data-theme='dark'] .site-shell .pill {
 .site-shell .card-list {
   gap: 0;
   border: 1px solid var(--border);
-  border-top: none;
   background: var(--site-row-a);
   box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.08);
 }
@@ -2424,7 +2422,6 @@ html[data-theme='dark'] .site-shell .pill {
   padding: 0.65rem 0.75rem;
 }
 
-.site-shell .section > h2 + .site-inset,
 .site-shell .section > h2 + .site-section-blurb + .site-inset {
   border-top: none;
   margin-top: 0;

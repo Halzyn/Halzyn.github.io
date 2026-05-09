@@ -386,7 +386,7 @@ export function AdminGameEdit() {
             </form>
           </section>
 
-          <section className="section">
+          <section className="section panel">
             <h2>Danger zone</h2>
             <button type="button" className="button ghost" onClick={() => void deleteGame()}>
               Delete game...

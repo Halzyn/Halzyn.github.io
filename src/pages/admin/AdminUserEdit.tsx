@@ -145,7 +145,7 @@ export function AdminUserEdit() {
       {pageError ? <p className="banner warn">{pageError}</p> : null}
       {successMessage ? <p className="banner success">{successMessage}</p> : null}
 
-      <section className="section">
+      <section className="section panel">
         <h2>Profile</h2>
         <form className="form" onSubmit={saveProfile}>
           <label className="field">
@@ -166,7 +166,7 @@ export function AdminUserEdit() {
         </form>
       </section>
 
-      <section className="section">
+      <section className="section panel">
         <h2>Assign submission</h2>
         <p className="muted small">
           Paste a submission UUID to attach this contest entry to the user.
@@ -186,7 +186,7 @@ export function AdminUserEdit() {
         </form>
       </section>
 
-      <section className="section">
+      <section className="section panel">
         <h2>Danger zone OH NOES!!!!!</h2>
         <p className="muted small">
           Deletes the Supabase auth account and profile. Contest submissions remain with no linked player.

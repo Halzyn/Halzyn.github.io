@@ -243,10 +243,6 @@ export function ContestPage() {
                 Submit answers
               </Link>
             </p>
-            <p className="muted small">
-              After your first submit, bookmark the confirmation page or save the address. This address is your private link to
-              update guesses. Names alone cannot be reused by someone else.
-            </p>
           </div>
         ) : null}
       </header>
