@@ -2293,7 +2293,7 @@ html[data-theme='dark'] .site-shell .pill {
 .site-shell .section > h2,
 .site-shell .profile-rpg-stats-row .profile-totals-column--rpg-row > h2,
 .site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row > h2 {
-  margin: 0 0 1rem;
+  margin: 0;
   padding: 0.35rem 0.55rem;
   font-family: var(--heading-font);
   font-size: 12px;
@@ -2303,6 +2303,10 @@ html[data-theme='dark'] .site-shell .pill {
   border: 1px solid var(--site-category-border);
   border-bottom: none;
   background: var(--site-category-bg);
+}
+
+.site-shell .section > h2.games-index-head {
+  margin-bottom: 1rem;
 }
 
 .site-shell .section {
