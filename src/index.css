@@ -1234,7 +1234,7 @@ html[data-theme='light'] .banner.warn {
   flex-direction: column;
   gap: 0.35rem;
   padding: 0.85rem 1rem;
-  background: var(--surface);
+  background: var(--site-row-a);
   border: 1px solid var(--border);
 }
 
@@ -2547,4 +2547,60 @@ html[data-theme='light'] .site-shell .main .button:not(.primary):not(.danger):no
   html[data-theme='light'] .site-shell .card a {
     transition: background 0.12s ease;
   }
+}
+
+.display-name-styled-wrap {
+  display: inline;
+}
+
+.display-name-styled-inner {
+  font-weight: inherit;
+}
+
+.display-name-effect-outline {
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.78);
+  paint-order: stroke fill;
+}
+
+html[data-theme='dark'] .display-name-effect-outline {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.82);
+}
+
+.display-name-effect-drop_shadow {
+  filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.55));
+}
+
+html[data-theme='dark'] .display-name-effect-drop_shadow {
+  filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.65));
+}
+
+.display-name-effect-glow {
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 10px currentColor);
+}
+
+html[data-theme='dark'] .display-name-effect-glow {
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.55)) drop-shadow(0 0 12px rgba(180, 220, 255, 0.35));
+}
+
+.results-game-link .display-name-styled-wrap {
+  text-decoration: inherit;
+}
+
+.player-card-link .display-name-styled-wrap {
+  color: inherit;
+}
+
+.profile-rpg-ff-name .display-name-styled-wrap {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.profile-edit-name-color-row {
+  align-items: center;
+}
+
+.profile-edit-name-preview {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  line-height: 1.35;
 }

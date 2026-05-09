@@ -6,7 +6,15 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { avatarPublicUrl, resizeImageFileToAvatarJpeg } from '../lib/avatar'
 import { compareGameTitles } from '../lib/gamesIndex'
-import type { Game, Profile, SiteBackgroundPattern } from '../lib/types'
+import type { DisplayNameEffect, Game, Profile, SiteBackgroundPattern } from '../lib/types'
+import {
+  normalizeDisplayNameHex,
+  parseDisplayNameEffect,
+  parseDisplayNameStyleCaps,
+  type DisplayNameStyleCaps,
+  type DisplayNameStyleInfo,
+} from '../lib/displayNameStyle'
+import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import { contestClosed } from '../lib/deadline'
 import { useAuth } from '../auth/AuthContext'
 import { parseSiteBackgroundPattern } from '../theme/siteBackground'
@@ -27,7 +35,7 @@ type ModeratedContest = { id: string; slug: string; title: string }
 const USERNAME_REGEX = /^[a-z0-9_]{2,32}$/
 
 const PROFILE_SECTION_TABS: { tab: EditTab; label: string }[] = [
-  { tab: 'basic', label: 'Basic info' },
+  { tab: 'basic', label: 'Profile' },
   { tab: 'private', label: 'Private info' },
   { tab: 'submissions', label: 'Submissions' },
   { tab: 'appearance', label: 'Appearance' },
@@ -47,6 +55,15 @@ const SITE_BACKGROUND_OPTIONS: {
   { value: 'smwc', label: 'SMWCentral' },
   { value: 'supermariokart', label: 'Super Mario Kart' },
 ]
+
+const NAME_EFFECT_OPTIONS: { value: DisplayNameEffect; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'outline', label: 'Outline' },
+  { value: 'drop_shadow', label: 'Drop shadow' },
+  { value: 'glow', label: 'Glow' },
+]
+
+const NAME_COLOR_FALLBACK = '#4488cc'
 
 function tabButtonClass(selected: boolean): string {
   return selected ? 'button small primary' : 'button small ghost'
@@ -103,6 +120,13 @@ export function ProfileEditPage() {
   const [submissionsLoadError, setSubmissionsLoadError] = useState<string | null>(null)
   const [siteBackgroundPattern, setSiteBackgroundPattern] = useState<SiteBackgroundPattern>('none')
   const [appearanceBusy, setAppearanceBusy] = useState(false)
+  const [nameColor1, setNameColor1] = useState('')
+  const [nameColor2, setNameColor2] = useState('')
+  const [nameEffect, setNameEffect] = useState<DisplayNameEffect>('none')
+  const [styleCaps, setStyleCaps] = useState<DisplayNameStyleCaps>({
+    canGradient: false,
+    canEffect: false,
+  })
 
   const clearFeedback = useCallback(() => {
     setPageError(null)
@@ -136,6 +160,9 @@ export function ProfileEditPage() {
       setFavoriteGameId(loaded.favorite_soundtrack_game_id ?? null)
       setNotifyNewContestEmail(Boolean(loaded.notify_new_contest_email))
       setSiteBackgroundPattern(parseSiteBackgroundPattern(loaded.site_background_pattern))
+      setNameColor1(loaded.display_name_color?.trim() ?? '')
+      setNameColor2(loaded.display_name_color_2?.trim() ?? '')
+      setNameEffect(parseDisplayNameEffect(loaded.display_name_effect))
       setSessionReady(true)
     }
     void loadSessionAndProfile()
@@ -167,6 +194,26 @@ export function ProfileEditPage() {
 
     void loadModeratedContests()
   }, [profile?.id, profile?.is_admin, supabase])
+
+  useEffect(() => {
+    if (!profile?.id) return
+    let cancelled = false
+
+    async function loadCaps() {
+      const { data, error } = await supabase.rpc('profile_name_style_caps')
+      if (cancelled) return
+      if (error || data == null) {
+        setStyleCaps({ canGradient: false, canEffect: false })
+        return
+      }
+      setStyleCaps(parseDisplayNameStyleCaps(data) ?? { canGradient: false, canEffect: false })
+    }
+
+    void loadCaps()
+    return () => {
+      cancelled = true
+    }
+  }, [profile?.id, supabase])
 
   useEffect(() => {
     if (!profile) return
@@ -248,6 +295,14 @@ export function ProfileEditPage() {
     return { openSubmissions: open, closedSubmissions: closed }
   }, [mySubmissions])
 
+  const nameStylePreviewInfo = useMemo((): DisplayNameStyleInfo => {
+    return {
+      color1: normalizeDisplayNameHex(nameColor1 || null),
+      color2: styleCaps.canGradient ? normalizeDisplayNameHex(nameColor2 || null) : null,
+      effect: styleCaps.canEffect ? nameEffect : 'none',
+    }
+  }, [nameColor1, nameColor2, nameEffect, styleCaps.canEffect, styleCaps.canGradient])
+
   const saveAppearance = useCallback(async () => {
     if (!profile) return
     clearFeedback()
@@ -308,19 +363,30 @@ export function ProfileEditPage() {
         return
       }
     }
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from('profiles')
       .update({
         username: normalizedUsername || null,
         display_name: displayName.trim() || null,
         bio: bio.trim() || null,
+        display_name_color: normalizeDisplayNameHex(nameColor1 || null),
+        display_name_color_2: styleCaps.canGradient ? normalizeDisplayNameHex(nameColor2 || null) : null,
+        display_name_effect: styleCaps.canEffect ? nameEffect : 'none',
       })
       .eq('id', profile.id)
+      .select('*')
+      .single()
     setSubmitBusy(false)
     if (error) {
       setPageError(error.message)
       return
     }
+    const row = updated as Profile
+    setProfile(row)
+    setNameColor1(row.display_name_color?.trim() ?? '')
+    setNameColor2(row.display_name_color_2?.trim() ?? '')
+    setNameEffect(parseDisplayNameEffect(row.display_name_effect))
+    await refreshProfile()
     setSuccessMessage('Profile saved.')
   }
 
@@ -573,6 +639,66 @@ export function ProfileEditPage() {
               <span>Bio</span>
               <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} />
             </label>
+
+            <h3 className="profile-subhead">Name color</h3>
+            <label className="field">
+              <div className="row tight profile-edit-name-color-row">
+                <input
+                  type="color"
+                  aria-label="Pick name color"
+                  value={normalizeDisplayNameHex(nameColor1 || null) ?? NAME_COLOR_FALLBACK}
+                  onChange={(event) => setNameColor1(event.target.value)}
+                />
+                <button type="button" className="button small ghost" onClick={() => setNameColor1('')}>
+                  Clear
+                </button>
+              </div>
+              {!nameColor1 && <span className="muted small">
+                Uses the default text color until you choose a color.
+              </span>}
+            </label>
+
+            {styleCaps.canGradient ? (
+              <>
+                <h3 className="profile-subhead">Second name color</h3>
+                <label className="field">
+                  <div className="row tight profile-edit-name-color-row">
+                    <input
+                      type="color"
+                      aria-label="Pick second name color"
+                      value={normalizeDisplayNameHex(nameColor2 || null) ?? NAME_COLOR_FALLBACK}
+                      onChange={(event) => setNameColor2(event.target.value)}
+                    />
+                    <button type="button" className="button small ghost" onClick={() => setNameColor2('')}>
+                      Clear
+                    </button>
+                  </div>
+                </label>
+              </>
+            ) : null}
+
+            {styleCaps.canEffect ? (
+              <>
+                <h3 className="profile-subhead">Name effect</h3>
+                <label className="field">
+                  <select
+                    value={nameEffect}
+                    onChange={(event) => setNameEffect(parseDisplayNameEffect(event.target.value))}
+                  >
+                    {NAME_EFFECT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : null}
+
+            <p className="profile-subhead">Name preview</p>
+            <p className="profile-edit-name-preview">
+              <DisplayNameStyled text={displayName.trim() || 'Your display name'} info={nameStylePreviewInfo} />
+            </p>
 
             <button type="submit" className="button primary" disabled={submitBusy}>
               Save profile

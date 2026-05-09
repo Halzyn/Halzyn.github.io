@@ -11,7 +11,6 @@ export type Contest = {
   created_at: string
 }
 
-/** Public home-page teaser rows from `scheduled_contests_teaser()` RPC. */
 export type ScheduledContestTeaser = {
   id: string
   title: string
@@ -97,6 +96,8 @@ export type SiteBackgroundPattern =
   | 'outer_wall'
   | 'supermariokart'
 
+export type DisplayNameEffect = 'none' | 'outline' | 'drop_shadow' | 'glow'
+
 export type Profile = {
   id: string
   is_admin: boolean
@@ -109,6 +110,9 @@ export type Profile = {
   avatar_path?: string | null
   favorite_soundtrack_game_id?: string | null
   site_background_pattern?: SiteBackgroundPattern | null
+  display_name_color?: string | null
+  display_name_color_2?: string | null
+  display_name_effect?: DisplayNameEffect | null
 }
 
 export type PublicProfile = {

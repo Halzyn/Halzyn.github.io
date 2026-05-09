@@ -7,6 +7,8 @@ import type { Contest, GradingMark, Submission, SubmissionGuess, Track } from '.
 import { computeProfileContestStats, type ProfileContestStatsResult } from '../lib/profileContestStats'
 import { computeProfileRpgStats } from '../lib/profileRpgStats'
 import { avatarPublicUrl } from '../lib/avatar'
+import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
+import { DisplayNameStyled } from '../components/DisplayNameStyled'
 
 type ProfileJson = {
   id: string
@@ -89,6 +91,7 @@ export function ProfilePage() {
   const [profileLoading, setProfileLoading] = useState(true)
   const [statBundle, setStatBundle] = useState<ProfileStatBundle | null>(null)
   const [sessionUserId, setSessionUserId] = useState<string | null>(null)
+  const [displayNameStyleInfo, setDisplayNameStyleInfo] = useState<DisplayNameStyleInfo | null>(null)
 
   const contestStats = useMemo(() => {
     if (!statBundle) return null
@@ -130,6 +133,7 @@ export function ProfilePage() {
 
     async function loadPublicProfile() {
       setLoadError(null)
+      setDisplayNameStyleInfo(null)
       const { data, error } = await supabase.rpc('get_public_profile_page_data', {
         p_username: usernameFromRoute,
       })
@@ -149,6 +153,14 @@ export function ProfilePage() {
 
       const payload = data as PublicProfileRpcResponse
       setProfile(payload.profile)
+
+      const pid = payload.profile.id
+      const { data: styleBlob, error: styleErr } = await supabase.rpc('profile_display_name_styles_for_users', {
+        p_user_ids: [pid],
+      })
+      if (!styleErr) {
+        setDisplayNameStyleInfo(displayNameStyleMapFromRpc(styleBlob).get(pid) ?? null)
+      }
 
       const rawStats = payload.stats
       setStatBundle({
@@ -237,7 +249,9 @@ export function ProfilePage() {
                   )}
                 </div>
                 <div className="profile-rpg-ff-primary">
-                  <h1 className="profile-rpg-ff-name">{displayHeading}</h1>
+                  <h1 className="profile-rpg-ff-name">
+                    <DisplayNameStyled text={displayHeading} info={displayNameStyleInfo} />
+                  </h1>
                   <div className="profile-rpg-ff-job-row">
                     <span className="profile-rpg-ff-job">{title(profile)}</span>
                   </div>

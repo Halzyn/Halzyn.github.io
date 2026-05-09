@@ -4,6 +4,8 @@ import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { avatarPublicUrl } from '../lib/avatar'
+import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
+import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import type { PublicProfile } from '../lib/types'
 
 type SortMode = 'id' | 'name'
@@ -21,18 +23,31 @@ export function PlayersPage() {
   useDocumentTitle(pageTitle('Players'))
   const supabase = getSupabase()
   const [profiles, setProfiles] = useState<PublicProfile[]>([])
+  const [displayNameStyleByUserId, setDisplayNameStyleByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
+    new Map(),
+  )
   const [sortMode, setSortMode] = useState<SortMode>('id')
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadPlayers() {
       setLoadError(null)
+      setDisplayNameStyleByUserId(new Map())
       const { data, error } = await supabase.rpc('list_players_public')
       if (error) {
         setLoadError(error.message)
         return
       }
-      setProfiles((data ?? []) as PublicProfile[])
+      const list = (data ?? []) as PublicProfile[]
+      setProfiles(list)
+      const ids = list.map((p) => p.id)
+      if (ids.length === 0) return
+      const { data: styleBlob, error: styleErr } = await supabase.rpc('profile_display_name_styles_for_users', {
+        p_user_ids: ids,
+      })
+      if (!styleErr) {
+        setDisplayNameStyleByUserId(displayNameStyleMapFromRpc(styleBlob))
+      }
     }
     void loadPlayers()
   }, [supabase])
@@ -88,7 +103,9 @@ export function PlayersPage() {
                     <span className="player-card-avatar player-card-avatar--placeholder" aria-hidden />
                   )}
                   <span className="player-card-text">
-                    <span className="card-title">{profile.display_name}</span>
+                    <span className="card-title">
+                      <DisplayNameStyled text={profile.display_name} info={displayNameStyleByUserId.get(profile.id)} />
+                    </span>
                     <span className="muted small">
                       #{profile.player_number} · @{profile.username}
                     </span>

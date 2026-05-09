@@ -12,6 +12,7 @@ import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { fetchGameTooltips, type GameTooltip } from '../lib/gameTooltip'
 import { buildContestRankRows } from '../lib/scoring'
+import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
 
 function ContestArchiveBackLink() {
   return (
@@ -38,6 +39,9 @@ export function ContestPage() {
   const [contestMod, setContestMod] = useState(false)
   const [displayNameByUserId, setDisplayNameByUserId] = useState<Map<string, string>>(new Map())
   const [profileUsernameByUserId, setProfileUsernameByUserId] = useState<Map<string, string>>(new Map())
+  const [displayNameStyleByUserId, setDisplayNameStyleByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
+    new Map(),
+  )
   const [documentTitle, setDocumentTitle] = useState(() => pageTitle('Contest'))
   const [contestRowReady, setContestRowReady] = useState(false)
 
@@ -66,6 +70,7 @@ export function ContestPage() {
         setGameTooltips({})
         setDisplayNameByUserId(new Map())
         setProfileUsernameByUserId(new Map())
+        setDisplayNameStyleByUserId(new Map())
         setContestMod(false)
       }
 
@@ -134,6 +139,7 @@ export function ContestPage() {
         setGameTooltips({})
         setDisplayNameByUserId(new Map())
         setProfileUsernameByUserId(new Map())
+        setDisplayNameStyleByUserId(new Map())
         return
       }
 
@@ -160,13 +166,15 @@ export function ContestPage() {
 
       const submissionIdSet = new Set(submissionList.map((s) => s.id))
 
-      const [{ data: markRows }, { data: displayNamesJson }, { data: usernamesJson }] = await Promise.all([
-        trackIds.length > 0
-          ? supabase.from('grading_marks').select('*').in('track_id', trackIds)
-          : Promise.resolve({ data: [] as GradingMark[] }),
-        supabase.rpc('profile_display_names_for_contest', { p_contest_id: contestData.id }),
-        supabase.rpc('profile_usernames_for_contest', { p_contest_id: contestData.id }),
-      ])
+      const [{ data: markRows }, { data: displayNamesJson }, { data: usernamesJson }, { data: stylesJson }] =
+        await Promise.all([
+          trackIds.length > 0
+            ? supabase.from('grading_marks').select('*').in('track_id', trackIds)
+            : Promise.resolve({ data: [] as GradingMark[] }),
+          supabase.rpc('profile_display_names_for_contest', { p_contest_id: contestData.id }),
+          supabase.rpc('profile_usernames_for_contest', { p_contest_id: contestData.id }),
+          supabase.rpc('profile_display_name_styles_for_contest', { p_contest_id: contestData.id }),
+        ])
 
       const marksForSubmissions =
         trackIds.length > 0
@@ -176,6 +184,7 @@ export function ContestPage() {
 
       setDisplayNameByUserId(new Map(Object.entries((displayNamesJson as Record<string, string>) ?? {})))
       setProfileUsernameByUserId(new Map(Object.entries((usernamesJson as Record<string, string>) ?? {})))
+      setDisplayNameStyleByUserId(displayNameStyleMapFromRpc(stylesJson))
     }
 
     void loadContestPage()
@@ -286,6 +295,7 @@ export function ContestPage() {
           gameTooltips={gameTooltips}
           displayNameByUserId={displayNameByUserId}
           profileUsernameByUserId={profileUsernameByUserId}
+          displayNameStyleByUserId={displayNameStyleByUserId}
           onPlayTrack={(trackId) => {
             setTracksFoldOpen(true)
             tracksPlayerRef.current?.playTrack(trackId)

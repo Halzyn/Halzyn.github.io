@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
 import type { ContestRankRow } from '../lib/scoring'
+import type { DisplayNameStyleInfo } from '../lib/displayNameStyle'
+import { DisplayNameStyled } from './DisplayNameStyled'
 
 type Props = {
   rows: ContestRankRow[]
   profileUsernameByUserId?: Map<string, string>
+  displayNameStyleByUserId?: Map<string, DisplayNameStyleInfo>
 }
 
 const placeClasses = {
@@ -16,20 +19,29 @@ const placeClasses = {
 function RankNameCell({
   row,
   profileUsernameByUserId,
+  displayNameStyleByUserId,
 }: {
   row: ContestRankRow
   profileUsernameByUserId?: Map<string, string>
+  displayNameStyleByUserId?: Map<string, DisplayNameStyleInfo>
 }) {
   const username = row.user_id ? profileUsernameByUserId?.get(row.user_id) : undefined
-  if (!username) return row.name
+  const info = row.user_id ? displayNameStyleByUserId?.get(row.user_id) : undefined
+  if (!username) {
+    return <DisplayNameStyled text={row.name} info={info} />
+  }
   return (
     <Link className="results-game-link" to={`/players/${encodeURIComponent(username)}`}>
-      {row.name}
+      <DisplayNameStyled text={row.name} info={info} />
     </Link>
   )
 }
 
-export function ContestLeaderboardTable({ rows, profileUsernameByUserId }: Props) {
+export function ContestLeaderboardTable({
+  rows,
+  profileUsernameByUserId,
+  displayNameStyleByUserId,
+}: Props) {
   if (rows.length === 0) {
     return <p className="muted">No rankings yet.</p>
   }
@@ -52,7 +64,11 @@ export function ContestLeaderboardTable({ rows, profileUsernameByUserId }: Props
             <tr key={row.id} className={placeClasses[index as keyof typeof placeClasses]}>
               <td>{index + 1}</td>
               <td>
-                <RankNameCell row={row} profileUsernameByUserId={profileUsernameByUserId} />
+                <RankNameCell
+                  row={row}
+                  profileUsernameByUserId={profileUsernameByUserId}
+                  displayNameStyleByUserId={displayNameStyleByUserId}
+                />
               </td>
               <td>{row.score.toFixed(1)}</td>
               <td>{row.correctGames}</td>

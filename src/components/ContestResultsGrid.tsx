@@ -13,8 +13,10 @@ import {
   submissionDisplayNameForRank,
 } from '../lib/scoring'
 import type { GameTooltip } from '../lib/gameTooltip'
+import type { DisplayNameStyleInfo } from '../lib/displayNameStyle'
 import { useResultsGridStickyLead } from '../hooks/useResultsGridStickyLead'
 import { ResultsGridHoverTip } from './ContestResultsGridHoverTip'
+import { DisplayNameStyled } from './DisplayNameStyled'
 
 function ResultsGridNavLink({ to, children }: { to: string; children: ReactNode }) {
   return (
@@ -115,6 +117,7 @@ type ResultsGridProps = {
   onPlayTrack?: (trackId: string) => void
   displayNameByUserId?: Map<string, string>
   profileUsernameByUserId?: Map<string, string>
+  displayNameStyleByUserId?: Map<string, DisplayNameStyleInfo>
 }
 
 export function ContestResultsGrid({
@@ -126,6 +129,7 @@ export function ContestResultsGrid({
   onPlayTrack,
   displayNameByUserId,
   profileUsernameByUserId,
+  displayNameStyleByUserId,
 }: ResultsGridProps) {
   const gridScrollRef = useRef<HTMLDivElement>(null)
   useResultsGridStickyLead(gridScrollRef, `${tracks.length}-${submissions.length}`)
@@ -165,12 +169,15 @@ export function ContestResultsGrid({
             {submissionsRanked.map((s) => {
               const label = submissionDisplayNameForRank(s, displayNameByUserId)
               const uname = s.user_id ? profileUsernameByUserId?.get(s.user_id) : undefined
+              const nameStyleInfo = s.user_id ? displayNameStyleByUserId?.get(s.user_id) : undefined
               return (
                 <th key={s.id} className="results-col-grade" scope="col">
                   {uname ? (
-                    <ResultsGridNavLink to={`/players/${encodeURIComponent(uname)}`}>{label}</ResultsGridNavLink>
+                    <ResultsGridNavLink to={`/players/${encodeURIComponent(uname)}`}>
+                      <DisplayNameStyled text={label} info={nameStyleInfo} />
+                    </ResultsGridNavLink>
                   ) : (
-                    label
+                    <DisplayNameStyled text={label} info={nameStyleInfo} />
                   )}
                 </th>
               )
