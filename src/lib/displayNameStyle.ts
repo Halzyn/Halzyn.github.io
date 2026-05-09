@@ -78,8 +78,35 @@ export function displayNameFillStyle(info: DisplayNameStyleInfo): CSSProperties 
   return {}
 }
 
+// need this because using glow in index.css doesn't work well with gradients lol
+export function displayNameGlowFilter(info: DisplayNameStyleInfo): string | undefined {
+  if (info.effect !== 'glow') return undefined
+  const fallback = '#446688'
+  const c1 = info.color1 ?? info.color2 ?? fallback
+  const c2 = info.color2 ?? info.color1 ?? c1
+  const rgb1 = hexToRgb(c1)
+  const rgb2 = hexToRgb(c2)
+  if (!rgb1) return undefined
+  const soft = '0.4'
+  const wide = '0.28'
+  const core = `drop-shadow(0 0 5px rgba(${rgb1.r},${rgb1.g},${rgb1.b},${soft}))`
+  const halo = `drop-shadow(0 0 14px rgba(${rgb1.r},${rgb1.g},${rgb1.b},${wide}))`
+  if (!rgb2 || (rgb2.r === rgb1.r && rgb2.g === rgb1.g && rgb2.b === rgb1.b)) {
+    return `${core} ${halo}`
+  }
+  const halo2 = `drop-shadow(0 0 12px rgba(${rgb2.r},${rgb2.g},${rgb2.b},${wide}))`
+  return `${core} ${halo} ${halo2}`
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const normalized = hex.trim().startsWith('#') ? hex.trim().slice(1) : hex.trim()
+  if (normalized.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(normalized)) return null
+  const n = Number.parseInt(normalized, 16)
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+}
+
 export function displayNameEffectClass(effect: DisplayNameEffect): string {
-  if (effect === 'none') return ''
+  if (effect === 'none' || effect === 'glow') return ''
   return `display-name-effect-${effect}`
 }
 

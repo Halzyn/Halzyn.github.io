@@ -2574,14 +2574,6 @@ html[data-theme='dark'] .display-name-effect-drop_shadow {
   filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.65));
 }
 
-.display-name-effect-glow {
-  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 10px currentColor);
-}
-
-html[data-theme='dark'] .display-name-effect-glow {
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.55)) drop-shadow(0 0 12px rgba(180, 220, 255, 0.35));
-}
-
 .results-game-link .display-name-styled-wrap {
   text-decoration: inherit;
 }
