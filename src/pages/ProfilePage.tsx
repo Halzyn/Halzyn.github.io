@@ -24,7 +24,7 @@ type ProfileJson = {
   favorite_soundtrack_cover_url?: string | null
 }
 
-type ProfileStatBundle = {
+type ProfileStats = {
   my_submissions: Submission[]
   contests: Contest[]
   tracks: Track[]
@@ -91,32 +91,32 @@ export function ProfilePage() {
   const [profile, setProfile] = useState<ProfileJson | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
-  const [statBundle, setStatBundle] = useState<ProfileStatBundle | null>(null)
+  const [stats, setStats] = useState<ProfileStats | null>(null)
   const [displayNameStyleInfo, setDisplayNameStyleInfo] = useState<DisplayNameStyleInfo | null>(null)
 
   const contestStats = useMemo(() => {
-    if (!statBundle) return null
+    if (!stats) return null
     return computeProfileContestStats(
-      statBundle.my_submissions,
-      statBundle.contests,
-      statBundle.tracks,
-      statBundle.submissions,
-      statBundle.marks,
+      stats.my_submissions,
+      stats.contests,
+      stats.tracks,
+      stats.submissions,
+      stats.marks,
     )
-  }, [statBundle])
+  }, [stats])
 
   const rpgStats = useMemo(() => {
-    if (!statBundle || contestStats === null) return null
+    if (!stats || contestStats === null) return null
     return computeProfileRpgStats(
-      statBundle.guesses ?? [],
-      statBundle.submissions,
-      statBundle.tracks,
-      statBundle.marks,
+      stats.guesses ?? [],
+      stats.submissions,
+      stats.tracks,
+      stats.marks,
       contestStats,
       profile?.player_number ?? 0,
       profile?.id,
     )
-  }, [statBundle, contestStats, profile?.player_number, profile?.id])
+  }, [stats, contestStats, profile?.player_number, profile?.id])
 
   useEffect(() => {
     if (!usernameFromRoute) {
@@ -133,13 +133,13 @@ export function ProfilePage() {
       if (error) {
         setLoadError(error.message)
         setProfile(null)
-        setStatBundle(null)
+        setStats(null)
         setProfileLoading(false)
         return
       }
       if (!data || typeof data !== 'object') {
         setProfile(null)
-        setStatBundle(null)
+        setStats(null)
         setProfileLoading(false)
         return
       }
@@ -156,7 +156,7 @@ export function ProfilePage() {
       }
 
       const rawStats = payload.stats
-      setStatBundle({
+      setStats({
         my_submissions: (rawStats?.my_submissions ?? []) as Submission[],
         contests: (rawStats?.contests ?? []) as Contest[],
         tracks: (rawStats?.tracks ?? []) as Track[],
@@ -197,7 +197,7 @@ export function ProfilePage() {
     )
   }
 
-  if (!statBundle || !contestStats || !rpgStats) {
+  if (!stats || !contestStats || !rpgStats) {
     return <p className="muted">Loading...</p>
   }
 

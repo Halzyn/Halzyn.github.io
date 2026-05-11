@@ -1,8 +1,9 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   displayNameStyleInfoFromProfileFields,
   type DisplayNameStyleInfo,
 } from './displayNameStyle'
-import { firstOf } from './utils'
+import { firstOf, pushToMappedList } from './utils'
 import type { ContestGuestHostEmbed, ContestModeratorEmbed, ContestWithHosts } from './types'
 
 function hostDisplayLabel(displayName: string | null | undefined, username: string | null | undefined): string {
@@ -26,8 +27,12 @@ export type ContestHosts = {
 
 export const emptyContestHosts: ContestHosts = { entries: [], styles: new Map() }
 
-export const CONTEST_HOST_EMBED_SELECT =
-  'contest_moderators(user_id, profiles(id, display_name, username, display_name_color, display_name_color_2, display_name_effect)), contest_guest_hosts(id, display_name, sort_order)'
+const MODERATOR_PROFILES_EMBED =
+  'profiles(id, display_name, username, display_name_color, display_name_color_2, display_name_effect)'
+
+export const CONTEST_HOST_EMBED_SELECT = `contest_moderators(user_id, ${MODERATOR_PROFILES_EMBED}), contest_guest_hosts(id, display_name, sort_order)`
+
+const CONTEST_MODERATORS_STANDALONE_SELECT = `contest_id, user_id, ${MODERATOR_PROFILES_EMBED}`
 
 function moderatorLabel(row: ContestModeratorEmbed): string {
   const profile = firstOf(row.profiles)
@@ -75,4 +80,50 @@ export function hostsMapFromContests(contests: ContestWithHosts[]): Map<string, 
     if (h.entries.length > 0) m.set(c.id, h)
   }
   return m
+}
+
+type GuestFlatRow = ContestGuestHostEmbed & { contest_id: string }
+
+export async function fetchHostsForContestIds(
+  supabase: SupabaseClient,
+  contestIds: string[],
+): Promise<Map<string, ContestHosts>> {
+  const map = new Map<string, ContestHosts>()
+  const ids = [...new Set(contestIds)].filter(Boolean)
+  if (ids.length === 0) return map
+
+  const [modsRes, guestsRes] = await Promise.all([
+    supabase.from('contest_moderators').select(CONTEST_MODERATORS_STANDALONE_SELECT).in('contest_id', ids),
+    supabase.from('contest_guest_hosts').select('contest_id, id, display_name, sort_order').in('contest_id', ids),
+  ])
+
+  const modsByContest = new Map<string, ContestModeratorEmbed[]>()
+  if (!modsRes.error) {
+    for (const row of modsRes.data ?? []) {
+      const r = row as { contest_id: string; user_id: string; profiles?: ContestModeratorEmbed['profiles'] }
+      pushToMappedList(modsByContest, r.contest_id, { user_id: r.user_id, profiles: r.profiles })
+    }
+  }
+
+  const guestsByContest = new Map<string, ContestGuestHostEmbed[]>()
+  if (!guestsRes.error) {
+    for (const row of guestsRes.data ?? []) {
+      const r = row as GuestFlatRow
+      pushToMappedList(guestsByContest, r.contest_id, {
+        id: r.id,
+        display_name: r.display_name,
+        sort_order: r.sort_order,
+      })
+    }
+  }
+
+  for (const id of ids) {
+    const h = buildContestHostsFromEmbed({
+      id,
+      contest_moderators: modsByContest.get(id) ?? null,
+      contest_guest_hosts: guestsByContest.get(id) ?? null,
+    } as ContestWithHosts)
+    if (h.entries.length > 0) map.set(id, h)
+  }
+  return map
 }
