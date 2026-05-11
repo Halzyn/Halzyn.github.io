@@ -42,6 +42,8 @@ export type ScheduledContestTeaser = {
   title: string
   scheduled_publish_at: string
   schedule_tagline: string | null
+  contest_moderators?: ContestModeratorEmbed[] | null
+  contest_guest_hosts?: ContestGuestHostEmbed[] | null
 }
 
 export type Track = {
