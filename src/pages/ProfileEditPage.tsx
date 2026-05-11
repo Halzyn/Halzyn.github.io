@@ -32,7 +32,7 @@ type MyContestSubmissionRow = {
 
 type ModeratedContest = { id: string; slug: string; title: string }
 
-const USERNAME_REGEX = /^[a-z0-9_]{2,32}$/
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{2,32}$/
 
 const PROFILE_SECTION_TABS: { tab: EditTab; label: string }[] = [
   { tab: 'basic', label: 'Profile' },
@@ -346,16 +346,16 @@ export function ProfileEditPage() {
     event.preventDefault()
     if (!profile) return
     clearFeedback()
-    const normalizedUsername = username.trim().toLowerCase()
-    if (normalizedUsername && !USERNAME_REGEX.test(normalizedUsername)) {
-      setPageError('Username: 2-32 characters, lowercase letters, digits, or underscore.')
+    const trimmedUsername = username.trim()
+    if (trimmedUsername && !USERNAME_REGEX.test(trimmedUsername)) {
+      setPageError('Username: 2-32 characters, letters, digits, or underscore.')
       return
     }
     setSubmitBusy(true)
-    const previousUsername = (profile.username ?? '').toLowerCase()
-    if (normalizedUsername !== previousUsername) {
+    const previousTrimmed = (profile.username ?? '').trim()
+    if (trimmedUsername.toLowerCase() !== previousTrimmed.toLowerCase()) {
       const { data: usernameAvailable } = await supabase.rpc('username_is_available', {
-        p_username: normalizedUsername,
+        p_username: trimmedUsername,
       })
       if (usernameAvailable === false) {
         setSubmitBusy(false)
@@ -366,7 +366,7 @@ export function ProfileEditPage() {
     const { data: updated, error } = await supabase
       .from('profiles')
       .update({
-        username: normalizedUsername || null,
+        username: trimmedUsername || null,
         display_name: displayName.trim() || null,
         bio: bio.trim() || null,
         display_name_color: normalizeDisplayNameHex(nameColor1 || null),

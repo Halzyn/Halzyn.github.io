@@ -266,7 +266,7 @@ export function AdminContestEdit() {
   async function addModerator(e: FormEvent) {
     e.preventDefault()
     if (!contest) return
-    const normalizedUsername = modUsername.trim().toLowerCase()
+    const normalizedUsername = modUsername.trim()
     if (!normalizedUsername) return
     setPageError(null)
     const { data: profileRow, error: profileLookupError } = await supabase

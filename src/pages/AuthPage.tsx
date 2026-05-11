@@ -20,7 +20,7 @@ const MODE_TABS: { mode: Mode; label: string }[] = [
   { mode: 'forgot', label: 'Forgot password' },
 ]
 
-const USERNAME_REGEX = /^[a-z0-9_]{2,32}$/
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{2,32}$/
 
 export function AuthPage() {
   useDocumentTitle(pageTitle('Sign in'))
@@ -89,9 +89,9 @@ export function AuthPage() {
   async function handleSignUp(event: FormEvent) {
     event.preventDefault()
     clearFeedback()
-    const normalizedUsername = username.trim().toLowerCase()
-    if (!USERNAME_REGEX.test(normalizedUsername)) {
-      setPageError('Username: 2-32 characters, lowercase letters, digits, or underscore only.')
+    const trimmedUsername = username.trim()
+    if (!USERNAME_REGEX.test(trimmedUsername)) {
+      setPageError('Username: 2-32 characters, letters, digits, or underscore only.')
       return
     }
     if (password.length < 8) {
@@ -105,7 +105,7 @@ export function AuthPage() {
     setSubmitting(true)
     try {
       const { data: usernameAvailable, error: availabilityError } = await supabase.rpc('username_is_available', {
-        p_username: normalizedUsername,
+        p_username: trimmedUsername,
       })
       if (availabilityError || usernameAvailable !== true) {
         setPageError(availabilityError?.message ?? 'That username is already taken.')
@@ -117,8 +117,8 @@ export function AuthPage() {
         options: {
           emailRedirectTo: authRedirectUrl('auth/callback'),
           data: {
-            username: normalizedUsername,
-            display_name: normalizedUsername,
+            username: trimmedUsername,
+            display_name: trimmedUsername,
           },
         },
       })
@@ -203,7 +203,7 @@ export function AuthPage() {
       {mode === 'signUp' ? (
         <form className="form auth-form" onSubmit={handleSignUp}>
           <label className="field">
-            <span>Username (public, lowercase)</span>
+            <span>Username</span>
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
