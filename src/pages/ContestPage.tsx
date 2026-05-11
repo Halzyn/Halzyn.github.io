@@ -16,8 +16,6 @@ import { fetchGameTooltips, type GameTooltip } from '../lib/gameTooltip'
 import { buildContestRankRows } from '../lib/scoring'
 import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
 
-type ProfileDisplayRow = { id: string; display_name: string | null; username: string | null }
-
 function hostDisplayLabel(displayName: string | null | undefined, username: string | null | undefined): string {
   const d = displayName?.trim()
   if (d) return d
@@ -25,6 +23,8 @@ function hostDisplayLabel(displayName: string | null | undefined, username: stri
   if (u) return u
   return 'Player'
 }
+
+type ContestHostRpcRow = { user_id: string; display_name: string | null; username: string | null }
 
 async function fetchContestHostsDisplay(
   supabase: SupabaseClient,
@@ -35,42 +35,19 @@ async function fetchContestHostsDisplay(
 }> {
   const empty = { entries: [] as { userId: string; displayName: string }[], styles: new Map<string, DisplayNameStyleInfo>() }
 
-  const [{ data: adminProfiles }, { data: modRows }] = await Promise.all([
-    supabase.from('profiles').select('id, display_name, username').eq('is_admin', true),
-    supabase.from('contest_moderators').select('user_id').eq('contest_id', contestId),
-  ])
+  const { data: rpcRows, error: rpcError } = await supabase.rpc('contest_hosts_for_display', {
+    p_contest_id: contestId,
+  })
 
-  const adminList = ((adminProfiles ?? []) as ProfileDisplayRow[])
-    .map((a) => ({
-      userId: a.id,
-      displayName: hostDisplayLabel(a.display_name, a.username),
-    }))
-    .sort((a, b) => a.displayName.localeCompare(b.displayName))
-
-  const adminIdSet = new Set(adminList.map((a) => a.userId))
-
-  const rawModIds = ((modRows ?? []) as { user_id: string }[]).map((r) => r.user_id)
-  const modUserIds = [...new Set(rawModIds)].filter((id) => !adminIdSet.has(id))
-
-  let modHosts: { userId: string; displayName: string }[] = []
-
-  if (modUserIds.length > 0) {
-    const { data: modProfiles } = await supabase
-      .from('profiles')
-      .select('id, display_name, username')
-      .in('id', modUserIds)
-    const map = new Map(
-      ((modProfiles ?? []) as ProfileDisplayRow[]).map((p) => [p.id, hostDisplayLabel(p.display_name, p.username)]),
-    )
-    modHosts = modUserIds
-      .map((id) => ({
-        userId: id,
-        displayName: map.get(id) ?? 'Player',
-      }))
-      .sort((a, b) => a.displayName.localeCompare(b.displayName))
+  if (rpcError || !Array.isArray(rpcRows)) {
+    return empty
   }
 
-  const entries = [...adminList, ...modHosts]
+  const entries = (rpcRows as ContestHostRpcRow[]).map((r) => ({
+    userId: r.user_id,
+    displayName: hostDisplayLabel(r.display_name, r.username),
+  }))
+
   const hostIds = entries.map((e) => e.userId)
 
   if (hostIds.length === 0) return empty
