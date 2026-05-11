@@ -11,6 +11,32 @@ export type Contest = {
   created_at: string
 }
 
+
+export type ContestModeratorEmbedProfile = {
+  id: string
+  display_name: string | null
+  username: string | null
+  display_name_color?: string | null
+  display_name_color_2?: string | null
+  display_name_effect?: string | null
+}
+
+export type ContestModeratorEmbed = {
+  user_id: string
+  profiles?: ContestModeratorEmbedProfile | ContestModeratorEmbedProfile[] | null
+}
+
+export type ContestGuestHostEmbed = {
+  id: string
+  display_name: string
+  sort_order: number
+}
+
+export type ContestWithHosts = Contest & {
+  contest_moderators?: ContestModeratorEmbed[] | null
+  contest_guest_hosts?: ContestGuestHostEmbed[] | null
+}
+
 export type ScheduledContestTeaser = {
   id: string
   title: string

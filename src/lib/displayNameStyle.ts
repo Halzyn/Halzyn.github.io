@@ -36,6 +36,19 @@ export function parseDisplayNameStyleInfo(raw: unknown): DisplayNameStyleInfo | 
   }
 }
 
+export function displayNameStyleInfoFromProfileFields(profile: {
+  display_name_color?: string | null
+  display_name_color_2?: string | null
+  display_name_effect?: string | null
+} | null | undefined): DisplayNameStyleInfo | null {
+  if (!profile) return null
+  return parseDisplayNameStyleInfo({
+    color1: profile.display_name_color ?? null,
+    color2: profile.display_name_color_2 ?? null,
+    effect: profile.display_name_effect ?? undefined,
+  })
+}
+
 export function displayNameStyleMapFromRpc(data: unknown): Map<string, DisplayNameStyleInfo> {
   const map = new Map<string, DisplayNameStyleInfo>()
   if (!data || typeof data !== 'object') return map

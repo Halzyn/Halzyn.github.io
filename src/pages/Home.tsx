@@ -4,14 +4,16 @@ import { useAuth } from '../auth/AuthContext'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
-import type { Contest, ScheduledContestTeaser } from '../lib/types'
+import { CONTEST_HOST_EMBED_SELECT, hostsMapFromContests } from '../lib/contestHosts'
+import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
+import type { ContestWithHosts, ScheduledContestTeaser } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
 
 export function Home() {
   useDocumentTitle(pageTitle('Home'))
   const supabase = getSupabase()
   const { ready, userId, isAdmin } = useAuth()
-  const [contests, setContests] = useState<Contest[]>([])
+  const [contests, setContests] = useState<ContestWithHosts[]>([])
   const [scheduledTeasers, setScheduledTeasers] = useState<ScheduledContestTeaser[]>([])
   const [modContestIds, setModContestIds] = useState<Set<string>>(new Set())
 
@@ -32,25 +34,21 @@ export function Home() {
       setModContestIds(moderatedContestIds)
 
       const [contestsResult, teaserResult] = await Promise.all([
-        supabase.from('contests').select('*').order('deadline', { ascending: false }),
+        supabase.from('contests').select(`*, ${CONTEST_HOST_EMBED_SELECT}`).order('deadline', { ascending: false }),
         supabase.rpc('scheduled_contests_teaser'),
       ])
 
-      if (contestsResult.error) {
-        setContests([])
-      } else {
-        setContests((contestsResult.data ?? []) as Contest[])
-      }
+      const contestList = (contestsResult.error ? [] : (contestsResult.data ?? [])) as ContestWithHosts[]
+      const teaserList = (teaserResult.error ? [] : (teaserResult.data ?? [])) as ScheduledContestTeaser[]
 
-      if (teaserResult.error) {
-        setScheduledTeasers([])
-      } else {
-        setScheduledTeasers((teaserResult.data ?? []) as ScheduledContestTeaser[])
-      }
+      setContests(contestList)
+      setScheduledTeasers(teaserList)
     }
 
     void loadHomeData()
-  }, [supabase, ready, userId])
+  }, [supabase, ready, userId, isAdmin])
+
+  const hostsByContestId = useMemo(() => hostsMapFromContests(contests), [contests])
 
   const openContests = useMemo(
     () =>
@@ -89,8 +87,13 @@ export function Home() {
             {openContests.map((contest) => (
               <li key={contest.id} className="card">
                 <Link to={`/contests/${contest.slug}`}>
-                  <span className="card-title">{contest.title}</span>
-                  <span className="muted small">Deadline {new Date(contest.deadline).toLocaleString()}</span>
+                  <ContestTitleWithHosts
+                    title={contest.title}
+                    hosts={hostsByContestId.get(contest.id)}
+                  />
+                  <span className="muted small contest-card-deadline">
+                    Deadline {new Date(contest.deadline).toLocaleString()}
+                  </span>
                 </Link>
               </li>
             ))}
@@ -106,7 +109,11 @@ export function Home() {
               const liveAt = row.scheduled_publish_at
               return (
                 <li key={row.id} className="scheduled-contest-item">
-                  <span className="scheduled-contest-title">{row.title}</span>
+                  <ContestTitleWithHosts
+                    title={row.title}
+                    hosts={hostsByContestId.get(row.id)}
+                    titleClassName="scheduled-contest-title"
+                  />
                   {liveAt ? (
                     <span className="muted small scheduled-contest-live">
                       Goes live {new Date(liveAt).toLocaleString()}

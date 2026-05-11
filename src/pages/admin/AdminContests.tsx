@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthContext'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { invokeContestPublishedNotify } from '../../lib/contestPublishedNotify'
@@ -11,6 +12,7 @@ import type { Contest } from '../../lib/types'
 export function AdminContests() {
   useDocumentTitle(pageTitle('Admin', 'Contests'))
   const supabase = getSupabase()
+  const { userId } = useAuth()
   const [contests, setContests] = useState<Contest[]>([])
   const [pageError, setPageError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -58,6 +60,16 @@ export function AdminContests() {
     if (insertError) {
       setPageError(insertError.message)
       return
+    }
+    if (newContest?.id && userId) {
+      const { error: modError } = await supabase.from('contest_moderators').insert({
+        contest_id: newContest.id as string,
+        user_id: userId,
+      })
+      if (modError) {
+        setPageError(modError.message)
+        return
+      }
     }
     if (published && newContest?.id) {
       invokeContestPublishedNotify(supabase, newContest.id as string)

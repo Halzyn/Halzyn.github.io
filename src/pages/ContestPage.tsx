@@ -1,9 +1,8 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { useAuth } from '../auth/AuthContext'
 import { getSupabase } from '../lib/supabase'
-import type { Contest, GradingMark, Submission, Track, TrackAnswer } from '../lib/types'
+import type { ContestWithHosts, GradingMark, Submission, Track, TrackAnswer } from '../lib/types'
 import { parseTrackAnswer } from '../lib/trackAnswer'
 import { contestClosed } from '../lib/deadline'
 import { Countdown } from '../components/Countdown'
@@ -15,71 +14,11 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { fetchGameTooltips, type GameTooltip } from '../lib/gameTooltip'
 import { buildContestRankRows } from '../lib/scoring'
 import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
-
-function hostDisplayLabel(displayName: string | null | undefined, username: string | null | undefined): string {
-  const d = displayName?.trim()
-  if (d) return d
-  const u = username?.trim()
-  if (u) return u
-  return 'Player'
-}
-
-type ContestHostRpcRow = {
-  user_id: string | null
-  guest_host_id: string | null
-  display_name: string | null
-  username: string | null
-}
-
-type ContestHostDisplayEntry = {
-  hostKey: string
-  profileUserId: string | null
-  displayName: string
-}
-
-async function fetchContestHostsDisplay(
-  supabase: SupabaseClient,
-  contestId: string,
-): Promise<{
-  entries: ContestHostDisplayEntry[]
-  styles: Map<string, DisplayNameStyleInfo>
-}> {
-  const empty = { entries: [] as ContestHostDisplayEntry[], styles: new Map<string, DisplayNameStyleInfo>() }
-
-  const { data: rpcRows, error: rpcError } = await supabase.rpc('contest_hosts_for_display', {
-    p_contest_id: contestId,
-  })
-
-  if (rpcError || !Array.isArray(rpcRows)) {
-    return empty
-  }
-
-  const entries: ContestHostDisplayEntry[] = []
-  for (const r of rpcRows as ContestHostRpcRow[]) {
-    const profileUserId = r.user_id
-    const guestId = r.guest_host_id
-    if (!profileUserId && !guestId) continue
-    const hostKey = profileUserId ?? `guest:${guestId}`
-    entries.push({
-      hostKey,
-      profileUserId: profileUserId ?? null,
-      displayName: hostDisplayLabel(r.display_name, r.username),
-    })
-  }
-
-  if (entries.length === 0) return empty
-
-  const profileIds = [...new Set(entries.map((e) => e.profileUserId).filter((id): id is string => Boolean(id)))]
-  let styles = new Map<string, DisplayNameStyleInfo>()
-  if (profileIds.length > 0) {
-    const { data: styleBlob } = await supabase.rpc('profile_display_name_styles_for_users', {
-      p_user_ids: profileIds,
-    })
-    styles = displayNameStyleMapFromRpc(styleBlob)
-  }
-
-  return { entries, styles }
-}
+import {
+  buildContestHostsFromEmbed,
+  CONTEST_HOST_EMBED_SELECT,
+  emptyContestHosts,
+} from '../lib/contestHosts'
 
 function ContestArchiveBackLink() {
   return (
@@ -96,7 +35,7 @@ export function ContestPage() {
   const { ready, isAdmin } = useAuth()
   const { slug } = useParams()
 
-  const [contest, setContest] = useState<Contest | null>(null)
+  const [contest, setContest] = useState<ContestWithHosts | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
   const [answers, setAnswers] = useState<TrackAnswer[]>([])
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -107,10 +46,6 @@ export function ContestPage() {
   const [displayNameByUserId, setDisplayNameByUserId] = useState<Map<string, string>>(new Map())
   const [profileUsernameByUserId, setProfileUsernameByUserId] = useState<Map<string, string>>(new Map())
   const [displayNameStyleByUserId, setDisplayNameStyleByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
-    new Map(),
-  )
-  const [contestHosts, setContestHosts] = useState<ContestHostDisplayEntry[]>([])
-  const [contestHostStylesByUserId, setContestHostStylesByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
     new Map(),
   )
   const [documentTitle, setDocumentTitle] = useState(() => pageTitle('Contest'))
@@ -142,8 +77,6 @@ export function ContestPage() {
         setDisplayNameByUserId(new Map())
         setProfileUsernameByUserId(new Map())
         setDisplayNameStyleByUserId(new Map())
-        setContestHosts([])
-        setContestHostStylesByUserId(new Map())
         setContestMod(false)
       }
 
@@ -151,7 +84,7 @@ export function ContestPage() {
 
       const { data: contestRow, error: contestError } = await supabase
         .from('contests')
-        .select('*')
+        .select(`*, ${CONTEST_HOST_EMBED_SELECT}`)
         .eq('slug', slug)
         .maybeSingle()
 
@@ -161,34 +94,24 @@ export function ContestPage() {
         setLoadError(contestError.message)
         setDocumentTitle(pageTitle('Contest'))
         setContest(null)
-        setContestHosts([])
-        setContestHostStylesByUserId(new Map())
         return
       }
 
       if (!contestRow) {
         setContest(null)
         setDocumentTitle(pageTitle('Contest not found'))
-        setContestHosts([])
-        setContestHostStylesByUserId(new Map())
         return
       }
 
-      const contestData = contestRow as Contest
+      const contestData = contestRow as ContestWithHosts
       setContest(contestData)
       setDocumentTitle(pageTitle(contestData.title))
 
-      const [{ data: trackRows, error: tracksError }, hostBundle] = await Promise.all([
-        supabase
-          .from('tracks')
-          .select('*')
-          .eq('contest_id', contestData.id)
-          .order('sort_order', { ascending: true }),
-        fetchContestHostsDisplay(supabase, contestData.id),
-      ])
-
-      setContestHosts(hostBundle.entries)
-      setContestHostStylesByUserId(hostBundle.styles)
+      const { data: trackRows, error: tracksError } = await supabase
+        .from('tracks')
+        .select('*')
+        .eq('contest_id', contestData.id)
+        .order('sort_order', { ascending: true })
 
       if (tracksError) {
         setLoadError(tracksError.message)
@@ -273,6 +196,11 @@ export function ContestPage() {
     void loadContestPage()
   }, [slug, isAdmin, ready, supabase])
 
+  const contestHosts = useMemo(
+    () => (contest ? buildContestHostsFromEmbed(contest) : emptyContestHosts),
+    [contest],
+  )
+
   const deadlinePassed = contest ? contestClosed(contest.deadline) : false
   const resultsPublished = contest ? Boolean(contest.results_published) : false
   const showResultsToPublic = deadlinePassed && resultsPublished
@@ -322,15 +250,19 @@ export function ContestPage() {
       <ContestArchiveBackLink />
       <header className="page-head">
         <h1>{contest.title}</h1>
-        {contestHosts.length > 0 ? (
+        {contestHosts.entries.length > 0 ? (
           <p className="muted small contest-hosts-line">
-            Hosted by{' '}
-            {contestHosts.map((host, index) => (
+            {contestHosts.entries.map((host, index) => (
               <Fragment key={host.hostKey}>
-                {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                {index > 0 ? (
+                  <span className="contest-title-with-hosts-sep" aria-hidden>
+                    {' '}
+                    ·{' '}
+                  </span>
+                ) : null}
                 <DisplayNameStyled
                   text={host.displayName}
-                  info={host.profileUserId ? contestHostStylesByUserId.get(host.profileUserId) : undefined}
+                  info={host.profileUserId ? contestHosts.styles.get(host.profileUserId) : undefined}
                 />
               </Fragment>
             ))}

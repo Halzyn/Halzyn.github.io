@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
@@ -85,12 +86,12 @@ function title(profile: ProfileJson): string {
 
 export function ProfilePage() {
   const supabase = getSupabase()
+  const { userId: sessionUserId } = useAuth()
   const { username: usernameFromRoute } = useParams()
   const [profile, setProfile] = useState<ProfileJson | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   const [statBundle, setStatBundle] = useState<ProfileStatBundle | null>(null)
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
   const [displayNameStyleInfo, setDisplayNameStyleInfo] = useState<DisplayNameStyleInfo | null>(null)
 
   const contestStats = useMemo(() => {
@@ -116,14 +117,6 @@ export function ProfilePage() {
       profile?.id,
     )
   }, [statBundle, contestStats, profile?.player_number, profile?.id])
-
-  useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => setSessionUserId(data.session?.user?.id ?? null))
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => setSessionUserId(session?.user?.id ?? null))
-    return () => subscription.unsubscribe()
-  }, [supabase])
 
   useEffect(() => {
     if (!usernameFromRoute) {

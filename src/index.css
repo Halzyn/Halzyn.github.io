@@ -1261,6 +1261,41 @@ html[data-theme='light'] .banner.warn {
   display: block;
 }
 
+.contest-title-with-hosts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35rem;
+  row-gap: 0.2rem;
+  min-width: 0;
+}
+
+.contest-title-with-hosts-sep {
+  color: var(--muted);
+  user-select: none;
+}
+
+.contest-card-deadline {
+  display: block;
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 0.4rem;
+}
+
+.contest-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  width: 100%;
+}
+
+.contest-card-head .contest-title-with-hosts {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .scheduled-contest-tagline {
   margin: 0;
   line-height: 1.45;
