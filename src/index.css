@@ -826,6 +826,10 @@ h2 {
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
 }
 
+.profile-rpg-ff .profile-rpg-ff-name:has(.display-name-styled-wrap) {
+  text-shadow: none;
+}
+
 .profile-rpg-ff-job-row {
   margin: -0.35rem 0 0.4rem;
   padding: 0;
@@ -2633,6 +2637,11 @@ html[data-theme='dark'] .display-name-effect-drop_shadow {
 .profile-rpg-ff-name .display-name-styled-wrap {
   display: inline-block;
   max-width: 100%;
+}
+
+.profile-rpg-ff-name .display-name-styled-inner {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .profile-edit-name-color-row {
