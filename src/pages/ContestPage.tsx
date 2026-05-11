@@ -252,7 +252,7 @@ export function ContestPage() {
         <h1>{contest.title}</h1>
         {contestHosts.entries.length > 0 ? (
           <p className="muted small contest-hosts-line">
-            {contestHosts.entries.map((host, index) => (
+            Hosted by {contestHosts.entries.map((host, index) => (
               <Fragment key={host.hostKey}>
                 {index > 0 ? (
                   <span className="contest-title-with-hosts-sep" aria-hidden>
