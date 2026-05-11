@@ -172,15 +172,12 @@ export function ContestPage() {
 
       const submissionIdSet = new Set(submissionList.map((s) => s.id))
 
-      const [{ data: markRows }, { data: displayNamesJson }, { data: usernamesJson }, { data: stylesJson }] =
-        await Promise.all([
-          trackIds.length > 0
-            ? supabase.from('grading_marks').select('*').in('track_id', trackIds)
-            : Promise.resolve({ data: [] as GradingMark[] }),
-          supabase.rpc('profile_display_names_for_contest', { p_contest_id: contestData.id }),
-          supabase.rpc('profile_usernames_for_contest', { p_contest_id: contestData.id }),
-          supabase.rpc('profile_display_name_styles_for_contest', { p_contest_id: contestData.id }),
-        ])
+      const [{ data: markRows }, { data: profilesBlob }] = await Promise.all([
+        trackIds.length > 0
+          ? supabase.from('grading_marks').select('*').in('track_id', trackIds)
+          : Promise.resolve({ data: [] as GradingMark[] }),
+        supabase.rpc('profiles_for_contest', { p_contest_id: contestData.id }),
+      ])
 
       const marksForSubmissions =
         trackIds.length > 0
@@ -188,9 +185,14 @@ export function ContestPage() {
           : []
       setMarks(marksForSubmissions)
 
-      setDisplayNameByUserId(new Map(Object.entries((displayNamesJson as Record<string, string>) ?? {})))
-      setProfileUsernameByUserId(new Map(Object.entries((usernamesJson as Record<string, string>) ?? {})))
-      setDisplayNameStyleByUserId(displayNameStyleMapFromRpc(stylesJson))
+      const profilesJson = profilesBlob as {
+        display_names?: Record<string, string>
+        usernames?: Record<string, string>
+        display_name_styles?: unknown
+      } | null
+      setDisplayNameByUserId(new Map(Object.entries(profilesJson?.display_names ?? {})))
+      setProfileUsernameByUserId(new Map(Object.entries(profilesJson?.usernames ?? {})))
+      setDisplayNameStyleByUserId(displayNameStyleMapFromRpc(profilesJson?.display_name_styles))
     }
 
     void loadContestPage()
