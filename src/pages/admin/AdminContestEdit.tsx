@@ -115,6 +115,8 @@ export function AdminContestEdit() {
   const [gamesCatalog, setGamesCatalog] = useState<Game[]>([])
   const [moderators, setModerators] = useState<{ user_id: string; username: string | null }[]>([])
   const [modUsername, setModUsername] = useState('')
+  const [guestHosts, setGuestHosts] = useState<{ id: string; display_name: string; sort_order: number }[]>([])
+  const [guestHostName, setGuestHostName] = useState('')
 
   const load = useCallback(async () => {
     if (!id) return
@@ -236,6 +238,18 @@ export function AdminContestEdit() {
         })),
       )
     }
+
+    const { data: guestHostRows, error: guestHostError } = await supabase
+      .from('contest_guest_hosts')
+      .select('id, display_name, sort_order')
+      .eq('contest_id', id)
+      .order('sort_order', { ascending: true })
+    type GuestHostRow = { id: string; display_name: string; sort_order: number }
+    if (guestHostError) {
+      setGuestHosts([])
+    } else {
+      setGuestHosts(((guestHostRows ?? []) as GuestHostRow[]).map((row) => ({ ...row })))
+    }
   }, [id, supabase])
 
   useEffect(() => {
@@ -284,6 +298,42 @@ export function AdminContestEdit() {
       .delete()
       .eq('contest_id', contest.id)
       .eq('user_id', userId)
+    if (error) {
+      setPageError(error.message)
+      return
+    }
+    void load()
+  }
+
+  async function addGuestHost(e: FormEvent) {
+    e.preventDefault()
+    if (!contest) return
+    const name = guestHostName.trim()
+    if (!name) return
+    setPageError(null)
+    const nextOrder =
+      guestHosts.length === 0 ? 0 : Math.max(...guestHosts.map((row) => row.sort_order), -1) + 1
+    const { error } = await supabase.from('contest_guest_hosts').insert({
+      contest_id: contest.id,
+      display_name: name,
+      sort_order: nextOrder,
+    })
+    if (error) {
+      setPageError(error.message)
+      return
+    }
+    setGuestHostName('')
+    void load()
+  }
+
+  async function removeGuestHost(rowId: string) {
+    if (!contest) return
+    setPageError(null)
+    const { error } = await supabase
+      .from('contest_guest_hosts')
+      .delete()
+      .eq('id', rowId)
+      .eq('contest_id', contest.id)
     if (error) {
       setPageError(error.message)
       return
@@ -569,37 +619,74 @@ export function AdminContestEdit() {
       </section>
 
       {isAdminUser ? (
-        <section className="section panel">
-          <h2>Contest moderators</h2>
-          {moderators.length === 0 ? <p className="muted">None yet.</p> : null}
-          <ul className="stack">
-            {moderators.map((moderator) => (
-              <li key={moderator.user_id} className="row spread panel">
-                <span>{moderator.username ?? moderator.user_id}</span>
-                <button
-                  type="button"
-                  className="button ghost small"
-                  onClick={() => void removeModerator(moderator.user_id)}
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-          <form className="form row-form" onSubmit={addModerator}>
-            <label className="field">
-              <span>Add by username</span>
-              <input
-                value={modUsername}
-                onChange={(e) => setModUsername(e.target.value)}
-                placeholder="playername"
-              />
-            </label>
-            <button type="submit" className="button">
-              Add moderator
-            </button>
-          </form>
-        </section>
+        <>
+          <section className="section panel">
+            <h2>Contest moderators</h2>
+            {moderators.length === 0 ? <p className="muted">None yet.</p> : null}
+            <ul className="stack">
+              {moderators.map((moderator) => (
+                <li key={moderator.user_id} className="row spread panel">
+                  <span>{moderator.username ?? moderator.user_id}</span>
+                  <button
+                    type="button"
+                    className="button ghost small"
+                    onClick={() => void removeModerator(moderator.user_id)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <form className="form row-form" onSubmit={addModerator}>
+              <label className="field">
+                <span>Add by username</span>
+                <input
+                  value={modUsername}
+                  onChange={(e) => setModUsername(e.target.value)}
+                  placeholder="playername"
+                />
+              </label>
+              <button type="submit" className="button">
+                Add
+              </button>
+            </form>
+          </section>
+
+          <section className="section panel">
+            <h2>Guest collaborators</h2>
+            <p className="muted small">
+              Hosts who don't have an account.
+            </p>
+            {guestHosts.length === 0 ? <p className="muted">None yet.</p> : null}
+            <ul className="stack">
+              {guestHosts.map((row) => (
+                <li key={row.id} className="row spread panel">
+                  <span>{row.display_name}</span>
+                  <button
+                    type="button"
+                    className="button ghost small"
+                    onClick={() => void removeGuestHost(row.id)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <form className="form row-form" onSubmit={addGuestHost}>
+              <label className="field">
+                <span>Add name</span>
+                <input
+                  value={guestHostName}
+                  onChange={(e) => setGuestHostName(e.target.value)}
+                  placeholder="Display name"
+                />
+              </label>
+              <button type="submit" className="button">
+                Add
+              </button>
+            </form>
+          </section>
+        </>
       ) : null}
 
       <AdminContestSubmissions

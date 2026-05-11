@@ -1690,6 +1690,10 @@ textarea {
   align-items: flex-end;
 }
 
+.admin-contest-submissions-lede {
+  white-space: pre-line;
+}
+
 .admin-reset-link-banner code {
   display: block;
   word-break: break-all;

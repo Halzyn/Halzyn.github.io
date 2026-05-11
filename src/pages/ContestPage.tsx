@@ -24,16 +24,27 @@ function hostDisplayLabel(displayName: string | null | undefined, username: stri
   return 'Player'
 }
 
-type ContestHostRpcRow = { user_id: string; display_name: string | null; username: string | null }
+type ContestHostRpcRow = {
+  user_id: string | null
+  guest_host_id: string | null
+  display_name: string | null
+  username: string | null
+}
+
+type ContestHostDisplayEntry = {
+  hostKey: string
+  profileUserId: string | null
+  displayName: string
+}
 
 async function fetchContestHostsDisplay(
   supabase: SupabaseClient,
   contestId: string,
 ): Promise<{
-  entries: { userId: string; displayName: string }[]
+  entries: ContestHostDisplayEntry[]
   styles: Map<string, DisplayNameStyleInfo>
 }> {
-  const empty = { entries: [] as { userId: string; displayName: string }[], styles: new Map<string, DisplayNameStyleInfo>() }
+  const empty = { entries: [] as ContestHostDisplayEntry[], styles: new Map<string, DisplayNameStyleInfo>() }
 
   const { data: rpcRows, error: rpcError } = await supabase.rpc('contest_hosts_for_display', {
     p_contest_id: contestId,
@@ -43,23 +54,31 @@ async function fetchContestHostsDisplay(
     return empty
   }
 
-  const entries = (rpcRows as ContestHostRpcRow[]).map((r) => ({
-    userId: r.user_id,
-    displayName: hostDisplayLabel(r.display_name, r.username),
-  }))
-
-  const hostIds = entries.map((e) => e.userId)
-
-  if (hostIds.length === 0) return empty
-
-  const { data: styleBlob } = await supabase.rpc('profile_display_name_styles_for_users', {
-    p_user_ids: hostIds,
-  })
-
-  return {
-    entries,
-    styles: displayNameStyleMapFromRpc(styleBlob),
+  const entries: ContestHostDisplayEntry[] = []
+  for (const r of rpcRows as ContestHostRpcRow[]) {
+    const profileUserId = r.user_id
+    const guestId = r.guest_host_id
+    if (!profileUserId && !guestId) continue
+    const hostKey = profileUserId ?? `guest:${guestId}`
+    entries.push({
+      hostKey,
+      profileUserId: profileUserId ?? null,
+      displayName: hostDisplayLabel(r.display_name, r.username),
+    })
   }
+
+  if (entries.length === 0) return empty
+
+  const profileIds = [...new Set(entries.map((e) => e.profileUserId).filter((id): id is string => Boolean(id)))]
+  let styles = new Map<string, DisplayNameStyleInfo>()
+  if (profileIds.length > 0) {
+    const { data: styleBlob } = await supabase.rpc('profile_display_name_styles_for_users', {
+      p_user_ids: profileIds,
+    })
+    styles = displayNameStyleMapFromRpc(styleBlob)
+  }
+
+  return { entries, styles }
 }
 
 function ContestArchiveBackLink() {
@@ -90,7 +109,7 @@ export function ContestPage() {
   const [displayNameStyleByUserId, setDisplayNameStyleByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
     new Map(),
   )
-  const [contestHosts, setContestHosts] = useState<{ userId: string; displayName: string }[]>([])
+  const [contestHosts, setContestHosts] = useState<ContestHostDisplayEntry[]>([])
   const [contestHostStylesByUserId, setContestHostStylesByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
     new Map(),
   )
@@ -307,9 +326,12 @@ export function ContestPage() {
           <p className="muted small contest-hosts-line">
             Hosted by{' '}
             {contestHosts.map((host, index) => (
-              <Fragment key={host.userId}>
+              <Fragment key={host.hostKey}>
                 {index > 0 ? <span aria-hidden="true"> · </span> : null}
-                <DisplayNameStyled text={host.displayName} info={contestHostStylesByUserId.get(host.userId)} />
+                <DisplayNameStyled
+                  text={host.displayName}
+                  info={host.profileUserId ? contestHostStylesByUserId.get(host.profileUserId) : undefined}
+                />
               </Fragment>
             ))}
           </p>
