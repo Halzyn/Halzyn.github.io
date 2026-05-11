@@ -36,11 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
   const trackedAuthUserIdRef = useRef<string | null>(null)
   const profileLoadedForUserIdRef = useRef<string | null>(null)
+  const profileFetchInFlightForUserIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     let providerUnmounted = false
 
-    async function syncAuthState(nextSession: Session | null) {
+    async function syncAuthState(nextSession: Session | null, authEvent: string) {
       const nextUserId = nextSession?.user?.id ?? null
       trackedAuthUserIdRef.current = nextUserId
 
@@ -50,36 +51,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null)
         setReady(true)
         profileLoadedForUserIdRef.current = null
+        profileFetchInFlightForUserIdRef.current = null
         return
       }
 
-      const sameUserAlreadyLoaded = profileLoadedForUserIdRef.current === nextUserId
+      if (
+        profileFetchInFlightForUserIdRef.current === nextUserId ||
+        (profileLoadedForUserIdRef.current === nextUserId && authEvent !== 'USER_UPDATED')
+      ) {
+        return
+      }
 
+      profileFetchInFlightForUserIdRef.current = nextUserId
+
+      const sameUserAlreadyLoaded = profileLoadedForUserIdRef.current === nextUserId
       if (!sameUserAlreadyLoaded) {
         setReady(false)
         setProfile((prev) => (prev?.id === nextUserId ? prev : null))
       }
 
-      const loaded = await fetchProfileRow(supabase, nextUserId)
+      try {
+        const loaded = await fetchProfileRow(supabase, nextUserId)
 
-      if (providerUnmounted) return
-      if (trackedAuthUserIdRef.current !== nextUserId) {
-        return
+        if (providerUnmounted) return
+        if (trackedAuthUserIdRef.current !== nextUserId) {
+          return
+        }
+
+        setProfile(loaded)
+        setReady(true)
+        profileLoadedForUserIdRef.current = nextUserId
+      } finally {
+        if (profileFetchInFlightForUserIdRef.current === nextUserId) {
+          profileFetchInFlightForUserIdRef.current = null
+        }
       }
-
-      setProfile(loaded)
-      setReady(true)
-      profileLoadedForUserIdRef.current = nextUserId
     }
-
-    void supabase.auth.getSession().then(({ data: { session: initial } }) => {
-      void syncAuthState(initial)
-    })
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void syncAuthState(nextSession)
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      void syncAuthState(nextSession, event)
+    })
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (providerUnmounted) return
+      void syncAuthState(session ?? null, '')
     })
 
     return () => {
@@ -97,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loaded = await fetchProfileRow(supabase, uid)
     if (trackedAuthUserIdRef.current !== uid) return
     setProfile(loaded)
+    profileLoadedForUserIdRef.current = uid
   }, [session?.user?.id, supabase])
 
   const value = useMemo<AuthContextValue>(() => {
