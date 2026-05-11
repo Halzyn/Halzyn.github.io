@@ -721,6 +721,10 @@ h2 {
   margin: 0.5rem 0 0;
 }
 
+.page-head .contest-hosts-line {
+  margin: 0 0 0.65rem;
+}
+
 .profile-page-top {
   display: flex;
   flex-wrap: wrap;

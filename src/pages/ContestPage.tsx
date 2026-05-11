@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { useAuth } from '../auth/AuthContext'
 import { getSupabase } from '../lib/supabase'
 import type { Contest, GradingMark, Submission, Track, TrackAnswer } from '../lib/types'
@@ -8,11 +9,81 @@ import { contestClosed } from '../lib/deadline'
 import { Countdown } from '../components/Countdown'
 import { ContestTrackAudio, type ContestTrackAudioHandle } from '../components/ContestTrackAudio'
 import { ContestResults } from '../components/ContestResults'
+import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { fetchGameTooltips, type GameTooltip } from '../lib/gameTooltip'
 import { buildContestRankRows } from '../lib/scoring'
 import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
+
+type ProfileDisplayRow = { id: string; display_name: string | null; username: string | null }
+
+function hostDisplayLabel(displayName: string | null | undefined, username: string | null | undefined): string {
+  const d = displayName?.trim()
+  if (d) return d
+  const u = username?.trim()
+  if (u) return u
+  return 'Player'
+}
+
+async function fetchContestHostsDisplay(
+  supabase: SupabaseClient,
+  contestId: string,
+): Promise<{
+  entries: { userId: string; displayName: string }[]
+  styles: Map<string, DisplayNameStyleInfo>
+}> {
+  const empty = { entries: [] as { userId: string; displayName: string }[], styles: new Map<string, DisplayNameStyleInfo>() }
+
+  const [{ data: adminProfiles }, { data: modRows }] = await Promise.all([
+    supabase.from('profiles').select('id, display_name, username').eq('is_admin', true),
+    supabase.from('contest_moderators').select('user_id').eq('contest_id', contestId),
+  ])
+
+  const adminList = ((adminProfiles ?? []) as ProfileDisplayRow[])
+    .map((a) => ({
+      userId: a.id,
+      displayName: hostDisplayLabel(a.display_name, a.username),
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+
+  const adminIdSet = new Set(adminList.map((a) => a.userId))
+
+  const rawModIds = ((modRows ?? []) as { user_id: string }[]).map((r) => r.user_id)
+  const modUserIds = [...new Set(rawModIds)].filter((id) => !adminIdSet.has(id))
+
+  let modHosts: { userId: string; displayName: string }[] = []
+
+  if (modUserIds.length > 0) {
+    const { data: modProfiles } = await supabase
+      .from('profiles')
+      .select('id, display_name, username')
+      .in('id', modUserIds)
+    const map = new Map(
+      ((modProfiles ?? []) as ProfileDisplayRow[]).map((p) => [p.id, hostDisplayLabel(p.display_name, p.username)]),
+    )
+    modHosts = modUserIds
+      .map((id) => ({
+        userId: id,
+        displayName: map.get(id) ?? 'Player',
+      }))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName))
+  }
+
+  const entries = [...adminList, ...modHosts]
+  const hostIds = entries.map((e) => e.userId)
+
+  if (hostIds.length === 0) return empty
+
+  const { data: styleBlob } = await supabase.rpc('profile_display_name_styles_for_users', {
+    p_user_ids: hostIds,
+  })
+
+  return {
+    entries,
+    styles: displayNameStyleMapFromRpc(styleBlob),
+  }
+}
 
 function ContestArchiveBackLink() {
   return (
@@ -40,6 +111,10 @@ export function ContestPage() {
   const [displayNameByUserId, setDisplayNameByUserId] = useState<Map<string, string>>(new Map())
   const [profileUsernameByUserId, setProfileUsernameByUserId] = useState<Map<string, string>>(new Map())
   const [displayNameStyleByUserId, setDisplayNameStyleByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
+    new Map(),
+  )
+  const [contestHosts, setContestHosts] = useState<{ userId: string; displayName: string }[]>([])
+  const [contestHostStylesByUserId, setContestHostStylesByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
     new Map(),
   )
   const [documentTitle, setDocumentTitle] = useState(() => pageTitle('Contest'))
@@ -71,6 +146,8 @@ export function ContestPage() {
         setDisplayNameByUserId(new Map())
         setProfileUsernameByUserId(new Map())
         setDisplayNameStyleByUserId(new Map())
+        setContestHosts([])
+        setContestHostStylesByUserId(new Map())
         setContestMod(false)
       }
 
@@ -88,12 +165,16 @@ export function ContestPage() {
         setLoadError(contestError.message)
         setDocumentTitle(pageTitle('Contest'))
         setContest(null)
+        setContestHosts([])
+        setContestHostStylesByUserId(new Map())
         return
       }
 
       if (!contestRow) {
         setContest(null)
         setDocumentTitle(pageTitle('Contest not found'))
+        setContestHosts([])
+        setContestHostStylesByUserId(new Map())
         return
       }
 
@@ -101,11 +182,17 @@ export function ContestPage() {
       setContest(contestData)
       setDocumentTitle(pageTitle(contestData.title))
 
-      const { data: trackRows, error: tracksError } = await supabase
-        .from('tracks')
-        .select('*')
-        .eq('contest_id', contestData.id)
-        .order('sort_order', { ascending: true })
+      const [{ data: trackRows, error: tracksError }, hostBundle] = await Promise.all([
+        supabase
+          .from('tracks')
+          .select('*')
+          .eq('contest_id', contestData.id)
+          .order('sort_order', { ascending: true }),
+        fetchContestHostsDisplay(supabase, contestData.id),
+      ])
+
+      setContestHosts(hostBundle.entries)
+      setContestHostStylesByUserId(hostBundle.styles)
 
       if (tracksError) {
         setLoadError(tracksError.message)
@@ -239,6 +326,17 @@ export function ContestPage() {
       <ContestArchiveBackLink />
       <header className="page-head">
         <h1>{contest.title}</h1>
+        {contestHosts.length > 0 ? (
+          <p className="muted small contest-hosts-line">
+            Hosted by{' '}
+            {contestHosts.map((host, index) => (
+              <Fragment key={host.userId}>
+                {index > 0 ? <span aria-hidden="true"> · </span> : null}
+                <DisplayNameStyled text={host.displayName} info={contestHostStylesByUserId.get(host.userId)} />
+              </Fragment>
+            ))}
+          </p>
+        ) : null}
         {contest.description ? <p className="lede lede--preline">{contest.description}</p> : null}
         <p className="muted small">
           Deadline: {new Date(contest.deadline).toLocaleString()}
