@@ -138,14 +138,14 @@ export function AdminContestSubmissions({
   return (
     <section className="section panel">
       <h2>Submissions</h2>
-      <p className="muted small">
-        Open the grid to start grading a submission. When submissions are ready to be reviewed, they will be marked as Open.\n
-        When you're done reviewing, click Done to mark the submission as reviewed. If someone edits their submission, the status will be reset to Open.\n
-        You can press Open submit to view a user's actual submission answers.\n
-        You can reset someone's edit link by clicking "New edit link". This is helpful if someone loses their link.\n
-        You can edit a submission's name by editing it below and clicking "Save name". This is for moderation purposes only, DO NOT use unless necessary.\n
-        You can merge two submissions by selecting one to keep and one to merge away. The second submission will be deleted and the grades will be copied to the first submission.\n
-        This is useful if someone accidentally submitted twice with different names.
+      <p className="muted small admin-contest-submissions-lede">
+        {`Open the grid to start grading a submission. When submissions are ready to be reviewed, they will be marked as Open.
+          When you're done reviewing, click Done to mark the submission as reviewed. If someone edits their submission, the status will be reset to Open.
+          You can press Open submit to view a user's actual submission answers.
+          You can reset someone's edit link by clicking "New edit link". This is helpful if someone loses their link.
+          You can edit a submission's name by editing it below and clicking "Save name". This is for moderation purposes only, DO NOT use unless necessary.
+          You can merge two submissions by selecting one to keep and one to merge away. The second submission will be deleted and the grades will be copied to the first submission.
+          This is useful if someone accidentally submitted twice with different names.`}
       </p>
 
       {resetLinkBanner ? (
