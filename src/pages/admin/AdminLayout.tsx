@@ -64,20 +64,22 @@ function SiteShell({
 }) {
   return (
     <div className="shell site-shell">
-      <header className="top site-topbar">
-        <Link to={brandHref} className="brand site-brand">
-          {brandLabel}
-        </Link>
-        <div className="top-end">{headerEnd}</div>
-      </header>
-      <main className="main main-shell">
-        <Outlet />
-      </main>
-      <footer className="foot">
-        <div className="foot-row">
-          <span>{footerLabel}</span>
-        </div>
-      </footer>
+      <div className="site-shell-panel">
+        <header className="top site-topbar">
+          <Link to={brandHref} className="brand site-brand">
+            {brandLabel}
+          </Link>
+          <div className="top-end">{headerEnd}</div>
+        </header>
+        <main className="main main-shell">
+          <Outlet />
+        </main>
+        <footer className="foot">
+          <div className="foot-row">
+            <span>{footerLabel}</span>
+          </div>
+        </footer>
+      </div>
     </div>
   )
 }

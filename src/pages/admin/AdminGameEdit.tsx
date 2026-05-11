@@ -295,7 +295,7 @@ export function AdminGameEdit() {
       <h1>{isNew ? 'New game' : game?.primary_title}</h1>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
 
-      <section className="section panel">
+      <section className="section">
         <h2>Canonical name &amp; URL</h2>
         <form className="form tight" onSubmit={saveMeta}>
           <label className="field">
@@ -325,7 +325,7 @@ export function AdminGameEdit() {
 
       {!isNew && game ? (
         <>
-          <section className="section panel">
+          <section className="section">
             <h2>IGDB metadata</h2>
             <label className="field tight">
               <span>IGDB game id (optional)</span>
@@ -362,7 +362,7 @@ export function AdminGameEdit() {
             <SavedCatalogDetails game={game} />
           </section>
 
-          <section className="section panel">
+          <section className="section">
             <h2>Alternate titles</h2>
             <p className="muted small">Regional names and other accepted titles</p>
             <ul className="stack">
@@ -386,7 +386,7 @@ export function AdminGameEdit() {
             </form>
           </section>
 
-          <section className="section panel">
+          <section className="section">
             <h2>Danger zone</h2>
             <button type="button" className="button ghost" onClick={() => void deleteGame()}>
               Delete game...

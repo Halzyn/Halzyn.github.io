@@ -531,7 +531,7 @@ export function AdminContestEdit() {
       <h1>Edit contest</h1>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
 
-      <section className="section panel">
+      <section className="section">
         <h2>Contest settings</h2>
         <form className="form" onSubmit={saveContest}>
           <label className="field">
@@ -620,7 +620,7 @@ export function AdminContestEdit() {
 
       {isAdminUser ? (
         <>
-          <section className="section panel">
+          <section className="section">
             <h2>Contest moderators</h2>
             {moderators.length === 0 ? <p className="muted">None yet.</p> : null}
             <ul className="stack">
@@ -652,7 +652,7 @@ export function AdminContestEdit() {
             </form>
           </section>
 
-          <section className="section panel">
+          <section className="section">
             <h2>Guest collaborators</h2>
             <p className="muted small">
               Hosts who don't have an account.
@@ -697,7 +697,7 @@ export function AdminContestEdit() {
         onError={setPageError}
       />
 
-      <section className="section panel">
+      <section className="section">
         <h2>Upload tracks</h2>
         <p className="muted small site-section-blurb">
           Select multiple files at once. Each filename must be digits only, then the extension (e.g.{' '}
@@ -754,7 +754,7 @@ export function AdminContestEdit() {
         </div>
       </section>
 
-      <section className="section panel">
+      <section className="section">
         <h2>Tracks & answers</h2>
         {tracks.length === 0 ? <p className="muted">No tracks yet.</p> : null}
         <ul className="stack">
