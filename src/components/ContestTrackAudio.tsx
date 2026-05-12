@@ -30,6 +30,47 @@ type Props = {
   listRowContests?: ListContestLink[][]
 }
 
+function hardRebindTrackSource(audio: HTMLAudioElement, src: string): void {
+  audio.pause()
+  audio.removeAttribute('src')
+  void audio.load()
+  audio.src = src
+  void audio.load()
+}
+
+function trackNotLoading(audio: HTMLAudioElement): boolean {
+  return audio.error != null || audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA
+}
+
+function nextPlayableTrackId(
+  previousId: string,
+  tracks: Track[],
+  urlById: Map<string, string | null>,
+): string | null {
+  const index = tracks.findIndex((track) => track.id === previousId)
+  if (index < 0) return null
+  for (let i = index + 1; i < tracks.length; i++) {
+    const track = tracks[i]!
+    if (urlById.get(track.id)) return track.id
+  }
+  return null
+}
+
+function queueDeferredPlay(audio: HTMLAudioElement, isAlive: () => boolean, signal?: AbortSignal): void {
+  queueMicrotask(() => {
+    if (!isAlive()) return
+    const go = () => {
+      if (!isAlive()) return
+      void audio.play().catch(() => {})
+    }
+    if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+      queueMicrotask(go)
+    } else {
+      audio.addEventListener('canplay', go, { once: true, signal })
+    }
+  })
+}
+
 export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(function ContestTrackAudio(
   { tracks, listRowContests },
   ref,
@@ -37,6 +78,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
   const listMode = Boolean(listRowContests && listRowContests.length === tracks.length)
   const audioRef = useRef<HTMLAudioElement>(null)
   const playIntentRef = useRef(false)
+  const bindGenerationRef = useRef(0)
   const didRevealRef = useRef(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [autoplayNext, setAutoplayNext] = useState(readAutoplayPreference)
@@ -59,33 +101,65 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
 
   const activeSrc = activeId ? (urlById.get(activeId) ?? null) : null
 
+  const toggleOrRecoverSameTrack = useCallback((trackId: string, url: string): boolean => {
+    const element = audioRef.current
+    if (activeId !== trackId || !element) return false
+    if (element.paused) {
+      if (trackNotLoading(element)) {
+        hardRebindTrackSource(element, url)
+        queueMicrotask(() => {
+          applyGlobalVolumeToAudioElement(element)
+          queueDeferredPlay(element, () => element.isConnected)
+        })
+      } else {
+        void element.play().catch(() => {})
+      }
+    } else {
+      element.pause()
+    }
+    return true
+  }, [activeId])
+
   useAudioVolumeSync(audioRef, Boolean(activeSrc))
 
   useLayoutEffect(() => {
     const audioElement = audioRef.current
-    if (!audioElement || !activeSrc) return
+    if (!audioElement) return
 
-    audioElement.pause()
-    audioElement.src = activeSrc
-    audioElement.load()
-    applyGlobalVolumeToAudioElement(audioElement)
+    if (!activeSrc) {
+      bindGenerationRef.current++
+      audioElement.pause()
+      audioElement.removeAttribute('src')
+      audioElement.load()
+      return
+    }
+
+    const generation = ++bindGenerationRef.current
+    const ac = new AbortController()
+
+    hardRebindTrackSource(audioElement, activeSrc)
 
     if (!didRevealRef.current) {
       didRevealRef.current = true
       setRevealed(true)
     }
 
-    if (playIntentRef.current) {
-      playIntentRef.current = false
-      void audioElement.play().catch(() => {})
+    const wantPlay = playIntentRef.current
+    playIntentRef.current = false
+    if (wantPlay) {
+      queueDeferredPlay(audioElement, () => bindGenerationRef.current === generation, ac.signal)
     }
-  }, [activeSrc])
+
+    return () => {
+      ac.abort()
+    }
+  }, [activeId, activeSrc])
 
   useLayoutEffect(() => {
     const audioElement = audioRef.current
     if (!audioElement || !activeSrc || !revealed) return
     applyGlobalVolumeToAudioElement(audioElement)
-  }, [activeSrc, revealed])
+  }, [activeId, activeSrc, revealed])
 
   useEffect(() => {
     const audioElement = audioRef.current
@@ -94,14 +168,10 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     const onEnded = () => {
       setActiveId((previous) => {
         if (!previous) return previous
-        const index = tracks.findIndex((track) => track.id === previous)
-        if (index < 0) return previous
-        for (let i = index + 1; i < tracks.length; i++) {
-          const track = tracks[i]!
-          if (urlById.get(track.id)) {
-            playIntentRef.current = true
-            return track.id
-          }
+        const next = nextPlayableTrackId(previous, tracks, urlById)
+        if (next) {
+          playIntentRef.current = true
+          return next
         }
         return previous
       })
@@ -115,38 +185,42 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     (track: Track) => {
       const url = urlById.get(track.id)
       if (!url) return
-      const audioElement = audioRef.current
-      if (activeId === track.id && audioElement) {
-        if (audioElement.paused) void audioElement.play().catch(() => {})
-        else audioElement.pause()
-        return
-      }
+      if (toggleOrRecoverSameTrack(track.id, url)) return
       playIntentRef.current = true
       setActiveId(track.id)
     },
-    [activeId, urlById],
+    [toggleOrRecoverSameTrack, urlById],
   )
 
   useImperativeHandle(
     ref,
     () => ({
       playTrack: (trackId: string) => {
-        if (!urlById.get(trackId)) return
+        const url = urlById.get(trackId)
+        if (!url) return
+        if (toggleOrRecoverSameTrack(trackId, url)) return
         playIntentRef.current = true
         setActiveId(trackId)
       },
     }),
-    [urlById],
+    [toggleOrRecoverSameTrack, urlById],
   )
 
   if (tracks.length === 0) return null
 
   const wrapHidden = Boolean(activeSrc && !revealed)
 
-  const audioElement = activeSrc ? (
-    <audio ref={audioRef} className="tracks-universal-audio" controls preload="metadata" />
-  ) : (
-    <p className="muted small">Audio unavailable wtf!</p>
+  const audioElement = (
+    <>
+      <audio
+        ref={audioRef}
+        className="tracks-universal-audio"
+        controls
+        preload="auto"
+        hidden={!activeSrc}
+      />
+      {!activeSrc ? <p className="muted small">Audio unavailable.</p> : null}
+    </>
   )
 
   return (
