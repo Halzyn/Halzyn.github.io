@@ -11,6 +11,7 @@ import {
 import { Link } from 'react-router-dom'
 import type { Track } from '../lib/types'
 import {
+  appendPlaybackCacheBuster,
   applyGlobalVolumeToAudioElement,
   publicAudioUrl,
   readAutoplayPreference,
@@ -71,6 +72,16 @@ function queueDeferredPlay(audio: HTMLAudioElement, isAlive: () => boolean, sign
   })
 }
 
+function recoverTrackWithCacheBust(audio: HTMLAudioElement, baseUrl: string, play: boolean): void {
+  hardRebindTrackSource(audio, appendPlaybackCacheBuster(baseUrl))
+  queueMicrotask(() => {
+    applyGlobalVolumeToAudioElement(audio)
+    if (play) {
+      queueDeferredPlay(audio, () => audio.isConnected)
+    }
+  })
+}
+
 export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(function ContestTrackAudio(
   { tracks, listRowContests },
   ref,
@@ -79,6 +90,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
   const audioRef = useRef<HTMLAudioElement>(null)
   const playIntentRef = useRef(false)
   const bindGenerationRef = useRef(0)
+  const playAfterBindRef = useRef(false)
   const didRevealRef = useRef(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [autoplayNext, setAutoplayNext] = useState(readAutoplayPreference)
@@ -106,11 +118,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     if (activeId !== trackId || !element) return false
     if (element.paused) {
       if (trackNotLoading(element)) {
-        hardRebindTrackSource(element, url)
-        queueMicrotask(() => {
-          applyGlobalVolumeToAudioElement(element)
-          queueDeferredPlay(element, () => element.isConnected)
-        })
+        recoverTrackWithCacheBust(element, url, true)
       } else {
         void element.play().catch(() => {})
       }
@@ -135,7 +143,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     }
 
     const generation = ++bindGenerationRef.current
-    const ac = new AbortController()
+    const abortController = new AbortController()
 
     hardRebindTrackSource(audioElement, activeSrc)
 
@@ -146,12 +154,13 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
 
     const wantPlay = playIntentRef.current
     playIntentRef.current = false
+    playAfterBindRef.current = wantPlay
     if (wantPlay) {
-      queueDeferredPlay(audioElement, () => bindGenerationRef.current === generation, ac.signal)
+      queueDeferredPlay(audioElement, () => bindGenerationRef.current === generation, abortController.signal)
     }
 
     return () => {
-      ac.abort()
+      abortController.abort()
     }
   }, [activeId, activeSrc])
 
@@ -180,6 +189,33 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     audioElement.addEventListener('ended', onEnded)
     return () => audioElement.removeEventListener('ended', onEnded)
   }, [autoplayNext, activeSrc, tracks, urlById])
+
+  useEffect(() => {
+    const element = audioRef.current
+    if (!element || !activeSrc) return
+
+    const genAtSubscribe = bindGenerationRef.current
+
+    const onError = () => {
+      if (bindGenerationRef.current !== genAtSubscribe) return
+      recoverTrackWithCacheBust(element, activeSrc, true)
+    }
+
+    element.addEventListener('error', onError, { once: true })
+    return () => element.removeEventListener('error', onError)
+  }, [activeId, activeSrc])
+
+  useEffect(() => {
+    const element = audioRef.current
+    if (!element || !activeSrc) return
+    const gen = bindGenerationRef.current
+    const timeout = window.setTimeout(() => {
+      if (bindGenerationRef.current !== gen) return
+      if (element.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return
+      recoverTrackWithCacheBust(element, activeSrc, playAfterBindRef.current)
+    }, 2000)
+    return () => window.clearTimeout(timeout)
+  }, [activeId, activeSrc])
 
   const selectTrack = useCallback(
     (track: Track) => {

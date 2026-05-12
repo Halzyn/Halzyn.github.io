@@ -60,6 +60,16 @@ function setVolumeWithNativeUiNudge(element: HTMLAudioElement, target: number): 
   }
 }
 
+export function appendPlaybackCacheBuster(url: string): string {
+  try {
+    const u = new URL(url, window.location.href)
+    u.searchParams.set('_vgmgc', `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`)
+    return u.href
+  } catch {
+    return url
+  }
+}
+
 export function applyGlobalVolumeToAudioElement(element: HTMLAudioElement): void {
   programmaticVolumeDepth++
   try {
