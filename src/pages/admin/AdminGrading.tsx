@@ -33,6 +33,8 @@ export function AdminGrading() {
   const [pageError, setPageError] = useState<string | null>(null)
   const [newContestantName, setNewContestantName] = useState('')
   const [addingContestant, setAddingContestant] = useState(false)
+  const [draftOverrides, setDraftOverrides] = useState<Map<string, Mark>>(() => new Map())
+  const [savingGrades, setSavingGrades] = useState(false)
 
   const gridScrollRef = useRef<HTMLDivElement>(null)
   useResultsGridStickyLead(gridScrollRef, `${tracks.length}-${submissions.length}`)
@@ -104,20 +106,36 @@ export function AdminGrading() {
   useDocumentTitle(gradingDocTitle)
 
   const markMap = useMemo(() => markMapFromMarks(marks), [marks])
-
-  const soloByTrack = useMemo(() => soloGameWinnerByTrack(marks), [marks])
-
   const trackIds = useMemo(() => tracks.map((track) => track.id), [tracks])
 
+  const { effectiveMarks, effectiveMarkMap, soloByTrackEffective } = useMemo(() => {
+    const map = markMapFromMarks(marks)
+    for (const [key, value] of draftOverrides) {
+      if (value === null) map.delete(key)
+      else map.set(key, value)
+    }
+    const effectiveMarks: GradingMark[] = [...map.entries()].map(([key, mark]) => {
+      const [submission_id, track_id] = key.split(':', 2)
+      return { submission_id, track_id, mark }
+    })
+    return {
+      effectiveMarks,
+      effectiveMarkMap: map,
+      soloByTrackEffective: soloGameWinnerByTrack(effectiveMarks),
+    }
+  }, [marks, draftOverrides])
+
   const contestRankRows = useMemo(
-    () => buildContestRankRows(submissions, trackIds, marks, tracks),
-    [submissions, marks, trackIds, tracks],
+    () => buildContestRankRows(submissions, trackIds, effectiveMarks, tracks),
+    [submissions, effectiveMarks, trackIds, tracks],
   )
 
   const submissionsForGrid = useMemo(
     () => sortSubmissionsByContestRank(submissions, trackIds, marks, tracks),
     [submissions, trackIds, marks, tracks],
   )
+
+  const hasDraftGrades = draftOverrides.size > 0
 
   const submissionById = useMemo(() => new Map(submissions.map((submission) => [submission.id, submission])), [submissions])
 
@@ -131,27 +149,42 @@ export function AdminGrading() {
 
   const answersByTrack = useMemo(() => new Map(answers.map((answer) => [answer.track_id, answer])), [answers])
 
-  function getMark(submissionId: string, trackId: string): Mark {
-    return markMap.get(`${submissionId}:${trackId}`) ?? null
-  }
-
-  async function setMark(submissionId: string, trackId: string, next: Mark) {
-    if (next === null) {
-      await supabase.from('grading_marks').delete().match({ submission_id: submissionId, track_id: trackId })
-    } else {
-      await supabase.from('grading_marks').upsert(
-        { submission_id: submissionId, track_id: trackId, mark: next },
-        { onConflict: 'submission_id,track_id' },
-      )
+  async function saveGrades() {
+    if (draftOverrides.size === 0 || trackIds.length === 0) return
+    setSavingGrades(true)
+    setPageError(null)
+    try {
+      const { error: deletionError } = await supabase.from('grading_marks').delete().in('track_id', trackIds)
+      if (deletionError) throw deletionError
+      if (effectiveMarks.length > 0) {
+        const { error: upsertError } = await supabase
+          .from('grading_marks')
+          .upsert(effectiveMarks, { onConflict: 'submission_id,track_id' })
+        if (upsertError) throw upsertError
+      }
+      setDraftOverrides(new Map())
+      await reloadGradingData()
+    } catch (error: unknown) {
+      setPageError(error instanceof Error ? error.message : 'Save failed')
+    } finally {
+      setSavingGrades(false)
     }
-    void reloadGradingData()
   }
 
   function cycleMark(submissionId: string, trackId: string) {
-    const current = getMark(submissionId, trackId)
-    const index = MARK_CYCLE.indexOf(current)
-    const nextIndex = index === -1 ? 0 : (index + 1) % MARK_CYCLE.length
-    void setMark(submissionId, trackId, MARK_CYCLE[nextIndex]!)
+    if (savingGrades) return
+    const key = `${submissionId}:${trackId}`
+    setDraftOverrides((prev) => {
+      const nextMap = new Map(prev)
+      const base = markMap.get(key) ?? null
+      const current = nextMap.has(key) ? nextMap.get(key)! : base
+      const index = MARK_CYCLE.indexOf(current)
+      const nextIndex = index === -1 ? 0 : (index + 1) % MARK_CYCLE.length
+      const next = MARK_CYCLE[nextIndex]!
+      if (next === base) nextMap.delete(key)
+      else nextMap.set(key, next)
+      return nextMap
+    })
   }
 
   async function removeSubmission(submissionId: string) {
@@ -205,8 +238,7 @@ export function AdminGrading() {
       </p>
       <h1>Grading — {contest.title}</h1>
       <p className="muted small">
-        Each row is a track and each column is a contestant. Click a cell
-        to toggle between X (correct game), ~ (franchise only) and
+        Each row is a track and each column is a contestant. Click a cell to toggle between X (correct game), ~ (franchise only) and
         empty. If someone sends you a submission in private through Discord, you can add them to the grid with the form below.
       </p>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
@@ -230,57 +262,18 @@ export function AdminGrading() {
       </section>
 
       <section className="section">
-        <h2>Score preview</h2>
-        {submissions.length === 0 ? (
-          <p className="muted">Add at least one contestant to see scores.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="table rankings-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Review</th>
-                  <th>Score</th>
-                  <th>Correct games</th>
-                  <th>Correct franchise</th>
-                  <th>Solo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contestRankRows.map((row, rankIndex) => {
-                  const reviewed =
-                    (submissionById.get(row.id)?.review_status ?? 'open') === 'reviewed'
-                  return (
-                    <tr key={row.id} className={rankMedalRowClass(rankIndex)}>
-                      <td>{rankIndex + 1}</td>
-                      <td>{row.name}</td>
-                      <td>{reviewed ? 'Reviewed' : 'Open'}</td>
-                      <td>{row.score.toFixed(1)}</td>
-                      <td>{row.correctGames}</td>
-                      <td>{row.correctFranchise}</td>
-                      <td>{row.solo}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="section">
         <h2>Grid</h2>
         {tracks.length === 0 ? (
           <p className="muted">No tracks yet.</p>
         ) : submissions.length === 0 ? (
           <p className="muted">No contestants yet.</p>
         ) : (
-          <div
-            ref={gridScrollRef}
-            className="scoring-grid-root table-wrap scroll grading-pivot-wrap results-grid-sticky-lead"
-          >
-            <table className="dense results-unified-grid">
+          <>
+            <div
+              ref={gridScrollRef}
+              className="scoring-grid-root table-wrap scroll grading-pivot-wrap results-grid-sticky-lead"
+            >
+              <table className="dense results-unified-grid">
               <thead>
                 <tr>
                   <th className="results-col-number" scope="col">
@@ -332,8 +325,13 @@ export function AdminGrading() {
                       </td>
                       <td className="results-col-separator" aria-hidden />
                       {submissionsForGrid.map((submission) => {
-                        const mark = getMark(submission.id, track.id)
-                        const markVisual = gradeCell(markMap, soloByTrack, submission.id, track.id)
+                        const mark = effectiveMarkMap.get(`${submission.id}:${track.id}`) ?? null
+                        const markVisual = gradeCell(
+                          effectiveMarkMap,
+                          soloByTrackEffective,
+                          submission.id,
+                          track.id,
+                        )
                         const gradeLabel = mark === 'game' ? 'X' : mark === 'franchise' ? '~' : '·'
                         const guessText =
                           guessBySubmissionTrack.get(`${submission.id}:${track.id}`) ?? ''
@@ -344,6 +342,7 @@ export function AdminGrading() {
                               type="button"
                               className="results-grade-btn"
                               title={guessText || '(no guess)'}
+                              disabled={savingGrades}
                               onClick={() => cycleMark(submission.id, track.id)}
                             >
                               <span className="results-grade-char">{gradeLabel}</span>
@@ -352,6 +351,58 @@ export function AdminGrading() {
                           </td>
                         )
                       })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+              </table>
+            </div>
+            <div className="row-form" style={{ marginTop: '0.75rem', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
+              <button
+                type="button"
+                className="button primary small"
+                disabled={!hasDraftGrades || savingGrades}
+                onClick={() => void saveGrades()}
+              >
+                {savingGrades ? 'Saving...' : 'Save'}
+              </button>
+              {hasDraftGrades ? <span className="muted small">Unsaved</span> : null}
+            </div>
+          </>
+        )}
+      </section>
+
+      <section className="section">
+        <h2>Score preview</h2>
+        {submissions.length === 0 ? (
+          <p className="muted">Add at least one contestant to see scores.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table rankings-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Review</th>
+                  <th>Score</th>
+                  <th>Correct games</th>
+                  <th>Correct franchise</th>
+                  <th>Solo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contestRankRows.map((row, rankIndex) => {
+                  const reviewed =
+                    (submissionById.get(row.id)?.review_status ?? 'open') === 'reviewed'
+                  return (
+                    <tr key={row.id} className={rankMedalRowClass(rankIndex)}>
+                      <td>{rankIndex + 1}</td>
+                      <td>{row.name}</td>
+                      <td>{reviewed ? 'Reviewed' : 'Open'}</td>
+                      <td>{row.score.toFixed(1)}</td>
+                      <td>{row.correctGames}</td>
+                      <td>{row.correctFranchise}</td>
+                      <td>{row.solo}</td>
                     </tr>
                   )
                 })}
