@@ -2316,6 +2316,12 @@ html[data-theme='light'] .site-shell .site-topbar {
   border-left: 1px solid rgba(255, 255, 255, 0.28);
 }
 
+.site-shell .site-nav + .auth-bar-session > a:first-child {
+  margin-left: 0.55rem;
+  padding-left: 0.65rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.28);
+}
+
 .site-shell .site-topbar .theme-toggle {
   border-color: rgba(255, 255, 255, 0.35);
   background: rgba(0, 0, 0, 0.2);
