@@ -172,9 +172,9 @@ export function AdminContestSubmissions({
         </div>
       ) : null}
 
-      {submissions.length === 0 ? (
-        <p className="muted">No submissions yet.</p>
-      ) : (
+      {submissions.length === 0 ? <p className="muted">No submissions yet.</p> : null}
+
+      {submissions.length > 0 ? (
         <>
           <div className="table-wrap">
             <table className="table dense">
@@ -264,45 +264,55 @@ export function AdminContestSubmissions({
               </tbody>
             </table>
           </div>
+        </>
+      ) : null}
 
-          <div className="site-inset admin-merge-panel">
-            <h3 className="site-inset-head">Merge two submissions</h3>
-            <div className="site-inset-body">
-              <div className="form row-form admin-merge-form">
-                <label className="field grow">
-                  <span>Keep</span>
-                  <select
-                    value={mergeKeepId}
-                    onChange={(e) => setMergeKeepId(e.target.value)}
-                    aria-label="Submission to keep"
-                  >
-                    <option value="">Select...</option>
-                    {mergeSubmissionOptions(submissions)}
-                  </select>
-                </label>
-                <label className="field grow">
-                  <span>Merge away</span>
-                  <select
-                    value={mergeRemoveId}
-                    onChange={(e) => setMergeRemoveId(e.target.value)}
-                    aria-label="Submission to remove after merge"
-                  >
-                    <option value="">Select...</option>
-                    {mergeSubmissionOptions(submissions)}
-                  </select>
-                </label>
-                <button type="button" className="button" disabled={mergeBusy} onClick={() => void mergeSubmissions()}>
-                  {mergeBusy ? 'Merging...' : 'Merge'}
-                </button>
-              </div>
+      <p className="row tight">
+        <Link className="button" to={`/admin/contests/${contestId}/grade`}>
+          Grade submissions
+        </Link>
+      </p>
+
+      {submissions.length > 0 ? (
+        <div className="site-inset admin-merge-panel">
+          <h3 className="site-inset-head">Merge two submissions</h3>
+          <div className="site-inset-body">
+            <div className="form row-form admin-merge-form">
+              <label className="field grow">
+                <span>Keep</span>
+                <select
+                  value={mergeKeepId}
+                  onChange={(e) => setMergeKeepId(e.target.value)}
+                  aria-label="Submission to keep"
+                >
+                  <option value="">Select...</option>
+                  {mergeSubmissionOptions(submissions)}
+                </select>
+              </label>
+              <label className="field grow">
+                <span>Merge away</span>
+                <select
+                  value={mergeRemoveId}
+                  onChange={(e) => setMergeRemoveId(e.target.value)}
+                  aria-label="Submission to remove after merge"
+                >
+                  <option value="">Select...</option>
+                  {mergeSubmissionOptions(submissions)}
+                </select>
+              </label>
+              <button type="button" className="button" disabled={mergeBusy} onClick={() => void mergeSubmissions()}>
+                {mergeBusy ? 'Merging...' : 'Merge'}
+              </button>
             </div>
           </div>
+        </div>
+      ) : null}
 
-          <p className="muted small">
-            Public contest: <Link to={`/contests/${contestSlug}/submit`}>/contests/{contestSlug}/submit</Link>
-          </p>
-        </>
-      )}
+      {submissions.length > 0 ? (
+        <p className="muted small">
+          Public contest: <Link to={`/contests/${contestSlug}/submit`}>/contests/{contestSlug}/submit</Link>
+        </p>
+      ) : null}
     </section>
   )
 }

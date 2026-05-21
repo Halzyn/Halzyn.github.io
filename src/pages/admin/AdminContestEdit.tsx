@@ -59,6 +59,18 @@ function mergeAnswersFromTrackGameRows(
   }
 }
 
+type ContestEditTab = 'general' | 'submissions' | 'tracks' | 'access'
+
+const CONTEST_EDIT_TABS: { tab: Exclude<ContestEditTab, 'access'>; label: string }[] = [
+  { tab: 'general', label: 'General' },
+  { tab: 'submissions', label: 'Submissions' },
+  { tab: 'tracks', label: 'Tracks' },
+]
+
+function tabButtonClass(selected: boolean): string {
+  return selected ? 'button small primary' : 'button small ghost'
+}
+
 function TrackPreviewAudio({ src }: { src: string }) {
   const ref = useRef<HTMLAudioElement>(null)
   const didRevealRef = useRef(false)
@@ -117,6 +129,7 @@ export function AdminContestEdit() {
   const [modUsername, setModUsername] = useState('')
   const [guestHosts, setGuestHosts] = useState<{ id: string; display_name: string; sort_order: number }[]>([])
   const [guestHostName, setGuestHostName] = useState('')
+  const [editTab, setEditTab] = useState<ContestEditTab>('general')
 
   const load = useCallback(async () => {
     if (!id) return
@@ -255,6 +268,12 @@ export function AdminContestEdit() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (editTab === 'access' && !isAdminUser) {
+      setEditTab('general')
+    }
+  }, [editTab, isAdminUser])
 
   const editContestDocTitle = useMemo(() => {
     if (!contest) return pageTitle('Edit contest')
@@ -531,6 +550,47 @@ export function AdminContestEdit() {
       <h1>Edit contest</h1>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
 
+      <div
+        className="row tight site-toolbar profile-edit-tabs"
+        role="tablist"
+        aria-label="Contest sections"
+      >
+        {CONTEST_EDIT_TABS.map(({ tab, label }) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            id={`contest-tab-${tab}`}
+            aria-selected={editTab === tab}
+            aria-controls={`contest-panel-${tab}`}
+            className={tabButtonClass(editTab === tab)}
+            onClick={() => setEditTab(tab)}
+          >
+            {label}
+          </button>
+        ))}
+        {isAdminUser ? (
+          <button
+            type="button"
+            role="tab"
+            id="contest-tab-access"
+            aria-selected={editTab === 'access'}
+            aria-controls="contest-panel-access"
+            className={tabButtonClass(editTab === 'access')}
+            onClick={() => setEditTab('access')}
+          >
+            Access
+          </button>
+        ) : null}
+      </div>
+
+      <div
+        id="contest-panel-general"
+        role="tabpanel"
+        aria-labelledby="contest-tab-general"
+        hidden={editTab !== 'general'}
+        className="profile-edit-tab-panel"
+      >
       <section className="section">
         <h2>Contest settings</h2>
         <form className="form" onSubmit={saveContest}>
@@ -609,94 +669,36 @@ export function AdminContestEdit() {
         </form>
 
         <p>
-          <Link className="button" to={`/admin/contests/${contest.id}/grade`}>
-            Grade submissions
-          </Link>
           <Link className="button ghost" to={`/contests/${contest.slug}`}>
             Public page
           </Link>
         </p>
       </section>
+      </div>
 
-      {isAdminUser ? (
-        <>
-          <section className="section">
-            <h2>Contest moderators</h2>
-            {moderators.length === 0 ? <p className="muted">None yet.</p> : null}
-            <ul className="stack">
-              {moderators.map((moderator) => (
-                <li key={moderator.user_id} className="row spread panel">
-                  <span>{moderator.username ?? moderator.user_id}</span>
-                  <button
-                    type="button"
-                    className="button ghost small"
-                    onClick={() => void removeModerator(moderator.user_id)}
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <form className="form row-form" onSubmit={addModerator}>
-              <label className="field">
-                <span>Add by username</span>
-                <input
-                  value={modUsername}
-                  onChange={(e) => setModUsername(e.target.value)}
-                  placeholder="playername"
-                />
-              </label>
-              <button type="submit" className="button">
-                Add
-              </button>
-            </form>
-          </section>
+      <div
+        id="contest-panel-submissions"
+        role="tabpanel"
+        aria-labelledby="contest-tab-submissions"
+        hidden={editTab !== 'submissions'}
+        className="profile-edit-tab-panel"
+      >
+        <AdminContestSubmissions
+          contestId={contest.id}
+          contestSlug={contest.slug}
+          submissions={submissions}
+          onReload={() => void load()}
+          onError={setPageError}
+        />
+      </div>
 
-          <section className="section">
-            <h2>Guest collaborators</h2>
-            <p className="muted small">
-              Hosts who don't have an account.
-            </p>
-            {guestHosts.length === 0 ? <p className="muted">None yet.</p> : null}
-            <ul className="stack">
-              {guestHosts.map((row) => (
-                <li key={row.id} className="row spread panel">
-                  <span>{row.display_name}</span>
-                  <button
-                    type="button"
-                    className="button ghost small"
-                    onClick={() => void removeGuestHost(row.id)}
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <form className="form row-form" onSubmit={addGuestHost}>
-              <label className="field">
-                <span>Add name</span>
-                <input
-                  value={guestHostName}
-                  onChange={(e) => setGuestHostName(e.target.value)}
-                  placeholder="Display name"
-                />
-              </label>
-              <button type="submit" className="button">
-                Add
-              </button>
-            </form>
-          </section>
-        </>
-      ) : null}
-
-      <AdminContestSubmissions
-        contestId={contest.id}
-        contestSlug={contest.slug}
-        submissions={submissions}
-        onReload={() => void load()}
-        onError={setPageError}
-      />
-
+      <div
+        id="contest-panel-tracks"
+        role="tabpanel"
+        aria-labelledby="contest-tab-tracks"
+        hidden={editTab !== 'tracks'}
+        className="profile-edit-tab-panel"
+      >
       <section className="section">
         <h2>Upload tracks</h2>
         <p className="muted small site-section-blurb">
@@ -795,6 +797,84 @@ export function AdminContestEdit() {
           })}
         </ul>
       </section>
+      </div>
+
+      {isAdminUser ? (
+        <div
+          id="contest-panel-access"
+          role="tabpanel"
+          aria-labelledby="contest-tab-access"
+          hidden={editTab !== 'access'}
+          className="profile-edit-tab-panel"
+        >
+          <section className="section">
+            <h2>Contest moderators</h2>
+            {moderators.length === 0 ? <p className="muted">None yet.</p> : null}
+            <ul className="stack">
+              {moderators.map((moderator) => (
+                <li key={moderator.user_id} className="row spread panel">
+                  <span>{moderator.username ?? moderator.user_id}</span>
+                  <button
+                    type="button"
+                    className="button ghost small"
+                    onClick={() => void removeModerator(moderator.user_id)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <form className="form row-form" onSubmit={addModerator}>
+              <label className="field">
+                <span>Add by username</span>
+                <input
+                  value={modUsername}
+                  onChange={(e) => setModUsername(e.target.value)}
+                  placeholder="playername"
+                />
+              </label>
+              <button type="submit" className="button">
+                Add
+              </button>
+            </form>
+          </section>
+
+          <section className="section">
+            <h2>Guest collaborators</h2>
+            <p className="muted small">
+              Hosts who don't have an account.
+            </p>
+            {guestHosts.length === 0 ? <p className="muted">None yet.</p> : null}
+            <ul className="stack">
+              {guestHosts.map((row) => (
+                <li key={row.id} className="row spread panel">
+                  <span>{row.display_name}</span>
+                  <button
+                    type="button"
+                    className="button ghost small"
+                    onClick={() => void removeGuestHost(row.id)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <form className="form row-form" onSubmit={addGuestHost}>
+              <label className="field">
+                <span>Add name</span>
+                <input
+                  value={guestHostName}
+                  onChange={(e) => setGuestHostName(e.target.value)}
+                  placeholder="Display name"
+                />
+              </label>
+              <button type="submit" className="button">
+                Add
+              </button>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </div>
   )
 }

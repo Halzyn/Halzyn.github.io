@@ -154,7 +154,7 @@ export function AdminLayout() {
         brandHref="/admin/contests"
         brandLabel="Admin"
         headerEnd={<AdminNav />}
-        footerLabel="VGMGC administration"
+        footerLabel="You're in the thick of it now... welcome to the admin zone"
       />
     )
   }
