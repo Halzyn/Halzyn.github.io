@@ -72,10 +72,10 @@ export function AdminContestSubmissions({
 
   async function setReviewStatus(submissionId: string, status: 'open' | 'reviewed') {
     onError(null)
-    const { error } = await supabase
-      .from('submissions')
-      .update({ review_status: status, updated_at: new Date().toISOString() })
-      .eq('id', submissionId)
+    const { error } = await supabase.rpc('admin_set_submission_review_status', {
+      p_submission_id: submissionId,
+      p_status: status,
+    })
     if (error) {
       onError(error.message)
       return
