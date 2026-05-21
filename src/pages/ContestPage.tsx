@@ -20,12 +20,17 @@ import {
   emptyContestHosts,
 } from '../lib/contestHosts'
 
-function ContestArchiveBackLink() {
+function ContestPageTop({ editContestHref }: { editContestHref?: string }) {
   return (
     <div className="profile-page-top">
       <p className="muted small profile-page-top-back">
         <Link to="/contests">← Contests</Link>
       </p>
+      {editContestHref ? (
+        <Link to={editContestHref} className="profile-page-edit-link">
+          Edit contest
+        </Link>
+      ) : null}
     </div>
   )
 }
@@ -210,6 +215,8 @@ export function ContestPage() {
   const showAdminResultsPreview = ready && isAdmin && showResults && !showResultsToPublic
   const showModResultsPreview = contestMod && showResults && deadlinePassed && !resultsPublished
   const showResultsPreviewBanner = showAdminResultsPreview || showModResultsPreview
+  const canEditContest = Boolean(contest && ((ready && isAdmin) || contestMod))
+  const editContestHref = canEditContest ? `/admin/contests/${contest!.id}` : undefined
 
   const trackIds = useMemo(() => tracks.map((t) => t.id), [tracks])
 
@@ -232,7 +239,7 @@ export function ContestPage() {
   if (!contestRowReady) {
     return (
       <div className="page">
-        <ContestArchiveBackLink />
+        <ContestPageTop />
         <p className="muted">Loading...</p>
       </div>
     )
@@ -240,7 +247,7 @@ export function ContestPage() {
   if (contest === null) {
     return (
       <div className="page">
-        <ContestArchiveBackLink />
+        <ContestPageTop />
         <p>Contest not found.</p>
         <Link to="/">Home</Link>
       </div>
@@ -249,7 +256,7 @@ export function ContestPage() {
 
   return (
     <div className="page">
-      <ContestArchiveBackLink />
+      <ContestPageTop editContestHref={editContestHref} />
       <header className="page-head">
         <h1>{contest.title}</h1>
         {contestHosts.entries.length > 0 ? (
