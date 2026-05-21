@@ -1,6 +1,7 @@
 import type { Contest, GradingMark, Submission, Track } from './types'
 import {
   buildContestRankRows,
+  contestPlaceForIndex,
   scoreForSubmission,
   soloGameWinnerByTrack,
   countCorrectGameMarks,
@@ -100,7 +101,7 @@ export function computeProfileContestStats(
     const rows = buildContestRankRows(submissions, trackOrder, contestMarks, contestTracks)
     const mySubmission = mySubmissionByContestId.get(contestId)
     const rankIndex = mySubmission ? rows.findIndex((row) => row.id === mySubmission.id) : -1
-    const rank = rankIndex >= 0 ? rankIndex + 1 : 0
+    const rank = rankIndex >= 0 ? contestPlaceForIndex(rows, rankIndex) : 0
     const score = mySubmission ? scoreForSubmission(mySubmission.id, trackOrder, contestMarks) : 0
 
     contestStats.push({

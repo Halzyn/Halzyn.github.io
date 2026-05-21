@@ -7,17 +7,22 @@ import { parseTrackAnswer } from '../../lib/trackAnswer'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { difficultyClass, gradeCell, markMapFromMarks } from '../../lib/resultsGrid'
-import { buildContestRankRows, soloGameWinnerByTrack, sortSubmissionsByContestRank } from '../../lib/scoring'
+import {
+  buildContestRankRows,
+  contestPlaceForIndex,
+  soloGameWinnerByTrack,
+  sortSubmissionsByContestRank,
+} from '../../lib/scoring'
 import { useResultsGridStickyLead } from '../../hooks/useResultsGridStickyLead'
 
 type Mark = 'game' | 'franchise' | null
 
 const MARK_CYCLE: Mark[] = [null, 'game', 'franchise']
 
-function rankMedalRowClass(rankIndex: number): string {
-  if (rankIndex === 0) return 'rank-medal-gold'
-  if (rankIndex === 1) return 'rank-medal-silver'
-  if (rankIndex === 2) return 'rank-medal-bronze'
+function rankMedalRowClass(place: number): string {
+  if (place === 1) return 'rank-medal-gold'
+  if (place === 2) return 'rank-medal-silver'
+  if (place === 3) return 'rank-medal-bronze'
   return ''
 }
 
@@ -392,11 +397,12 @@ export function AdminGrading() {
               </thead>
               <tbody>
                 {contestRankRows.map((row, rankIndex) => {
+                  const place = contestPlaceForIndex(contestRankRows, rankIndex)
                   const reviewed =
                     (submissionById.get(row.id)?.review_status ?? 'open') === 'reviewed'
                   return (
-                    <tr key={row.id} className={rankMedalRowClass(rankIndex)}>
-                      <td>{rankIndex + 1}</td>
+                    <tr key={row.id} className={rankMedalRowClass(place)}>
+                      <td>{place}</td>
                       <td>{row.name}</td>
                       <td>{reviewed ? 'Reviewed' : 'Open'}</td>
                       <td>{row.score.toFixed(1)}</td>

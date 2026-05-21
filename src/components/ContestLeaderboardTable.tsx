@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import type { ContestRankRow } from '../lib/scoring'
+import { contestPlaceForIndex, type ContestRankRow } from '../lib/scoring'
 import type { DisplayNameStyleInfo } from '../lib/displayNameStyle'
 import { DisplayNameStyled } from './DisplayNameStyled'
 
@@ -9,11 +9,11 @@ type Props = {
   displayNameStyleByUserId?: Map<string, DisplayNameStyleInfo>
 }
 
-const placeClasses = {
-  0: 'rank-medal-gold',
-  1: 'rank-medal-silver',
-  2: 'rank-medal-bronze',
-  default: '',
+function rankMedalRowClass(place: number): string {
+  if (place === 1) return 'rank-medal-gold'
+  if (place === 2) return 'rank-medal-silver'
+  if (place === 3) return 'rank-medal-bronze'
+  return ''
 }
 
 function RankNameCell({
@@ -60,9 +60,11 @@ export function ContestLeaderboardTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => (
-            <tr key={row.id} className={placeClasses[index as keyof typeof placeClasses]}>
-              <td>{index + 1}</td>
+          {rows.map((row, index) => {
+            const place = contestPlaceForIndex(rows, index)
+            return (
+            <tr key={row.id} className={rankMedalRowClass(place)}>
+              <td>{place}</td>
               <td>
                 <RankNameCell
                   row={row}
@@ -75,7 +77,8 @@ export function ContestLeaderboardTable({
               <td>{row.correctFranchise}</td>
               <td>{row.solo}</td>
             </tr>
-          ))}
+            )
+          })}
         </tbody>
       </table>
     </div>

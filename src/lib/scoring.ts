@@ -74,7 +74,7 @@ export function countCorrectGamesOnDifficulty(
   submissionId: string,
   marks: GradingMark[],
   tracks: Track[],
-  difficulty: 'hard' | 'medium',
+  difficulty: 'insane' | 'hard' | 'medium',
 ): number {
   const diffByTrack = new Map(tracks.map((t) => [t.id, normDifficulty(t.difficulty)]))
   let count = 0
@@ -93,6 +93,7 @@ export type ContestRankRow = {
   solo: number
   correctGames: number
   correctFranchise: number
+  correctInsane: number
   correctHard: number
   correctMedium: number
 }
@@ -107,10 +108,31 @@ export function compareContestRank(a: ContestRankRow, b: ContestRankRow): number
     compareDesc(a.score, b.score) ||
     compareDesc(a.correctGames, b.correctGames) ||
     compareDesc(a.solo, b.solo) ||
+    compareDesc(a.correctInsane, b.correctInsane) ||
     compareDesc(a.correctHard, b.correctHard) ||
     compareDesc(a.correctMedium, b.correctMedium) ||
     a.name.localeCompare(b.name)
   )
+}
+
+export function areContestRanksTied(a: ContestRankRow, b: ContestRankRow): boolean {
+  return (
+    a.score === b.score &&
+    a.correctGames === b.correctGames &&
+    a.solo === b.solo &&
+    a.correctInsane === b.correctInsane &&
+    a.correctHard === b.correctHard &&
+    a.correctMedium === b.correctMedium
+  )
+}
+
+export function contestPlaceForIndex(rows: ContestRankRow[], index: number): number {
+  for (let i = index; i >= 0; i--) {
+    if (i === 0 || !areContestRanksTied(rows[i - 1]!, rows[index]!)) {
+      return i + 1
+    }
+  }
+  return 1
 }
 
 export function submissionDisplayNameForRank(
@@ -138,6 +160,7 @@ export function buildContestRankRows(
     solo: countSoloMarks(submission.id, solo),
     correctGames: countCorrectGameMarks(submission.id, marks),
     correctFranchise: countCorrectFranchiseMarks(submission.id, marks),
+    correctInsane: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'insane'),
     correctHard: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'hard'),
     correctMedium: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'medium'),
   }))
