@@ -10,6 +10,7 @@ import { contestClosed } from '../lib/deadline'
 type EditDraftPayload = {
   submission_id?: string
   contestant_name?: string
+  user_id?: string | null
   guesses?: { track_id: string; text: string }[]
 }
 
@@ -76,6 +77,8 @@ export function SubmitPage() {
   const [nameReadOnly, setNameReadOnly] = useState(false)
   const [useAdminApi, setUseAdminApi] = useState(false)
   const [ownerClosedOutcome, setOwnerClosedOutcome] = useState<'unset' | 'none' | 'readonly'>('unset')
+  const [editSubmissionUserId, setEditSubmissionUserId] = useState<string | null | undefined>(undefined)
+  const [claiming, setClaiming] = useState(false)
 
   const profileDisplayNameForSubmit = useMemo(() => {
     const trimmed = profile?.display_name?.trim()
@@ -220,6 +223,7 @@ export function SubmitPage() {
 
     if (!editToken) {
       setUseAdminApi(false)
+      setEditSubmissionUserId(undefined)
       if (!userId) {
         setNameReadOnly(false)
         setDraftLoading(false)
@@ -245,6 +249,7 @@ export function SubmitPage() {
       const row = data as EditDraftPayload
       setNameReadOnly(true)
       setName(contestantNameFromDraft(row))
+      setEditSubmissionUserId(row.user_id ?? null)
       const draftByTrack = guessMapFromDraft(row)
       setGuesses((prev) => mergeDraftIntoGuessesState(draftByTrack, tracks, prev))
     })()
@@ -253,6 +258,34 @@ export function SubmitPage() {
       cancelled = true
     }
   }, [supabase, contest, tracks, editToken, isAdmin, ready, adminSubmissionId, userId])
+
+  async function handleClaimSubmission() {
+    if (!contest || !editToken || !userId) return
+    setClaiming(true)
+    setPageError(null)
+    setSaveNotice(null)
+    try {
+      const { data, error } = await supabase.rpc('claim_submission_for_edit', {
+        p_contest_id: contest.id,
+        p_edit_token: editToken,
+      })
+      if (error) {
+        setPageError(error.message)
+        return
+      }
+      setEditSubmissionUserId(userId)
+      const result = data as { already_claimed?: boolean } | null
+      if (result?.already_claimed) {
+        setSaveNotice('This submission is already linked to your account.')
+      } else {
+        setSaveNotice(
+          'Submission linked to your account. You can keep editing here or open Submit while signed in next time.',
+        )
+      }
+    } finally {
+      setClaiming(false)
+    }
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -342,6 +375,16 @@ export function SubmitPage() {
   const nameInputDisabled = draftLoading || nameReadOnly || sessionLocksName || ownerClosedReadOnly
   const missingDisplayNameWhileSignedIn =
     Boolean(userId) && ready && !profileDisplayNameForSubmit && !editToken && !adminSubmissionId
+
+  const showClaimSubmission =
+    Boolean(userId) &&
+    ready &&
+    Boolean(editToken) &&
+    !adminSubmissionId &&
+    !draftLoading &&
+    editSubmissionUserId === null &&
+    canUseForm &&
+    !ownerClosedReadOnly
 
   function renderTopBanner(): React.ReactNode {
     if (showAdminChecking) {
@@ -453,15 +496,27 @@ export function SubmitPage() {
           <form className="form" onSubmit={handleSubmit}>
             <label className="field">
               <span>Your name (public on rankings after the deadline)</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={80}
-                required={!missingDisplayNameWhileSignedIn}
-                disabled={nameInputDisabled}
-                className={nameInputDisabled ? 'submit-name-locked' : undefined}
-                autoComplete="nickname"
-              />
+              <div className="submit-name-row">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={80}
+                  required={!missingDisplayNameWhileSignedIn}
+                  disabled={nameInputDisabled}
+                  className={nameInputDisabled ? 'submit-name-locked' : undefined}
+                  autoComplete="nickname"
+                />
+                {showClaimSubmission ? (
+                  <button
+                    type="button"
+                    className="button"
+                    disabled={claiming || submitting}
+                    onClick={() => void handleClaimSubmission()}
+                  >
+                    {claiming ? 'Linking...' : 'Claim submission'}
+                  </button>
+                ) : null}
+              </div>
             </label>
             {tracks.map((t) => (
               <label key={t.id} className="field">

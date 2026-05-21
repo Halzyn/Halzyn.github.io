@@ -1595,6 +1595,18 @@ html[data-theme='light'] .banner.warn {
   color: var(--muted);
 }
 
+.submit-page .submit-name-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.submit-page .submit-name-row input {
+  flex: 1;
+  min-width: 0;
+}
+
 .submit-page .field input.submit-name-locked {
   cursor: default;
   color: var(--muted);
