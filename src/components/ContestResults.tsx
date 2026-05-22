@@ -1,3 +1,4 @@
+import { ContestComments } from './ContestComments'
 import { ContestLeaderboardTable } from './ContestLeaderboardTable'
 import { ContestResultsGrid } from './ContestResultsGrid'
 import type { ContestRankRow } from '../lib/scoring'
@@ -18,6 +19,9 @@ type Props = {
   displayNameByUserId?: Map<string, string>
   profileUsernameByUserId?: Map<string, string>
   displayNameStyleByUserId?: Map<string, DisplayNameStyleInfo>
+  contestId: string
+  commentsOpen: boolean
+  canModerateComments: boolean
 }
 
 export function ContestResults({
@@ -31,6 +35,9 @@ export function ContestResults({
   displayNameByUserId,
   profileUsernameByUserId,
   displayNameStyleByUserId,
+  contestId,
+  commentsOpen,
+  canModerateComments,
 }: Props) {
   return (
     <section className="section contest-results-section">
@@ -59,6 +66,12 @@ export function ContestResults({
             rows={leaderboard}
             profileUsernameByUserId={profileUsernameByUserId}
             displayNameStyleByUserId={displayNameStyleByUserId}
+          />
+
+          <ContestComments
+            contestId={contestId}
+            commentsOpen={commentsOpen}
+            canModerate={canModerateComments}
           />
         </div>
       </details>

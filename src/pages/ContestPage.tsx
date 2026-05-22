@@ -211,7 +211,9 @@ export function ContestPage() {
   const deadlinePassed = contest ? contestClosed(contest.deadline) : false
   const resultsPublished = contest ? Boolean(contest.results_published) : false
   const showResultsToPublic = deadlinePassed && resultsPublished
+  const commentsOpen = showResultsToPublic
   const showResults = (ready && isAdmin) || showResultsToPublic || contestMod
+  const canModerateComments = Boolean(contest && ((ready && isAdmin) || contestMod))
   const showAdminResultsPreview = ready && isAdmin && showResults && !showResultsToPublic
   const showModResultsPreview = contestMod && showResults && deadlinePassed && !resultsPublished
   const showResultsPreviewBanner = showAdminResultsPreview || showModResultsPreview
@@ -334,6 +336,9 @@ export function ContestPage() {
           displayNameByUserId={displayNameByUserId}
           profileUsernameByUserId={profileUsernameByUserId}
           displayNameStyleByUserId={displayNameStyleByUserId}
+          contestId={contest.id}
+          commentsOpen={commentsOpen}
+          canModerateComments={canModerateComments}
           onPlayTrack={(trackId) => {
             setTracksFoldOpen(true)
             tracksPlayerRef.current?.playTrack(trackId)

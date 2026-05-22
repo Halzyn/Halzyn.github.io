@@ -2803,3 +2803,253 @@ html[data-theme='dark'] .display-name-effect-drop_shadow {
   font-size: 1.25rem;
   line-height: 1.35;
 }
+
+.contest-comments {
+  margin-top: 1.25rem;
+}
+
+.contest-comments-head {
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.contest-comments-sort select {
+  min-width: 9rem;
+}
+
+.comment-compose {
+  margin-bottom: 1rem;
+}
+
+.comment-compose-placeholder {
+  margin: 0;
+}
+
+.comment-editor {
+  margin-bottom: 0.5rem;
+}
+
+.comment-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--site-row-b);
+}
+
+.comment-editor-tool {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #484850 0%, #3a3a42 48%, #32323a 100%);
+  color: var(--heading);
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+html[data-theme='light'] .comment-editor-tool {
+  background: linear-gradient(180deg, #fafafa 0%, #e4e4e4 45%, #d8d8d8 100%);
+  color: #111;
+}
+
+.comment-editor-tool:hover:not(:disabled) {
+  border-color: var(--accent);
+  filter: brightness(1.06);
+}
+
+.comment-editor-tool:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.comment-editor-input {
+  width: 100%;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 5rem;
+}
+
+.comment-editor-meta {
+  margin: 0.25rem 0.5rem 0.35rem;
+  text-align: right;
+}
+
+.comment-editor-hint {
+  margin: 0.35rem 0 0.65rem;
+}
+
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.comment-item {
+  padding: 0;
+  overflow: hidden;
+}
+
+.comment-item-meta {
+  padding: 0.35rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--site-row-b);
+  font-size: 11px;
+}
+
+.comment-item-when {
+  white-space: nowrap;
+}
+
+.comment-item-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.5rem 0.55rem 0.45rem;
+}
+
+.comment-item-sidebar {
+  flex: 0 0 4.75rem;
+  width: 4.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.comment-item-name {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.comment-item-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.comment-item-name-link:hover {
+  text-decoration: underline;
+}
+
+.comment-item-avatar-link {
+  display: block;
+  line-height: 0;
+}
+
+.comment-item-sidebar .player-card-avatar {
+  display: block;
+}
+
+.comment-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-vote-btn {
+  font: inherit;
+  font-size: 11px;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--site-row-a);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.comment-vote-btn.is-active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--heading);
+}
+
+.comment-vote-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.comment-md-body {
+  padding: 0 0 0.25rem;
+}
+
+.comment-item-main .comment-edit-form,
+.comment-item-main .comment-reply-form {
+  margin-top: 0.35rem;
+}
+
+.comment-md-body {
+  word-break: break-word;
+}
+
+.comment-md-list {
+  margin: 0.35rem 0 0.35rem 1.25rem;
+  padding: 0;
+}
+
+.comment-md-image {
+  display: block;
+  max-width: min(100%, 420px);
+  height: auto;
+  margin: 0.35rem 0;
+  border: 1px solid var(--border);
+}
+
+.comment-deleted {
+  margin: 0;
+  font-style: italic;
+}
+
+.comment-item-actions {
+  padding: 0.35rem 0 0;
+}
+
+.comment-delete-btn {
+  color: var(--warn);
+}
+
+.comment-reply-form,
+.comment-edit-form {
+  border: 1px solid var(--border);
+  background: var(--site-row-a);
+  padding: 0.45rem 0.5rem;
+}
+
+.comment-reply-form .button {
+  margin: 0.45rem 0 0;
+}
+
+.comment-edit-history {
+  margin: 0 0.55rem 0.45rem;
+}
+
+.comment-edit-history-summary {
+  font-size: 11px;
+}
+
+.comment-edit-history-body {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.comment-edit-history-list {
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+}
+
+.comment-edit-history-list > li + li {
+  margin-top: 0.65rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+.comment-edit-history-label {
+  margin: 0 0 0.25rem;
+}
