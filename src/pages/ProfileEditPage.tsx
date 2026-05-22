@@ -792,7 +792,7 @@ export function ProfileEditPage() {
           {mySubmissions === null ? (
             <p className="muted">Loading...</p>
           ) : mySubmissions.length === 0 ? (
-            <p className="muted small">No submissions yet. If you've participated in past contests before signing up, DM me on Discord @halzyn.</p>
+            <p className="muted small">No submissions yet. If you've participated in past contests before signing up, you can go to your guest submission links and claim them while signed in. If you lost your link(s), DM me on Discord @halzyn.</p>
           ) : (
             <>
               <h3 className="profile-subhead">Open</h3>
