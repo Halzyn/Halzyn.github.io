@@ -363,6 +363,69 @@ html[data-theme='light'] .theme-toggle--floating {
   gap: 1.25rem;
 }
 
+.profile-nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.profile-nav-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -0.35rem -0.2rem -0.35rem 0;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0.35rem 0.45rem;
+  border: none;
+  background: none;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.profile-nav-dropdown-toggle:hover,
+.profile-nav-dropdown-toggle:focus-visible {
+  color: var(--accent);
+}
+
+.profile-nav-dropdown-caret {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+}
+
+.profile-nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 10200;
+  min-width: 8.5rem;
+  padding: 0.2rem 0;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.28);
+}
+
+.profile-nav-dropdown-menu a {
+  display: block;
+  padding: 0.4rem 0.7rem;
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.profile-nav-dropdown-menu a:hover {
+  text-decoration: none;
+}
+
 .auth-mode-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -2328,10 +2391,36 @@ html[data-theme='light'] .site-shell .site-topbar {
   border-left: 1px solid rgba(255, 255, 255, 0.28);
 }
 
-.site-shell .site-nav + .auth-bar-session > a:first-child {
+.site-shell .site-nav + .auth-bar-session > .profile-nav-dropdown:first-child {
   margin-left: 0.55rem;
   padding-left: 0.65rem;
   border-left: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.site-shell .site-topbar .profile-nav-dropdown-toggle {
+  color: var(--site-header-link);
+}
+
+.site-shell .site-topbar .profile-nav-dropdown-toggle:hover,
+.site-shell .site-topbar .profile-nav-dropdown-toggle:focus-visible {
+  color: #ffffff;
+}
+
+.site-shell .profile-nav-dropdown-menu {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: var(--site-header-bg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    2px 3px 6px rgba(0, 0, 0, 0.38);
+}
+
+.site-shell .profile-nav-dropdown-menu a {
+  color: var(--site-header-link);
+}
+
+.site-shell .profile-nav-dropdown-menu a:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .site-shell .site-topbar .theme-toggle {

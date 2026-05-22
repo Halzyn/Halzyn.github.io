@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { signOutAndReloadHome } from '../lib/auth'
 import { playersSlug } from '../lib/slugify'
+import { ProfileNavDropdown } from './ProfileNavDropdown'
 
 export function AuthBar() {
   const { session, profile } = useAuth()
@@ -18,7 +19,7 @@ export function AuthBar() {
 
   return (
     <span className="auth-bar-session">
-      <Link to={profileTo}>Profile</Link>
+      <ProfileNavDropdown profileTo={profileTo} />
       <button type="button" className="button small ghost" onClick={() => void signOutAndReloadHome()}>
         Sign out
       </button>
