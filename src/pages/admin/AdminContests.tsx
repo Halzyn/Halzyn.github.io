@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
-import { invokeContestPublishedNotify } from '../../lib/contestPublishedNotify'
 import { getSupabase } from '../../lib/supabase'
 import { slugifyUrlSegment } from '../../lib/slugify'
 import type { Contest } from '../../lib/types'
@@ -70,9 +69,6 @@ export function AdminContests() {
         setPageError(modError.message)
         return
       }
-    }
-    if (published && newContest?.id) {
-      invokeContestPublishedNotify(supabase, newContest.id as string)
     }
     setTitle('')
     setSlug('')

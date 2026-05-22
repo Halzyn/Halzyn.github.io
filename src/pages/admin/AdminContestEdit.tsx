@@ -12,7 +12,6 @@ import { parseTrackNumberFromFileName } from '../../lib/trackFileName'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { AdminContestSubmissions } from './AdminContestSubmissions'
-import { invokeContestPublishedNotify } from '../../lib/contestPublishedNotify'
 import { firstOf } from '../../lib/utils'
 
 function mergeAnswersFromTrackGameRows(
@@ -363,7 +362,6 @@ export function AdminContestEdit() {
   async function saveContest(e: FormEvent) {
     e.preventDefault()
     if (!contest) return
-    const wasPublished = contest.published
     const { error } = await supabase
       .from('contests')
       .update({
@@ -381,9 +379,6 @@ export function AdminContestEdit() {
     if (error) {
       setPageError(error.message)
       return
-    }
-    if (!wasPublished && published) {
-      invokeContestPublishedNotify(supabase, contest.id)
     }
     void load()
   }
