@@ -1,8 +1,13 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import {
+  ContestTrackAudio,
+  type ContestTrackAudioHandle,
+} from '../components/ContestTrackAudio'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { publicAudioUrl } from '../lib/audio'
 import { getSupabase } from '../lib/supabase'
 import type { Contest, Track } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
@@ -79,6 +84,13 @@ export function SubmitPage() {
   const [ownerClosedOutcome, setOwnerClosedOutcome] = useState<'unset' | 'none' | 'readonly'>('unset')
   const [editSubmissionUserId, setEditSubmissionUserId] = useState<string | null | undefined>(undefined)
   const [claiming, setClaiming] = useState(false)
+  const tracksPlayerRef = useRef<ContestTrackAudioHandle>(null)
+
+  const audioUrlByTrackId = useMemo(() => {
+    const map = new Map<string, string | null>()
+    for (const track of tracks) map.set(track.id, publicAudioUrl(track.audio_path))
+    return map
+  }, [tracks])
 
   const profileDisplayNameForSubmit = useMemo(() => {
     const trimmed = profile?.display_name?.trim()
@@ -492,6 +504,14 @@ export function SubmitPage() {
               </>
             ) : null}
           </p>
+          {tracks.length > 0 ? (
+            <ContestTrackAudio
+              ref={tracksPlayerRef}
+              tracks={tracks}
+              showTrackPicker={false}
+              showAutoplay={false}
+            />
+          ) : null}
           {draftLoading ? <p className="muted">Loading your saved entry...</p> : null}
           <form className="form" onSubmit={handleSubmit}>
             <label className="field">
@@ -518,11 +538,22 @@ export function SubmitPage() {
                 ) : null}
               </div>
             </label>
-            {tracks.map((t) => (
+            {tracks.map((t) => {
+              const trackAudioUrl = audioUrlByTrackId.get(t.id)
+              const trackLabel = `Track ${t.sort_order}${t.difficulty ? ` · ${t.difficulty}` : ''}`
+              return (
               <label key={t.id} className="field">
-                <span>
-                  Track {t.sort_order}
-                  {t.difficulty ? ` · ${t.difficulty}` : ''}
+                <span className="submit-track-label-row">
+                  <button
+                    type="button"
+                    className="submit-track-play"
+                    disabled={!trackAudioUrl}
+                    aria-label={trackAudioUrl ? `Play ${trackLabel}` : 'Audio unavailable'}
+                    onClick={() => tracksPlayerRef.current?.playTrack(t.id)}
+                  >
+                    <span aria-hidden>▷</span>
+                  </button>
+                  <span>{trackLabel}</span>
                 </span>
                 <input
                   value={guesses[t.id] ?? ''}
@@ -533,7 +564,7 @@ export function SubmitPage() {
                   className={ownerClosedReadOnly ? 'submit-name-locked' : undefined}
                 />
               </label>
-            ))}
+            )})}
             {saveNotice ? (
               <p className="banner success" role="status">
                 {saveNotice}

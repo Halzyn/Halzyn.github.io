@@ -29,6 +29,8 @@ export type ContestTrackAudioHandle = {
 type Props = {
   tracks: Track[]
   listRowContests?: ListContestLink[][]
+  showTrackPicker?: boolean
+  showAutoplay?: boolean
 }
 
 function hardRebindTrackSource(audio: HTMLAudioElement, src: string): void {
@@ -83,10 +85,10 @@ function recoverTrackWithCacheBust(audio: HTMLAudioElement, baseUrl: string, pla
 }
 
 export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(function ContestTrackAudio(
-  { tracks, listRowContests },
+  { tracks, listRowContests, showTrackPicker = true, showAutoplay = true },
   ref,
 ) {
-  const listMode = Boolean(listRowContests && listRowContests.length === tracks.length)
+  const listMode = showTrackPicker && Boolean(listRowContests && listRowContests.length === tracks.length)
   const audioRef = useRef<HTMLAudioElement>(null)
   const playIntentRef = useRef(false)
   const bindGenerationRef = useRef(0)
@@ -172,7 +174,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
 
   useEffect(() => {
     const audioElement = audioRef.current
-    if (!audioElement || !autoplayNext || !activeSrc) return
+    if (!showAutoplay || !audioElement || !autoplayNext || !activeSrc) return
 
     const onEnded = () => {
       setActiveId((previous) => {
@@ -188,7 +190,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
 
     audioElement.addEventListener('ended', onEnded)
     return () => audioElement.removeEventListener('ended', onEnded)
-  }, [autoplayNext, activeSrc, tracks, urlById])
+  }, [showAutoplay, autoplayNext, activeSrc, tracks, urlById])
 
   useEffect(() => {
     const element = audioRef.current
@@ -261,7 +263,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
 
   return (
     <div className={listMode ? 'tracks-player-shell tracks-player-shell--list' : 'tracks-player-shell'}>
-      {listMode ? (
+      {showTrackPicker && listMode ? (
         <ul className="game-track-line-list" role="list">
           {tracks.map((track, index) => {
             const url = urlById.get(track.id)
@@ -311,7 +313,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
             )
           })}
         </ul>
-      ) : (
+      ) : showTrackPicker ? (
         <div className="track-pick-grid" role="list">
           {tracks.map((track) => {
             const url = urlById.get(track.id)
@@ -344,7 +346,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
             )
           })}
         </div>
-      )}
+      ) : null}
 
       <div className="tracks-universal-audio-row">
         <div
@@ -354,21 +356,23 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
         >
           {audioElement}
         </div>
-        <label
-          className="contest-autoplay-label"
-          title="When on, the next track plays after the current one finishes."
-        >
-          <input
-            type="checkbox"
-            checked={autoplayNext}
-            onChange={(e) => {
-              const next = e.target.checked
-              setAutoplayNext(next)
-              writeAutoplayPreference(next)
-            }}
-          />
-          <span>Autoplay</span>
-        </label>
+        {showAutoplay ? (
+          <label
+            className="contest-autoplay-label"
+            title="When on, the next track plays after the current one finishes."
+          >
+            <input
+              type="checkbox"
+              checked={autoplayNext}
+              onChange={(e) => {
+                const next = e.target.checked
+                setAutoplayNext(next)
+                writeAutoplayPreference(next)
+              }}
+            />
+            <span>Autoplay</span>
+          </label>
+        ) : null}
       </div>
     </div>
   )
