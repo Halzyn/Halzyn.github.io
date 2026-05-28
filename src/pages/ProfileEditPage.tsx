@@ -17,7 +17,10 @@ import {
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import { contestClosed } from '../lib/deadline'
 import { useAuth } from '../auth/AuthContext'
-import { parseSiteBackgroundPattern } from '../theme/siteBackground'
+import {
+  DEFAULT_SITE_BACKGROUND_PATTERN,
+  parseSiteBackgroundPattern,
+} from '../theme/siteBackground'
 
 type EditTab = 'basic' | 'private' | 'submissions' | 'appearance' | 'fun' | 'moderation'
 
@@ -118,7 +121,9 @@ export function ProfileEditPage() {
   const [notifyEmailBusy, setNotifyEmailBusy] = useState(false)
   const [mySubmissions, setMySubmissions] = useState<MyContestSubmissionRow[] | null>(null)
   const [submissionsLoadError, setSubmissionsLoadError] = useState<string | null>(null)
-  const [siteBackgroundPattern, setSiteBackgroundPattern] = useState<SiteBackgroundPattern>('none')
+  const [siteBackgroundPattern, setSiteBackgroundPattern] = useState<SiteBackgroundPattern>(
+    DEFAULT_SITE_BACKGROUND_PATTERN,
+  )
   const [appearanceBusy, setAppearanceBusy] = useState(false)
   const [nameColor1, setNameColor1] = useState('')
   const [nameColor2, setNameColor2] = useState('')
