@@ -264,6 +264,9 @@ export function SubmitPage() {
       setEditSubmissionUserId(row.user_id ?? null)
       const draftByTrack = guessMapFromDraft(row)
       setGuesses((prev) => mergeDraftIntoGuessesState(draftByTrack, tracks, prev))
+      const closed = contestClosed(contest.deadline)
+      if (closed && !isAdmin) setOwnerClosedOutcome('readonly')
+      else setOwnerClosedOutcome('unset')
     })()
 
     return () => {

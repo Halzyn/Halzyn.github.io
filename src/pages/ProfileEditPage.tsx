@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
@@ -72,6 +72,20 @@ function tabButtonClass(selected: boolean): string {
   return selected ? 'button small primary' : 'button small ghost'
 }
 
+function parseEditTab(value: string | null): EditTab | null {
+  if (
+    value === 'basic' ||
+    value === 'private' ||
+    value === 'submissions' ||
+    value === 'appearance' ||
+    value === 'fun' ||
+    value === 'moderation'
+  ) {
+    return value
+  }
+  return null
+}
+
 function collectModeratedContestsFromRows(
   rows: { contests: ModeratedContest | ModeratedContest[] | null }[],
 ): ModeratedContest[] {
@@ -95,6 +109,8 @@ export function ProfileEditPage() {
   useDocumentTitle(pageTitle('Your profile'))
   const supabase = getSupabase()
   const { refreshProfile } = useAuth()
+  const [searchParams] = useSearchParams()
+  const tabFromUrl = parseEditTab(searchParams.get('tab'))
   const [profile, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -253,6 +269,12 @@ export function ProfileEditPage() {
       setEditTab('basic')
     }
   }, [showModerationTab, editTab])
+
+  useEffect(() => {
+    if (!tabFromUrl) return
+    if (tabFromUrl === 'moderation' && !showModerationTab) return
+    setEditTab(tabFromUrl)
+  }, [tabFromUrl, showModerationTab])
 
   const avatarPreview = useMemo(
     () => (profile ? avatarPublicUrl(supabase, profile.avatar_path) : null),

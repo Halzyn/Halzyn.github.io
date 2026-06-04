@@ -48,6 +48,9 @@ export function ProfileNavDropdown({ profileTo }: Props) {
           <Link to="/profile/edit" role="menuitem" onClick={close}>
             Edit profile
           </Link>
+          <Link to="/profile/edit?tab=submissions" role="menuitem" onClick={close}>
+            My submissions
+          </Link>
         </div>
       ) : null}
     </span>
