@@ -276,7 +276,7 @@ export function AdminGrading() {
           <>
             <div
               ref={gridScrollRef}
-              className="scoring-grid-root table-wrap scroll grading-pivot-wrap results-grid-sticky-lead"
+              className="scoring-grid-root table-wrap scroll grading-pivot-wrap"
             >
               <table className="dense results-unified-grid">
               <thead>

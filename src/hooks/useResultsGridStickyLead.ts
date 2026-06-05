@@ -8,6 +8,8 @@ import { useLayoutEffect, type RefObject } from 'react'
 const STICKY_COLS = 4
 const GRID_SELECTOR = 'table.results-unified-grid'
 const HEADER_CELLS = 'thead tr th'
+const STICKY_LEAD_CLASS = 'results-grid-sticky-lead'
+const MIN_SCROLLABLE_VIEWPORT_PX = 48
 
 function overflowAllowsScroll(value: string): boolean {
   return value === 'auto' || value === 'scroll' || value === 'overlay'
@@ -55,6 +57,24 @@ function leadStickyCells(table: HTMLTableElement): HTMLTableCellElement[] | null
   return Array.from(ths).slice(0, STICKY_COLS)
 }
 
+function measureLeadWidth(cells: readonly HTMLTableCellElement[]): number {
+  return cells.reduce((sum, cell) => sum + cell.getBoundingClientRect().width, 0)
+}
+
+function shouldEnableStickyLead(
+  table: HTMLTableElement,
+  scrollHost: HTMLElement,
+  cells: readonly HTMLTableCellElement[],
+): boolean {
+  const viewportWidth = scrollHost.clientWidth
+  if (viewportWidth < 1) return false
+
+  if (table.scrollWidth <= viewportWidth + 1) return false
+
+  const leadWidth = measureLeadWidth(cells)
+  return viewportWidth - leadWidth >= MIN_SCROLLABLE_VIEWPORT_PX
+}
+
 function measureStickyLeftPixels(table: HTMLTableElement, scrollHost: HTMLElement): number[] | null {
   const cells = leadStickyCells(table)
   if (!cells) return null
@@ -86,11 +106,16 @@ function applyStickyToHosts(root: HTMLElement, table: HTMLTableElement, leftPx: 
 }
 
 function clearStickyFromHosts(root: HTMLElement): void {
+  root.classList.remove(STICKY_LEAD_CLASS)
   const table = root.querySelector<HTMLTableElement>(GRID_SELECTOR)
   const scrollHost = table ? nearestScrollHostForTable(table) : null
   for (const host of [scrollHost, table, root]) {
     clearStickyVars(host)
   }
+}
+
+function setStickyLeadActive(root: HTMLElement, active: boolean): void {
+  root.classList.toggle(STICKY_LEAD_CLASS, active)
 }
 
 export function useResultsGridStickyLead(
@@ -105,8 +130,20 @@ export function useResultsGridStickyLead(
       const table = host.querySelector<HTMLTableElement>(GRID_SELECTOR)
       if (!table) return
       const scrollHost = nearestScrollHostForTable(table) ?? host
+      const cells = leadStickyCells(table)
+      if (!cells) return
+
+      if (!shouldEnableStickyLead(table, scrollHost, cells)) {
+        clearStickyFromHosts(host)
+        return
+      }
+
+      setStickyLeadActive(host, true)
       const leftPx = measureStickyLeftPixels(table, scrollHost)
-      if (!leftPx) return
+      if (!leftPx) {
+        clearStickyFromHosts(host)
+        return
+      }
       applyStickyToHosts(host, table, leftPx)
     }
 

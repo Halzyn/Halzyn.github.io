@@ -151,7 +151,7 @@ export function ContestResultsGrid({
   return (
     <div
       ref={gridScrollRef}
-      className="scoring-grid-root table-wrap results-grid-wrap grading-pivot-wrap--full grading-pivot-clip results-grid-sticky-lead"
+      className="scoring-grid-root table-wrap results-grid-wrap grading-pivot-wrap--full grading-pivot-clip"
     >
       <table className="dense results-unified-grid">
         <thead>
