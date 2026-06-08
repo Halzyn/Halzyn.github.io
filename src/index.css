@@ -728,10 +728,7 @@ html[data-theme='light'] .theme-toggle--floating {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.game-track-line-contest-link,
-html[data-theme='light'] .site-shell .main .results-grid-sticky-lead .results-unified-grid a.results-game-link,
-html[data-theme='light'] .site-shell .main .results-grid-sticky-lead .results-unified-grid a.results-game-link:link,
-html[data-theme='light'] .site-shell .main .results-grid-sticky-lead .results-unified-grid a.results-game-link:visited {
+.game-track-line-contest-link {
   color: inherit;
 }
 .game-track-line-diff {
@@ -2748,12 +2745,12 @@ html[data-theme='light'] .site-shell .main .site-upload-panel .button:not(.prima
   filter: brightness(1.06);
 }
 
-html[data-theme='light'] .site-shell .main a:visited:not(.button):not(.site-brand) {
-  color: #551a8b;
+html[data-theme='light'] .site-shell .main a:visited:not(.button):not(.site-brand):not(.results-game-link) {
+  color: var(--accent);
 }
 
-html[data-theme='light'] .site-shell .main a:link:not(.button):not(.site-brand) {
-  color: #0000cc;
+html[data-theme='light'] .site-shell .main a:link:not(.button):not(.site-brand):not(.results-game-link) {
+  color: var(--accent);
 }
 
 html[data-theme='light'] .site-shell .main .button.primary {
