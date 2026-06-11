@@ -37,7 +37,7 @@ function ContestPageTop({ editContestHref }: { editContestHref?: string }) {
 
 export function ContestPage() {
   const supabase = getSupabase()
-  const { ready, isAdmin } = useAuth()
+  const { ready, isAdmin, profile } = useAuth()
   const { slug } = useParams()
 
   const [contest, setContest] = useState<ContestWithHosts | null>(null)
@@ -55,6 +55,7 @@ export function ContestPage() {
   )
   const [documentTitle, setDocumentTitle] = useState(() => pageTitle('Contest'))
   const [contestRowReady, setContestRowReady] = useState(false)
+  const [revealLoadedContestId, setRevealLoadedContestId] = useState<string | null>(null)
 
   const previousSlugRef = useRef<string | undefined>(undefined)
 
@@ -73,6 +74,7 @@ export function ContestPage() {
     async function loadContestPage() {
       if (slugChanged) {
         setContestRowReady(false)
+        setRevealLoadedContestId(null)
         setContest(null)
         setTracks([])
         setAnswers([])
@@ -151,8 +153,11 @@ export function ContestPage() {
         setDisplayNameByUserId(new Map())
         setProfileUsernameByUserId(new Map())
         setDisplayNameStyleByUserId(new Map())
+        setRevealLoadedContestId(null)
         return
       }
+
+      setRevealLoadedContestId(null)
 
       const [answersList, submissionsResult, tooltips] = await Promise.all([
         trackIds.length > 0
@@ -198,6 +203,7 @@ export function ContestPage() {
       setDisplayNameByUserId(new Map(Object.entries(profilesJson?.display_names ?? {})))
       setProfileUsernameByUserId(new Map(Object.entries(profilesJson?.usernames ?? {})))
       setDisplayNameStyleByUserId(displayNameStyleMapFromRpc(profilesJson?.display_name_styles))
+      setRevealLoadedContestId(contestData.id)
     }
 
     void loadContestPage()
@@ -219,6 +225,7 @@ export function ContestPage() {
   const showResultsPreviewBanner = showAdminResultsPreview || showModResultsPreview
   const canEditContest = Boolean(contest && ((ready && isAdmin) || contestMod))
   const editContestHref = canEditContest ? `/admin/contests/${contest!.id}` : undefined
+  const scoresReady = Boolean(contest && revealLoadedContestId === contest.id)
 
   const trackIds = useMemo(() => tracks.map((t) => t.id), [tracks])
 
@@ -227,14 +234,16 @@ export function ContestPage() {
     return buildContestRankRows(submissions, trackIds, marks, tracks, displayNameByUserId)
   }, [showResults, submissions, marks, trackIds, tracks, displayNameByUserId])
 
+  const alwaysRevealSpoilers = Boolean(profile?.always_reveal_spoilers)
   const tracksPlayerRef = useRef<ContestTrackAudioHandle>(null)
   const tracksFoldRef = useRef<HTMLDetailsElement>(null)
   const [tracksFoldOpen, setTracksFoldOpen] = useState(true)
 
   useLayoutEffect(() => {
     if (!contest) return
-    setTracksFoldOpen(!contestClosed(contest.deadline))
-  }, [contest])
+    const closed = contestClosed(contest.deadline)
+    setTracksFoldOpen(!closed || alwaysRevealSpoilers)
+  }, [contest, alwaysRevealSpoilers])
 
   if (!slug) return null
   if (loadError) return <p className="banner warn">{loadError}</p>
@@ -326,27 +335,35 @@ export function ContestPage() {
         </p>
       ) : null}
       {showResults ? (
-        <ContestResults
-          tracks={tracks}
-          answers={answers}
-          submissions={submissions}
-          marks={marks}
-          leaderboard={leaderboard}
-          gameTooltips={gameTooltips}
-          displayNameByUserId={displayNameByUserId}
-          profileUsernameByUserId={profileUsernameByUserId}
-          displayNameStyleByUserId={displayNameStyleByUserId}
-          contestId={contest.id}
-          commentsOpen={commentsOpen}
-          canModerateComments={canModerateComments}
-          onPlayTrack={(trackId) => {
-            setTracksFoldOpen(true)
-            tracksPlayerRef.current?.playTrack(trackId)
-            requestAnimationFrame(() => {
-              tracksFoldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-            })
-          }}
-        />
+        scoresReady ? (
+          <ContestResults
+            tracks={tracks}
+            answers={answers}
+            submissions={submissions}
+            marks={marks}
+            leaderboard={leaderboard}
+            gameTooltips={gameTooltips}
+            displayNameByUserId={displayNameByUserId}
+            profileUsernameByUserId={profileUsernameByUserId}
+            displayNameStyleByUserId={displayNameStyleByUserId}
+            contestId={contest.id}
+            commentsOpen={commentsOpen}
+            canModerateComments={canModerateComments}
+            alwaysRevealSpoilers={alwaysRevealSpoilers}
+            onPlayTrack={(trackId) => {
+              setTracksFoldOpen(true)
+              tracksPlayerRef.current?.playTrack(trackId)
+              requestAnimationFrame(() => {
+                tracksFoldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+              })
+            }}
+          />
+        ) : (
+          <section className="section contest-results-section">
+            <h2>Results</h2>
+            <p className="muted">Loading...</p>
+          </section>
+        )
       ) : null}
     </div>
   )

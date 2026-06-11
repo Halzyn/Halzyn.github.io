@@ -1,3 +1,4 @@
+import { useLayoutEffect, useState } from 'react'
 import { ContestComments } from './ContestComments'
 import { ContestLeaderboardTable } from './ContestLeaderboardTable'
 import { ContestResultsGrid } from './ContestResultsGrid'
@@ -22,6 +23,7 @@ type Props = {
   contestId: string
   commentsOpen: boolean
   canModerateComments: boolean
+  alwaysRevealSpoilers?: boolean
 }
 
 export function ContestResults({
@@ -38,17 +40,28 @@ export function ContestResults({
   contestId,
   commentsOpen,
   canModerateComments,
+  alwaysRevealSpoilers = false,
 }: Props) {
+  const [resultsSpoilerOpen, setResultsSpoilerOpen] = useState(alwaysRevealSpoilers)
+
+  useLayoutEffect(() => {
+    setResultsSpoilerOpen(alwaysRevealSpoilers)
+  }, [contestId, alwaysRevealSpoilers])
+
   return (
     <section className="section contest-results-section">
       <h2>Results</h2>
       <p className="muted small contest-results-intro">
         SPOILERS AHEAD!
       </p>
-      <details className="spoiler spoiler-all">
+      <details
+        className="spoiler spoiler-all"
+        open={resultsSpoilerOpen}
+        onToggle={(event) => setResultsSpoilerOpen(event.currentTarget.open)}
+      >
         <summary className="spoiler-all-summary">Show results and rankings</summary>
         <div className="reveal-bundle">
-          <h3 className="reveal-subhead">Tracks &amp; scores</h3>
+          <h3 className="reveal-subhead">Answers</h3>
           <ContestResultsGrid
             tracks={tracks}
             answers={answers}

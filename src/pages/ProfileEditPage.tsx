@@ -41,7 +41,7 @@ const PROFILE_SECTION_TABS: { tab: EditTab; label: string }[] = [
   { tab: 'basic', label: 'Profile' },
   { tab: 'private', label: 'Private info' },
   { tab: 'submissions', label: 'Submissions' },
-  { tab: 'appearance', label: 'Appearance' },
+  { tab: 'appearance', label: 'Site settings' },
   { tab: 'fun', label: 'Fun' },
 ]
 
@@ -141,6 +141,8 @@ export function ProfileEditPage() {
     DEFAULT_SITE_BACKGROUND_PATTERN,
   )
   const [appearanceBusy, setAppearanceBusy] = useState(false)
+  const [alwaysRevealSpoilers, setAlwaysRevealSpoilers] = useState(false)
+  const [behaviorBusy, setBehaviorBusy] = useState(false)
   const [nameColor1, setNameColor1] = useState('')
   const [nameColor2, setNameColor2] = useState('')
   const [nameEffect, setNameEffect] = useState<DisplayNameEffect>('none')
@@ -181,6 +183,7 @@ export function ProfileEditPage() {
       setFavoriteGameId(loaded.favorite_soundtrack_game_id ?? null)
       setNotifyNewContestEmail(Boolean(loaded.notify_new_contest_email))
       setSiteBackgroundPattern(parseSiteBackgroundPattern(loaded.site_background_pattern))
+      setAlwaysRevealSpoilers(Boolean(loaded.always_reveal_spoilers))
       setNameColor1(loaded.display_name_color?.trim() ?? '')
       setNameColor2(loaded.display_name_color_2?.trim() ?? '')
       setNameEffect(parseDisplayNameEffect(loaded.display_name_effect))
@@ -347,8 +350,28 @@ export function ProfileEditPage() {
     }
     setProfile(updated as Profile)
     await refreshProfile()
-    setSuccessMessage('Appearance saved.')
+    setSuccessMessage('Theme saved.')
   }, [clearFeedback, profile, refreshProfile, siteBackgroundPattern, supabase])
+
+  const saveBehavior = useCallback(async () => {
+    if (!profile) return
+    clearFeedback()
+    setBehaviorBusy(true)
+    const { data: updated, error } = await supabase
+      .from('profiles')
+      .update({ always_reveal_spoilers: alwaysRevealSpoilers })
+      .eq('id', profile.id)
+      .select('*')
+      .single()
+    setBehaviorBusy(false)
+    if (error) {
+      setPageError(error.message)
+      return
+    }
+    setProfile(updated as Profile)
+    await refreshProfile()
+    setSuccessMessage('Behavior saved.')
+  }, [alwaysRevealSpoilers, clearFeedback, profile, refreshProfile, supabase])
 
   const saveFavorite = useCallback(async () => {
     if (!profile) return
@@ -864,6 +887,27 @@ export function ProfileEditPage() {
         className="profile-edit-tab-panel"
       >
         <section className="section">
+          <h2 id="profile-site-settings-behavior-heading">Behavior</h2>
+          <label className="field row">
+            <input
+              type="checkbox"
+              checked={alwaysRevealSpoilers}
+              disabled={behaviorBusy || !profile}
+              onChange={(event) => setAlwaysRevealSpoilers(event.target.checked)}
+            />
+            <span>Always reveal spoilers</span>
+          </label>
+          <button
+            type="button"
+            className="button primary profile-edit-appearance-save"
+            disabled={behaviorBusy || !profile}
+            onClick={() => void saveBehavior()}
+          >
+            Save behavior
+          </button>
+        </section>
+
+        <section className="section">
           <h2 id="profile-appearance-bg-heading">Theme</h2>
           <label className="field">
             <span>Background</span>
@@ -889,7 +933,7 @@ export function ProfileEditPage() {
             disabled={appearanceBusy || !profile}
             onClick={() => void saveAppearance()}
           >
-            Save appearance
+            Save theme
           </button>
         </section>
       </div>

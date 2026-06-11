@@ -138,6 +138,7 @@ export type Profile = {
   avatar_path?: string | null
   favorite_soundtrack_game_id?: string | null
   site_background_pattern?: SiteBackgroundPattern | null
+  always_reveal_spoilers?: boolean
   display_name_color?: string | null
   display_name_color_2?: string | null
   display_name_effect?: DisplayNameEffect | null
