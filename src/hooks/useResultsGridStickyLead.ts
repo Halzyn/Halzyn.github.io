@@ -75,27 +75,24 @@ function shouldEnableStickyLead(
   return viewportWidth - leadWidth >= MIN_SCROLLABLE_VIEWPORT_PX
 }
 
-function measureStickyLeftPixels(table: HTMLTableElement, scrollHost: HTMLElement): number[] | null {
+function measureStickyLeftPixels(table: HTMLTableElement): number[] | null {
   const cells = leadStickyCells(table)
   if (!cells) return null
 
-  const rects = cells.map((c) => c.getBoundingClientRect())
-  if (rects.some((r) => !Number.isFinite(r.left) || r.width < 0.5)) return null
+  const widths = cells.map((cell) => cell.getBoundingClientRect().width)
+  if (widths.some((width) => !Number.isFinite(width) || width < 0.5)) return null
 
-  const scrollPortLeft = scrollHost.getBoundingClientRect().left + scrollHost.clientLeft
-  const scrollLeft = scrollHost.scrollLeft
-
-  const base = rects[0]!.left - scrollPortLeft + scrollLeft
-  const leftPx: number[] = [base]
+  const leftPx: number[] = [0]
   for (let i = 1; i < STICKY_COLS; i++) {
-    leftPx.push(leftPx[i - 1]! + rects[i - 1]!.width)
-  }
-
-  if (leftPx.some((x) => !Number.isFinite(x)) || leftPx.some((_, i) => i > 0 && leftPx[i]! < leftPx[i - 1]!)) {
-    return null
+    leftPx.push(leftPx[i - 1]! + widths[i - 1]!)
   }
 
   return leftPx
+}
+
+function stickyOffsetsNearEqual(a: readonly number[], b: readonly number[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((value, index) => Math.abs(value - b[index]!) < 0.5)
 }
 
 function applyStickyToHosts(root: HTMLElement, table: HTMLTableElement, leftPx: readonly number[]): void {
@@ -126,6 +123,9 @@ export function useResultsGridStickyLead(
     const scrollRoot = scrollRootRef.current
     if (!scrollRoot) return
 
+    let lastLeftPx: number[] | null = null
+    let measureRaf = 0
+
     function measure(host: HTMLElement): void {
       const table = host.querySelector<HTMLTableElement>(GRID_SELECTOR)
       if (!table) return
@@ -134,36 +134,34 @@ export function useResultsGridStickyLead(
       if (!cells) return
 
       if (!shouldEnableStickyLead(table, scrollHost, cells)) {
+        lastLeftPx = null
         clearStickyFromHosts(host)
         return
       }
 
-      setStickyLeadActive(host, true)
-      const leftPx = measureStickyLeftPixels(table, scrollHost)
+      const leftPx = measureStickyLeftPixels(table)
       if (!leftPx) {
+        lastLeftPx = null
         clearStickyFromHosts(host)
         return
       }
+
+      if (lastLeftPx && stickyOffsetsNearEqual(leftPx, lastLeftPx)) return
+      lastLeftPx = leftPx
+
       applyStickyToHosts(host, table, leftPx)
+      setStickyLeadActive(host, true)
     }
 
-    const scheduleMeasure = () => requestAnimationFrame(() => measure(scrollRoot))
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(measureRaf)
+      measureRaf = requestAnimationFrame(() => measure(scrollRoot))
+    }
 
     measure(scrollRoot)
 
     const resizeObserver = new ResizeObserver(scheduleMeasure)
     resizeObserver.observe(scrollRoot)
-
-    const table = scrollRoot.querySelector<HTMLTableElement>(GRID_SELECTOR)
-    if (table) resizeObserver.observe(table)
-
-    const intersectionObserver =
-      table &&
-      new IntersectionObserver(scheduleMeasure, {
-        threshold: 0,
-        rootMargin: '0px',
-      })
-    if (table && intersectionObserver) intersectionObserver.observe(table)
 
     const details = scrollRoot.closest('details')
     details?.addEventListener('toggle', scheduleMeasure)
@@ -173,8 +171,8 @@ export function useResultsGridStickyLead(
     window.addEventListener('resize', scheduleMeasure)
 
     return () => {
+      cancelAnimationFrame(measureRaf)
       resizeObserver.disconnect()
-      intersectionObserver?.disconnect()
       details?.removeEventListener('toggle', scheduleMeasure)
       window.removeEventListener('resize', scheduleMeasure)
       clearStickyFromHosts(scrollRoot)
