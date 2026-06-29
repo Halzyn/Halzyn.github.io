@@ -21,6 +21,7 @@ function hostDisplayLabel(displayName: string | null | undefined, username: stri
 export type ContestHostDisplayEntry = {
   hostKey: string
   profileUserId: string | null
+  profileUsername: string | null
   displayName: string
 }
 
@@ -60,14 +61,20 @@ export function buildContestHostsFromEmbed(contest: ContestWithHosts): ContestHo
   })
 
   const entries: ContestHostDisplayEntry[] = [
-    ...modDecorated.map(({ row, label }) => ({
-      hostKey: row.user_id,
-      profileUserId: row.user_id,
-      displayName: label,
-    })),
+    ...modDecorated.map(({ row, label }) => {
+      const profile = firstOf(row.profiles)
+      const username = profile?.username?.trim() || null
+      return {
+        hostKey: row.user_id,
+        profileUserId: row.user_id,
+        profileUsername: username,
+        displayName: label,
+      }
+    }),
     ...guestRows.map((g: ContestGuestHostEmbed) => ({
       hostKey: `guest:${g.id}`,
       profileUserId: null,
+      profileUsername: null,
       displayName: g.display_name.trim() || 'Player',
     })),
   ]

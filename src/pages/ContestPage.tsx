@@ -8,7 +8,7 @@ import { contestClosed } from '../lib/deadline'
 import { Countdown } from '../components/Countdown'
 import { ContestTrackAudio, type ContestTrackAudioHandle } from '../components/ContestTrackAudio'
 import { ContestResults } from '../components/ContestResults'
-import { DisplayNameStyled } from '../components/DisplayNameStyled'
+import { ContestHostName } from '../components/ContestHostName'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { fetchGameTooltips, type GameTooltip } from '../lib/gameTooltip'
@@ -280,9 +280,10 @@ export function ContestPage() {
                     ·{' '}
                   </span>
                 ) : null}
-                <DisplayNameStyled
-                  text={host.displayName}
-                  info={host.profileUserId ? contestHosts.styles.get(host.profileUserId) : undefined}
+                <ContestHostName
+                  displayName={host.displayName}
+                  profileUsername={host.profileUsername}
+                  styleInfo={host.profileUserId ? contestHosts.styles.get(host.profileUserId) : undefined}
                 />
               </Fragment>
             ))}

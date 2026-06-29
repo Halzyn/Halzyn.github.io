@@ -1,14 +1,20 @@
 import { Fragment } from 'react'
-import { DisplayNameStyled } from './DisplayNameStyled'
+import { ContestHostName } from './ContestHostName'
 import type { ContestHosts } from '../lib/contestHosts'
 
 type Props = {
   title: string
   hosts?: ContestHosts
   titleClassName?: string
+  hostsNestedInLink?: boolean
 }
 
-export function ContestTitleWithHosts({ title, hosts, titleClassName = 'card-title' }: Props) {
+export function ContestTitleWithHosts({
+  title,
+  hosts,
+  titleClassName = 'card-title',
+  hostsNestedInLink = false,
+}: Props) {
   const hasHosts = Boolean(hosts?.entries.length)
   return (
     <span className="contest-title-with-hosts">
@@ -19,10 +25,12 @@ export function ContestTitleWithHosts({ title, hosts, titleClassName = 'card-tit
               <span className="contest-title-with-hosts-sep" aria-hidden>
                 ·
               </span>
-              <DisplayNameStyled
-                text={host.displayName}
-                info={host.profileUserId ? hosts.styles.get(host.profileUserId) : undefined}
+              <ContestHostName
+                displayName={host.displayName}
+                profileUsername={host.profileUsername}
+                styleInfo={host.profileUserId ? hosts.styles.get(host.profileUserId) : undefined}
                 className="contest-title-with-hosts-name"
+                nestedInLink={hostsNestedInLink}
               />
             </Fragment>
           ))

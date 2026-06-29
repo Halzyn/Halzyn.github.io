@@ -48,6 +48,7 @@ export function ContestList() {
                   <ContestTitleWithHosts
                     title={contest.title}
                     hosts={hostsByContestId.get(contest.id)}
+                    hostsNestedInLink
                   />
                   <span className="pill">{contestClosed(contest.deadline) ? 'Closed' : 'Open'}</span>
                 </span>

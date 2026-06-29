@@ -94,6 +94,7 @@ export function Home() {
                   <ContestTitleWithHosts
                     title={contest.title}
                     hosts={hostsByContestId.get(contest.id)}
+                    hostsNestedInLink
                   />
                   <span className="muted small contest-card-deadline">
                     Deadline {new Date(contest.deadline).toLocaleString()}
