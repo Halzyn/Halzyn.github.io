@@ -222,10 +222,15 @@ a,
   color: var(--accent);
   text-decoration: none;
 }
-a:hover,
-.linkish:hover,
+a:hover:not(.button):not(.brand):not(.site-brand):not(.player-card-link):not(.comment-item-avatar-link),
+.linkish:hover:not(.button),
+.contest-host-name-link:hover,
 .results-game-link:hover {
   text-decoration: underline;
+}
+
+.card-list > .card > a:hover {
+  text-decoration: none;
 }
 
 #root {
@@ -423,7 +428,7 @@ html[data-theme='light'] .theme-toggle--floating {
 }
 
 .profile-nav-dropdown-menu a:hover {
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .auth-mode-tabs {
@@ -508,6 +513,11 @@ html[data-theme='light'] .theme-toggle--floating {
 .game-track-line-contest-link:hover,
 .game-track-line-play:hover:not(:disabled) {
   color: var(--accent);
+}
+
+.games-dir-link:hover,
+.game-track-line-contest-link:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 720px) {
@@ -1341,9 +1351,6 @@ html[data-theme='light'] .banner.warn {
   cursor: pointer;
 }
 
-.contest-host-name-link:hover {
-  text-decoration: underline;
-}
 
 .contest-card-deadline {
   display: block;
@@ -2081,6 +2088,22 @@ html[data-theme='light'] .results-unified-grid {
   min-width: 3.5rem;
 }
 
+/* Firefox: background-clip:text can map to the visible scroll fragment unless the box is text-sized. */
+@supports (-moz-appearance: none) {
+  .results-unified-grid thead th.results-col-grade .results-cell-text {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .results-unified-grid thead th.results-col-grade .display-name-styled-wrap,
+  .results-unified-grid thead th.results-col-grade .display-name-styled-inner {
+    display: inline-block;
+    width: max-content;
+    max-width: max-content;
+    white-space: nowrap;
+  }
+}
+
 .results-unified-grid tbody td {
   padding: 0.18rem 0.4rem;
   vertical-align: middle;
@@ -2412,6 +2435,7 @@ html[data-theme='light'] .site-shell .site-topbar {
 .site-shell .site-nav a:hover,
 .site-shell .site-topbar .auth-bar-session a:hover {
   color: #ffffff;
+  text-decoration: underline;
 }
 
 .site-shell .site-topbar .linkish:hover {
@@ -2455,6 +2479,7 @@ html[data-theme='light'] .site-shell .site-topbar {
 .site-shell .profile-nav-dropdown-menu a:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
+  text-decoration: underline;
 }
 
 .site-shell .site-topbar .theme-toggle {
@@ -2810,6 +2835,11 @@ html[data-theme='dark'] .display-name-effect-drop_shadow {
   filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.65));
 }
 
+a:hover .display-name-styled-wrap,
+.contest-host-name-link:hover .display-name-styled-wrap {
+  text-decoration: underline;
+}
+
 .results-game-link .display-name-styled-wrap {
   text-decoration: inherit;
 }
@@ -2970,9 +3000,6 @@ html[data-theme='light'] .comment-editor-tool {
   color: inherit;
 }
 
-.comment-item-name-link:hover {
-  text-decoration: underline;
-}
 
 .comment-item-avatar-link {
   display: block;
