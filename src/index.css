@@ -222,10 +222,9 @@ a,
   color: var(--accent);
   text-decoration: none;
 }
-a:hover:not(.button):not(.brand):not(.site-brand):not(.player-card-link):not(.comment-item-avatar-link),
+a:hover:not(.button):not(.brand):not(.site-brand):not(.player-card-link):not(.comment-item-avatar-link):not(.results-game-link),
 .linkish:hover:not(.button),
-.contest-host-name-link:hover,
-.results-game-link:hover {
+.contest-host-name-link:hover {
   text-decoration: underline;
 }
 
@@ -2835,13 +2834,23 @@ html[data-theme='dark'] .display-name-effect-drop_shadow {
   filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.65));
 }
 
-a:hover .display-name-styled-wrap,
-.contest-host-name-link:hover .display-name-styled-wrap {
-  text-decoration: underline;
+/* Gradient/transparent display-name text hides normal underlines — draw a line on the wrap. */
+a:hover:has(.display-name-styled-wrap):not(.player-card-link),
+.contest-host-name-link:hover:has(.display-name-styled-wrap) {
+  text-decoration: none;
 }
 
-.results-game-link .display-name-styled-wrap {
-  text-decoration: inherit;
+a:hover:not(.player-card-link) .display-name-styled-wrap,
+.contest-host-name-link:hover .display-name-styled-wrap {
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+.results-game-link:hover:not(:has(.display-name-styled-wrap)) {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.12em;
 }
 
 .player-card-link .display-name-styled-wrap {
