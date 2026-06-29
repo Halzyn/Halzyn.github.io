@@ -704,7 +704,7 @@ export function ProfileEditPage() {
                 </button>
               </div>
               {!nameColor1 && <span className="muted small">
-                Uses the default text color until you choose a color.
+                Uses the default link color until you choose a color.
               </span>}
             </label>
 

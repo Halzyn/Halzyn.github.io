@@ -24,8 +24,14 @@ export function DisplayNameStyled({
 }: Props): ReactNode {
   const useInfo = info ?? null
   if (!useInfo || displayNameStyleIsPlain(useInfo)) {
+    const plainClass = [
+      className,
+      useInfo && displayNameStyleIsPlain(useInfo) ? 'display-name-account-default' : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
     return (
-      <span className={className} style={outerStyle} title={title}>
+      <span className={plainClass} style={outerStyle} title={title}>
         {text}
       </span>
     )
