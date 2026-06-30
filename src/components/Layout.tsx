@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
+import { HeaderBrand } from './HeaderBrand'
 import { AuthBar } from './AuthBar'
 import { DisplayNameStyled } from './DisplayNameStyled'
 import { ContestHostName } from './ContestHostName'
@@ -38,9 +39,7 @@ export function Layout() {
     <div className="shell site-shell">
       <div className="site-shell-panel">
         <header className="top site-topbar">
-          <Link to="/" className="brand site-brand">
-            VGMGC
-          </Link>
+          <HeaderBrand to="/" />
           <div className="top-end">
             <nav className="nav site-nav">
               <Link to="/">Home</Link>

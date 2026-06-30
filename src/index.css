@@ -2424,9 +2424,39 @@ html[data-theme='light'] .site-shell .site-topbar {
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
 }
 
-.site-shell .site-brand:hover {
+.site-shell .site-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  line-height: 1;
+}
+
+.site-shell .site-brand-logo {
+  display: block;
+  height: 36px;
+  width: auto;
+  max-width: 10rem;
+  object-fit: contain;
+  image-rendering: auto;
+  flex-shrink: 0;
+}
+
+.site-shell .site-brand-label {
+  font-family: var(--heading-font);
+  font-size: 1.4rem;
+  letter-spacing: 0.02em;
+  color: var(--site-header-fg);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.site-shell .site-brand:hover,
+.site-shell .site-brand-mark:hover {
   color: #ffffff;
   text-decoration: none;
+}
+
+.site-shell .site-brand-mark:hover .site-brand-label {
+  color: #ffffff;
 }
 
 .site-shell .site-nav a,

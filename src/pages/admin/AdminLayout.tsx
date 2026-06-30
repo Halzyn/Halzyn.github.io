@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
+import { HeaderBrand } from '../../components/HeaderBrand'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { getSupabase } from '../../lib/supabase'
 import { signOutAndReloadHome } from '../../lib/auth'
@@ -66,9 +67,9 @@ function SiteShell({
     <div className="shell site-shell">
       <div className="site-shell-panel">
         <header className="top site-topbar">
-          <Link to={brandHref} className="brand site-brand">
-            {brandLabel}
-          </Link>
+          <HeaderBrand to={brandHref} label={brandLabel}>
+            {brandLabel !== 'VGMGC' ? <span className="site-brand-label">{brandLabel}</span> : null}
+          </HeaderBrand>
           <div className="top-end">{headerEnd}</div>
         </header>
         <main className="main main-shell">
