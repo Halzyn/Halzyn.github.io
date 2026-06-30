@@ -57,6 +57,43 @@ function leadStickyCells(table: HTMLTableElement): HTMLTableCellElement[] | null
   return Array.from(ths).slice(0, STICKY_COLS)
 }
 
+function leadWidthsFromRow(row: Element | null): number[] | null {
+  if (!row) return null
+  const cells = Array.from(row.children).slice(0, STICKY_COLS) as HTMLTableCellElement[]
+  if (cells.length < STICKY_COLS) return null
+
+  const widths = cells.map((cell) => cell.getBoundingClientRect().width)
+  if (widths.some((width) => !Number.isFinite(width) || width < 0.5)) return null
+
+  return widths
+}
+
+function measureStickyLeftPixels(table: HTMLTableElement, root: HTMLElement): number[] | null {
+  const wasSticky = root.classList.contains(STICKY_LEAD_CLASS)
+  if (wasSticky) setStickyLeadActive(root, false)
+
+  const bodyWidths = leadWidthsFromRow(table.querySelector('tbody tr:first-child'))
+  const headWidths = leadWidthsFromRow(table.querySelector('thead tr'))
+  const widthSets = [bodyWidths, headWidths].filter((widths): widths is number[] => widths != null)
+
+  if (widthSets.length === 0) {
+    if (wasSticky) setStickyLeadActive(root, true)
+    return null
+  }
+
+  const widths: number[] = []
+  for (let i = 0; i < STICKY_COLS; i++) {
+    widths.push(Math.max(...widthSets.map((set) => set[i]!)))
+  }
+
+  const leftPx: number[] = [0]
+  for (let i = 1; i < STICKY_COLS; i++) {
+    leftPx.push(leftPx[i - 1]! + widths[i - 1]!)
+  }
+
+  return leftPx
+}
+
 function measureLeadWidth(cells: readonly HTMLTableCellElement[]): number {
   return cells.reduce((sum, cell) => sum + cell.getBoundingClientRect().width, 0)
 }
@@ -73,21 +110,6 @@ function shouldEnableStickyLead(
 
   const leadWidth = measureLeadWidth(cells)
   return viewportWidth - leadWidth >= MIN_SCROLLABLE_VIEWPORT_PX
-}
-
-function measureStickyLeftPixels(table: HTMLTableElement): number[] | null {
-  const cells = leadStickyCells(table)
-  if (!cells) return null
-
-  const widths = cells.map((cell) => cell.getBoundingClientRect().width)
-  if (widths.some((width) => !Number.isFinite(width) || width < 0.5)) return null
-
-  const leftPx: number[] = [0]
-  for (let i = 1; i < STICKY_COLS; i++) {
-    leftPx.push(leftPx[i - 1]! + widths[i - 1]!)
-  }
-
-  return leftPx
 }
 
 function stickyOffsetsNearEqual(a: readonly number[], b: readonly number[]): boolean {
@@ -139,14 +161,20 @@ export function useResultsGridStickyLead(
         return
       }
 
-      const leftPx = measureStickyLeftPixels(table)
+      const leftPx = measureStickyLeftPixels(table, host)
       if (!leftPx) {
         lastLeftPx = null
         clearStickyFromHosts(host)
         return
       }
 
-      if (lastLeftPx && stickyOffsetsNearEqual(leftPx, lastLeftPx)) return
+      if (lastLeftPx && stickyOffsetsNearEqual(leftPx, lastLeftPx)) {
+        if (!host.classList.contains(STICKY_LEAD_CLASS)) {
+          applyStickyToHosts(host, table, leftPx)
+          setStickyLeadActive(host, true)
+        }
+        return
+      }
       lastLeftPx = leftPx
 
       applyStickyToHosts(host, table, leftPx)
@@ -162,6 +190,9 @@ export function useResultsGridStickyLead(
 
     const resizeObserver = new ResizeObserver(scheduleMeasure)
     resizeObserver.observe(scrollRoot)
+
+    const table = scrollRoot.querySelector<HTMLTableElement>(GRID_SELECTOR)
+    if (table) resizeObserver.observe(table)
 
     const details = scrollRoot.closest('details')
     details?.addEventListener('toggle', scheduleMeasure)
