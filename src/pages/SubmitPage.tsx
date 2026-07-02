@@ -11,6 +11,31 @@ import { publicAudioUrl } from '../lib/audio'
 import { getSupabase } from '../lib/supabase'
 import type { Contest, Track } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
+import { difficulty, type Difficulty } from '../lib/difficulty'
+
+type TrackDifficultyGroup = {
+  difficultyKey: Difficulty
+  heading: string
+  tracks: Track[]
+}
+
+function groupTracksByDifficulty(trackList: Track[]): TrackDifficultyGroup[] {
+  const groups: TrackDifficultyGroup[] = []
+  for (const track of trackList) {
+    const difficultyKey = difficulty(track.difficulty)
+    const last = groups[groups.length - 1]
+    if (last?.difficultyKey === difficultyKey) {
+      last.tracks.push(track)
+    } else {
+      groups.push({
+        difficultyKey,
+        heading: track.difficulty?.trim() || 'Other',
+        tracks: [track],
+      })
+    }
+  }
+  return groups
+}
 
 type EditDraftPayload = {
   submission_id?: string
@@ -91,6 +116,8 @@ export function SubmitPage() {
     for (const track of tracks) map.set(track.id, publicAudioUrl(track.audio_path))
     return map
   }, [tracks])
+
+  const trackGroups = useMemo(() => groupTracksByDifficulty(tracks), [tracks])
 
   const profileDisplayNameForSubmit = useMemo(() => {
     const trimmed = profile?.display_name?.trim()
@@ -541,33 +568,40 @@ export function SubmitPage() {
                 ) : null}
               </div>
             </label>
-            {tracks.map((t) => {
-              const trackAudioUrl = audioUrlByTrackId.get(t.id)
-              const trackLabel = `Track ${t.sort_order}${t.difficulty ? ` · ${t.difficulty}` : ''}`
-              return (
-              <label key={t.id} className="field">
-                <span className="submit-track-label-row">
-                  <button
-                    type="button"
-                    className="submit-track-play"
-                    disabled={!trackAudioUrl}
-                    aria-label={trackAudioUrl ? `Play ${trackLabel}` : 'Audio unavailable'}
-                    onClick={() => tracksPlayerRef.current?.playTrack(t.id)}
-                  >
-                    <span aria-hidden>▷</span>
-                  </button>
-                  <span>{trackLabel}</span>
-                </span>
-                <input
-                  value={guesses[t.id] ?? ''}
-                  onChange={(e) => setGuesses((g) => ({ ...g, [t.id]: e.target.value }))}
-                  maxLength={500}
-                  placeholder="Game title / notes"
-                  disabled={draftLoading || ownerClosedReadOnly}
-                  className={ownerClosedReadOnly ? 'submit-name-locked' : undefined}
-                />
-              </label>
-            )})}
+            {trackGroups.map((group, groupIndex) => (
+              <section
+                key={`${group.difficultyKey}-${group.tracks[0]?.id ?? groupIndex}`}
+                className="submit-difficulty-section"
+              >
+                <h3 className="submit-difficulty-heading">{group.heading}</h3>
+                {group.tracks.map((t) => {
+                  const trackAudioUrl = audioUrlByTrackId.get(t.id)
+                  const trackLabel = `Track ${t.sort_order}`
+                  return (
+                    <label key={t.id} className="field row submit-track-row">
+                      <button
+                        type="button"
+                        className="submit-track-play"
+                        disabled={!trackAudioUrl}
+                        aria-label={trackAudioUrl ? `Play ${trackLabel}` : 'Audio unavailable'}
+                        onClick={() => tracksPlayerRef.current?.playTrack(t.id)}
+                      >
+                        <span aria-hidden>▷</span>
+                      </button>
+                      <span className="submit-track-num">{t.sort_order}.</span>
+                      <input
+                        value={guesses[t.id] ?? ''}
+                        onChange={(e) => setGuesses((g) => ({ ...g, [t.id]: e.target.value }))}
+                        maxLength={500}
+                        placeholder="Game title / notes"
+                        disabled={draftLoading || ownerClosedReadOnly}
+                        className={ownerClosedReadOnly ? 'submit-name-locked' : undefined}
+                      />
+                    </label>
+                  )
+                })}
+              </section>
+            ))}
             {saveNotice ? (
               <p className="banner success" role="status">
                 {saveNotice}
