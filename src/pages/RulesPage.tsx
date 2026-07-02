@@ -2,10 +2,24 @@ import { Link } from 'react-router-dom'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
-const RULES_BODY =
-  "For every song, you have to determine the specific game this song is played in. A good answer will net you 1 point. If you guess the franchise correctly, but you picked the wrong game, you get half a point for trying. If you're the only one to guess a song, you'll get half a bonus point, so exclusive guesses are powerful! Songs are typically divided into 4 categories: easy, medium, hard and joke songs. You're not allowed to discuss your answers with anyone, and you're not allowed to post hints anywhere. It's important that people work for their own answers. There is no penalty for a wrong answer, so even if you're unsure or have no idea at all, it never hurts to try! I won't publish what you send me, only the final results."
+const GOAL_BODY = `The contest consists of a series of unlabeled video game songs. Your goal is to identify in which specific game the song is played.
+The songs are typically divided into 5 categories: easy, medium, hard, insane and joke songs.`
 
-const SUBMIT_EDIT_LINK_BODY = `When you submit answers for a contest, you receive a private edit link. Bookmark that page, or store the link somewhere! Only someone with that link can change that entry, so picking a display name that is already taken will be blocked unless you are updating your own entry. If you lose the link before the deadline, contact me on Discord @halzyn.`
+const SCORING_BODY =
+  `A correct answer will net you 1 point.
+  If you guess the franchise correctly, but you picked the wrong game (or no game at all), you get half a point for trying.
+  If you're the only one to guess a song, you'll get half a bonus point, so exclusive guesses are powerful!`
+
+const GUESSING_BODY = `There is no penalty for a wrong guess, so even if you're unsure or have no idea at all, it never hurts to try! I won't publish what you send me, only the final results.
+However, make sure your answer only contains one game or franchise, not multiple. I will only count the first game or franchise you mention in your answer. (e.g. if you write "Mario or Zelda", I will only count "Mario")
+Your guess does not have to be the original source if the exact same song also appears in a different game. (like with Super Smash Bros. Ultimate, for instance)`
+
+const SUBMISSION_BODY = `When you submit answers for a contest, you receive a private edit link. Bookmark that page, or store the link somewhere! Only someone with that link can change that entry, so picking a display name that is already taken will be blocked unless you are updating your own entry. If you lose the link before the deadline, contact me on Discord @halzyn.`
+
+const RESEARCH_BODY = `You're not allowed to share your answers with anybody, and you're not allowed to work together.
+Don't hint people a certain way either.
+You are allowed to look up songs on platforms like YouTube, KHInsider, or your own soundtrack collection. IMO half the fun is discovering songs from the contest when going through soundtracks.
+You're not allowed to use any sound search engines like Shazam. Obviously I can't enforce this, but please respect the competitive integrity of the contest. This is supposed to be for fun.`
 
 const TIEBREAKER_BODY = `In the event of two people getting equal scores, ties are broken using the following rules in set order:
 1. Most correct game answers
@@ -21,11 +35,21 @@ export function RulesPage() {
 
   return (
     <div className="page rules-page">
-      <h2 className="rules-section-head">RULES</h2>
-      <p className="rules-body">{RULES_BODY}</p>
+      <h1 className="rules-section-head">RULES</h1>
+      <h2 className="rules-section-head">GOAL</h2>
+      <p className="rules-body rules-body-pre">{GOAL_BODY}</p>
 
-      <h2 className="rules-section-head">SUBMITTING ANSWERS</h2>
-      <p className="rules-body">{SUBMIT_EDIT_LINK_BODY}</p>
+      <h2 className="rules-section-head">SCORING</h2>
+      <p className="rules-body rules-body-pre">{SCORING_BODY}</p>
+
+      <h2 className="rules-section-head">GUESSING</h2>
+      <p className="rules-body rules-body-pre">{GUESSING_BODY}</p>
+
+      <h2 className="rules-section-head">SUBMISSION</h2>
+      <p className="rules-body rules-body-pre">{SUBMISSION_BODY}</p>
+
+      <h2 className="rules-section-head">RESEARCH</h2>
+      <p className="rules-body rules-body-pre">{RESEARCH_BODY}</p>
 
       <h2 className="rules-section-head">IN THE EVENT OF A TIEBREAKER</h2>
       <p className="rules-body rules-body-pre">{TIEBREAKER_BODY}</p>
