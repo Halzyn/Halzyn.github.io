@@ -1535,6 +1535,10 @@ html[data-theme='light'] .banner.warn {
   transform: translateX(1px);
 }
 
+.track-pick-play-icon--pause {
+  transform: none;
+}
+
 .tracks-universal-audio-wrap {
   width: 100%;
   max-width: 36rem;

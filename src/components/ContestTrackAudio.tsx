@@ -26,11 +26,17 @@ export type ContestTrackAudioHandle = {
   playTrack: (trackId: string) => void
 }
 
+export type TrackPlaybackState = {
+  activeId: string | null
+  isPlaying: boolean
+}
+
 type Props = {
   tracks: Track[]
   listRowContests?: ListContestLink[][]
   showTrackPicker?: boolean
   showAutoplay?: boolean
+  onPlaybackChange?: (state: TrackPlaybackState) => void
 }
 
 function hardRebindTrackSource(audio: HTMLAudioElement, src: string): void {
@@ -85,7 +91,7 @@ function recoverTrackWithCacheBust(audio: HTMLAudioElement, baseUrl: string, pla
 }
 
 export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(function ContestTrackAudio(
-  { tracks, listRowContests, showTrackPicker = true, showAutoplay = true },
+  { tracks, listRowContests, showTrackPicker = true, showAutoplay = true, onPlaybackChange },
   ref,
 ) {
   const listMode = showTrackPicker && Boolean(listRowContests && listRowContests.length === tracks.length)
@@ -93,10 +99,29 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
   const playIntentRef = useRef(false)
   const bindGenerationRef = useRef(0)
   const playAfterBindRef = useRef(false)
+  const pauseConfirmRef = useRef<number | null>(null)
   const didRevealRef = useRef(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [wantsPlayback, setWantsPlayback] = useState(false)
   const [autoplayNext, setAutoplayNext] = useState(readAutoplayPreference)
   const [revealed, setRevealed] = useState(false)
+
+  const clearPendingPause = useCallback(() => {
+    if (pauseConfirmRef.current != null) {
+      window.clearTimeout(pauseConfirmRef.current)
+      pauseConfirmRef.current = null
+    }
+  }, [])
+
+  const markPlaying = useCallback(() => {
+    clearPendingPause()
+    setWantsPlayback(true)
+  }, [clearPendingPause])
+
+  const markPaused = useCallback(() => {
+    clearPendingPause()
+    setWantsPlayback(false)
+  }, [clearPendingPause])
 
   const urlById = useMemo(() => {
     const map = new Map<string, string | null>()
@@ -119,18 +144,61 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     const element = audioRef.current
     if (activeId !== trackId || !element) return false
     if (element.paused) {
+      markPlaying()
       if (trackNotLoading(element)) {
+        playAfterBindRef.current = true
         recoverTrackWithCacheBust(element, url, true)
       } else {
         void element.play().catch(() => {})
       }
     } else {
+      playAfterBindRef.current = false
+      playIntentRef.current = false
+      markPaused()
       element.pause()
     }
     return true
-  }, [activeId])
+  }, [activeId, markPaused, markPlaying])
 
   useAudioVolumeSync(audioRef, Boolean(activeSrc))
+
+  useEffect(() => {
+    const audioElement = audioRef.current
+    if (!audioElement) return
+
+    const onPlay = () => {
+      playAfterBindRef.current = false
+      markPlaying()
+    }
+    const onStop = () => {
+      if (playIntentRef.current || playAfterBindRef.current) return
+      if (audioElement.seeking) return
+
+      clearPendingPause()
+      pauseConfirmRef.current = window.setTimeout(() => {
+        pauseConfirmRef.current = null
+        if (playIntentRef.current || playAfterBindRef.current) return
+        const element = audioRef.current
+        if (!element || !element.paused || element.seeking) return
+        setWantsPlayback(false)
+      }, 120)
+    }
+
+    audioElement.addEventListener('play', onPlay)
+    audioElement.addEventListener('pause', onStop)
+    audioElement.addEventListener('ended', onStop)
+
+    return () => {
+      audioElement.removeEventListener('play', onPlay)
+      audioElement.removeEventListener('pause', onStop)
+      audioElement.removeEventListener('ended', onStop)
+      clearPendingPause()
+    }
+  }, [clearPendingPause, markPlaying])
+
+  useEffect(() => {
+    onPlaybackChange?.({ activeId, isPlaying: wantsPlayback })
+  }, [activeId, wantsPlayback, onPlaybackChange])
 
   useLayoutEffect(() => {
     const audioElement = audioRef.current
@@ -138,6 +206,8 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
 
     if (!activeSrc) {
       bindGenerationRef.current++
+      playAfterBindRef.current = false
+      markPaused()
       audioElement.pause()
       audioElement.removeAttribute('src')
       audioElement.load()
@@ -147,6 +217,13 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     const generation = ++bindGenerationRef.current
     const abortController = new AbortController()
 
+    const wantPlay = playIntentRef.current
+    playIntentRef.current = false
+    playAfterBindRef.current = wantPlay
+    if (wantPlay) {
+      markPlaying()
+    }
+
     hardRebindTrackSource(audioElement, activeSrc)
 
     if (!didRevealRef.current) {
@@ -154,9 +231,6 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
       setRevealed(true)
     }
 
-    const wantPlay = playIntentRef.current
-    playIntentRef.current = false
-    playAfterBindRef.current = wantPlay
     if (wantPlay) {
       queueDeferredPlay(audioElement, () => bindGenerationRef.current === generation, abortController.signal)
     }
@@ -164,7 +238,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     return () => {
       abortController.abort()
     }
-  }, [activeId, activeSrc])
+  }, [activeId, activeSrc, markPaused, markPlaying])
 
   useLayoutEffect(() => {
     const audioElement = audioRef.current
@@ -177,20 +251,22 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     if (!showAutoplay || !audioElement || !autoplayNext || !activeSrc) return
 
     const onEnded = () => {
-      setActiveId((previous) => {
-        if (!previous) return previous
-        const next = nextPlayableTrackId(previous, tracks, urlById)
-        if (next) {
-          playIntentRef.current = true
-          return next
-        }
-        return previous
-      })
+      const previous = activeId
+      if (!previous) return
+      const next = nextPlayableTrackId(previous, tracks, urlById)
+      if (next) {
+        playIntentRef.current = true
+        playAfterBindRef.current = true
+        markPlaying()
+        setActiveId(next)
+        return
+      }
+      markPaused()
     }
 
-    audioElement.addEventListener('ended', onEnded)
-    return () => audioElement.removeEventListener('ended', onEnded)
-  }, [showAutoplay, autoplayNext, activeSrc, tracks, urlById])
+    audioElement.addEventListener('ended', onEnded, { capture: true })
+    return () => audioElement.removeEventListener('ended', onEnded, { capture: true })
+  }, [showAutoplay, autoplayNext, activeSrc, activeId, tracks, urlById, markPaused, markPlaying])
 
   useEffect(() => {
     const element = audioRef.current
@@ -200,12 +276,14 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
 
     const onError = () => {
       if (bindGenerationRef.current !== genAtSubscribe) return
+      playAfterBindRef.current = true
+      markPlaying()
       recoverTrackWithCacheBust(element, activeSrc, true)
     }
 
     element.addEventListener('error', onError, { once: true })
     return () => element.removeEventListener('error', onError)
-  }, [activeId, activeSrc])
+  }, [activeId, activeSrc, markPlaying])
 
   useEffect(() => {
     const element = audioRef.current
@@ -219,29 +297,31 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
     return () => window.clearTimeout(timeout)
   }, [activeId, activeSrc])
 
+  const beginTrackPlayback = useCallback(
+    (trackId: string) => {
+      const url = urlById.get(trackId)
+      if (!url) return
+      if (toggleOrRecoverSameTrack(trackId, url)) return
+      playIntentRef.current = true
+      markPlaying()
+      setActiveId(trackId)
+    },
+    [markPlaying, toggleOrRecoverSameTrack, urlById],
+  )
+
   const selectTrack = useCallback(
     (track: Track) => {
-      const url = urlById.get(track.id)
-      if (!url) return
-      if (toggleOrRecoverSameTrack(track.id, url)) return
-      playIntentRef.current = true
-      setActiveId(track.id)
+      beginTrackPlayback(track.id)
     },
-    [toggleOrRecoverSameTrack, urlById],
+    [beginTrackPlayback],
   )
 
   useImperativeHandle(
     ref,
     () => ({
-      playTrack: (trackId: string) => {
-        const url = urlById.get(trackId)
-        if (!url) return
-        if (toggleOrRecoverSameTrack(trackId, url)) return
-        playIntentRef.current = true
-        setActiveId(trackId)
-      },
+      playTrack: beginTrackPlayback,
     }),
-    [toggleOrRecoverSameTrack, urlById],
+    [beginTrackPlayback],
   )
 
   if (tracks.length === 0) return null
@@ -268,6 +348,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
           {tracks.map((track, index) => {
             const url = urlById.get(track.id)
             const active = track.id === activeId
+            const playing = active && wantsPlayback
             const contests = listRowContests![index]!
             const difficulty = track.difficulty ?? ''
             const label = trackLineLabel(track)
@@ -277,11 +358,11 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
                   type="button"
                   className="game-track-line-play"
                   disabled={!url}
-                  aria-label={url ? `Play ${label}` : 'Audio unavailable'}
-                  aria-pressed={active}
+                  aria-label={url ? (playing ? `Pause ${label}` : `Play ${label}`) : 'Audio unavailable'}
+                  aria-pressed={playing}
                   onClick={() => selectTrack(track)}
                 >
-                  <span aria-hidden>▷</span>
+                  <span aria-hidden>{playing ? '⏸' : '▷'}</span>
                 </button>
                 <span className="game-track-line-title">{label}</span>
                 <span className="game-track-line-sep" aria-hidden>
@@ -318,6 +399,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
           {tracks.map((track) => {
             const url = urlById.get(track.id)
             const active = track.id === activeId
+            const playing = active && wantsPlayback
             return (
               <div
                 key={track.id}
@@ -334,12 +416,17 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
                   type="button"
                   className="track-pick-play"
                   disabled={!url}
-                  aria-label={url ? `Play track ${track.sort_order}` : 'Audio unavailable'}
-                  aria-pressed={active}
+                  aria-label={
+                    url ? (playing ? `Pause track ${track.sort_order}` : `Play track ${track.sort_order}`) : 'Audio unavailable'
+                  }
+                  aria-pressed={playing}
                   onClick={() => selectTrack(track)}
                 >
-                  <span className="track-pick-play-icon" aria-hidden>
-                    ▶
+                  <span
+                    className={`track-pick-play-icon${playing ? ' track-pick-play-icon--pause' : ''}`}
+                    aria-hidden
+                  >
+                    {playing ? '⏸' : '▶'}
                   </span>
                 </button>
               </div>

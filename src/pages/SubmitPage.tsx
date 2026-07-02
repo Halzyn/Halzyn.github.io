@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import {
   ContestTrackAudio,
   type ContestTrackAudioHandle,
+  type TrackPlaybackState,
 } from '../components/ContestTrackAudio'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -110,6 +111,10 @@ export function SubmitPage() {
   const [editSubmissionUserId, setEditSubmissionUserId] = useState<string | null | undefined>(undefined)
   const [claiming, setClaiming] = useState(false)
   const tracksPlayerRef = useRef<ContestTrackAudioHandle>(null)
+  const [trackPlayback, setTrackPlayback] = useState<TrackPlaybackState>({
+    activeId: null,
+    isPlaying: false,
+  })
 
   const audioUrlByTrackId = useMemo(() => {
     const map = new Map<string, string | null>()
@@ -540,6 +545,7 @@ export function SubmitPage() {
               tracks={tracks}
               showTrackPicker={false}
               showAutoplay={false}
+              onPlaybackChange={setTrackPlayback}
             />
           ) : null}
           {draftLoading ? <p className="muted">Loading your saved entry...</p> : null}
@@ -577,16 +583,20 @@ export function SubmitPage() {
                 {group.tracks.map((t) => {
                   const trackAudioUrl = audioUrlByTrackId.get(t.id)
                   const trackLabel = `Track ${t.sort_order}`
+                  const playing = trackPlayback.activeId === t.id && trackPlayback.isPlaying
                   return (
                     <label key={t.id} className="field row submit-track-row">
                       <button
                         type="button"
                         className="submit-track-play"
                         disabled={!trackAudioUrl}
-                        aria-label={trackAudioUrl ? `Play ${trackLabel}` : 'Audio unavailable'}
+                        aria-label={
+                          trackAudioUrl ? (playing ? `Pause ${trackLabel}` : `Play ${trackLabel}`) : 'Audio unavailable'
+                        }
+                        aria-pressed={playing}
                         onClick={() => tracksPlayerRef.current?.playTrack(t.id)}
                       >
-                        <span aria-hidden>▷</span>
+                        <span aria-hidden>{playing ? '⏸' : '▷'}</span>
                       </button>
                       <span className="submit-track-num">{t.sort_order}.</span>
                       <input
