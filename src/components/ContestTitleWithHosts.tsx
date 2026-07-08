@@ -20,20 +20,25 @@ export function ContestTitleWithHosts({
     <span className="contest-title-with-hosts">
       <span className={titleClassName}>{title}</span>
       {hasHosts && hosts ? (
-        <span className="contest-title-with-hosts-list muted small">
-          {hosts.entries.map((host, index) => (
-            <Fragment key={host.hostKey}>
-              {index > 0 ? ', ' : null}
-              <ContestHostName
-                displayName={host.displayName}
-                profileUsername={host.profileUsername}
-                styleInfo={host.profileUserId ? hosts.styles.get(host.profileUserId) : undefined}
-                className="contest-title-with-hosts-name"
-                nestedInLink={hostsNestedInLink}
-              />
-            </Fragment>
-          ))}
-        </span>
+        <>
+          <span className="contest-title-with-hosts-sep" aria-hidden>
+            ◦
+          </span>
+          <span className="contest-title-with-hosts-list">
+            {hosts.entries.map((host, index) => (
+              <Fragment key={host.hostKey}>
+                {index > 0 ? ', ' : null}
+                <ContestHostName
+                  displayName={host.displayName}
+                  profileUsername={host.profileUsername}
+                  styleInfo={host.profileUserId ? hosts.styles.get(host.profileUserId) : undefined}
+                  className="contest-title-with-hosts-name"
+                  nestedInLink={hostsNestedInLink}
+                />
+              </Fragment>
+            ))}
+          </span>
+        </>
       ) : null}
     </span>
   )

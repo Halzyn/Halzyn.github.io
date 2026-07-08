@@ -1369,14 +1369,14 @@ html[data-theme='light'] .banner.warn {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
-  column-gap: 0.75rem;
-  row-gap: 0.25rem;
+  column-gap: 0.35rem;
+  row-gap: 0.2rem;
   min-width: 0;
 }
 
-.contest-title-with-hosts-list {
-  flex-basis: 100%;
-  margin-top: 0.2rem;
+.contest-title-with-hosts-sep {
+  color: var(--muted);
+  user-select: none;
 }
 
 .contest-host-name-link {
