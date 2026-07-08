@@ -161,7 +161,7 @@ export function buildContestRankRows(
       user_id: submission.user_id ?? null,
       name: submissionDisplayNameForRank(submission, displayNameByUserId),
       score,
-      pp: contestRawPp(tracks, score),
+      pp: contestRawPp(tracks, score, submission.id, trackOrder, marks),
       solo: countSoloMarks(submission.id, solo),
       correctGames: countCorrectGameMarks(submission.id, marks),
       correctFranchise: countCorrectFranchiseMarks(submission.id, marks),
