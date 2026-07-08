@@ -2973,6 +2973,14 @@ html[data-theme='light'] .site-shell .site-topbar {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
+.site-shell .site-topbar .profile-nav-dropdown > a.site-nav-link.is-active {
+  color: var(--site-header-bg);
+  background: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  padding: 0.15rem 0.5rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
 .site-shell .site-nav--mobile .site-nav-link.is-active {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.14);
