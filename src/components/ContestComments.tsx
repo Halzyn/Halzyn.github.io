@@ -112,7 +112,7 @@ function CommentEditHistory({ commentId, editCount }: { commentId: string; editC
             {edits.map((edit, index) => (
               <li key={edit.id}>
                 <p className="muted small comment-edit-history-label">
-                  Version {index + 1} - {formatWhen(edit.edited_at)}
+                  Version {index + 1} ◦ {formatWhen(edit.edited_at)}
                 </p>
                 <CommentMarkdownBody body={edit.body} />
               </li>

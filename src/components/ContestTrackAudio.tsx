@@ -365,12 +365,15 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
                   <span aria-hidden>{playing ? '⏸' : '▷'}</span>
                 </button>
                 <span className="game-track-line-title">{label}</span>
+                <span className="game-track-line-sep" aria-hidden>
+                  ◦
+                </span>
                 <span className="game-track-line-contest muted">
                   {contests.map((contest, contestIndex) => (
                     <span key={contest.slug} className="game-track-line-contest-item">
                       {contestIndex > 0 ? (
                         <span className="game-track-line-sep game-track-line-sep--in-contest" aria-hidden>
-                          {' / '}
+                          {' ◦ '}
                         </span>
                       ) : null}
                       <Link className="game-track-line-contest-link" to={`/contests/${contest.slug}`}>
@@ -380,7 +383,12 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
                   ))}
                 </span>
                 {difficulty ? (
-                  <span className="game-track-line-diff muted">{difficulty}</span>
+                  <>
+                    <span className="game-track-line-sep" aria-hidden>
+                      ◦
+                    </span>
+                    <span className="game-track-line-diff muted">{difficulty}</span>
+                  </>
                 ) : null}
               </li>
             )

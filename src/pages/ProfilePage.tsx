@@ -206,7 +206,7 @@ export function ProfilePage() {
                   </div>
                   <div className="profile-rpg-ff-job-row">
                     <span className="profile-rpg-ff-rank-pp">
-                      {ppRank != null ? `Rank #${ppRank}` : 'Rank —'} - {(performancePoints ?? 0).toFixed(2)}pp
+                      {ppRank != null ? `Rank #${ppRank}` : 'Rank —'} ◦ {(performancePoints ?? 0).toFixed(2)}pp
                     </span>
                   </div>
                   <div className="profile-rpg-ff-line">
@@ -285,7 +285,7 @@ export function ProfilePage() {
                     <span className="card-title">{contest.title}</span>
                     <span className="muted small">
                       {rank > 0 && total > 0 ? (
-                        <>Place {rank} / {total} - Score {score.toFixed(1)}</>
+                        <>Place {rank} / {total} ◦ Score {score.toFixed(1)}</>
                       ) : (
                         <>Score {score.toFixed(1)}</>
                       )}

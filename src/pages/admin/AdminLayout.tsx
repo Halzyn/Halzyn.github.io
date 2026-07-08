@@ -140,7 +140,7 @@ export function AdminLayout() {
         brandHref="/"
         brandLabel="VGMGC"
         headerEnd={<ThemeToggle />}
-        footerLabel="Admin sign-in - VGMGC"
+        footerLabel="Admin sign-in ◦ VGMGC"
       />
     )
   }
@@ -181,7 +181,7 @@ export function AdminLayout() {
       brandHref={`/admin/contests/${contestIdForModerator}`}
       brandLabel="Moderator"
       headerEnd={<ModeratorNav contestId={contestIdForModerator} />}
-      footerLabel="Contest moderation - VGMGC"
+      footerLabel="Contest moderation ◦ VGMGC"
     />
   )
 }
