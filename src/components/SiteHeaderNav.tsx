@@ -2,23 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AuthBar } from './AuthBar'
 import { ThemeToggle } from './ThemeToggle'
-
-const MAIN_NAV_LINKS: { to: string; label: string; end?: boolean }[] = [
-  { to: '/', label: 'Home', end: true },
-  { to: '/contests', label: 'Contests' },
-  { to: '/rules', label: 'Rules' },
-  { to: '/games', label: 'Games' },
-  { to: '/players', label: 'Players' },
-]
-
-function isNavLinkActive(pathname: string, to: string, end?: boolean): boolean {
-  if (end) return pathname === '/'
-  return pathname === to || pathname.startsWith(`${to}/`)
-}
-
-function navLinkClass(isActive: boolean): string {
-  return isActive ? 'site-nav-link is-active' : 'site-nav-link'
-}
+import { isNavLinkActive, MAIN_NAV_LINKS, siteNavLinkClass } from '../lib/siteNav'
 
 function navLinksFor(locationPathname: string, onNavigate?: () => void) {
   return MAIN_NAV_LINKS.map(({ to, label, end }) => {
@@ -27,7 +11,7 @@ function navLinksFor(locationPathname: string, onNavigate?: () => void) {
       <Link
         key={to}
         to={to}
-        className={navLinkClass(active)}
+        className={siteNavLinkClass(active)}
         aria-current={active ? 'page' : undefined}
         onClick={onNavigate}
       >

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { HeaderBrand } from './HeaderBrand'
 import { SiteHeaderNav } from './SiteHeaderNav'
+import { SiteFooterNav } from './SiteFooterNav'
 import { DisplayNameStyled } from './DisplayNameStyled'
 import { ContestHostName } from './ContestHostName'
 import { getSupabase } from '../lib/supabase'
@@ -37,7 +38,7 @@ export function Layout() {
   return (
     <div className="shell site-shell">
       <div className="site-shell-panel">
-        <header className="top site-topbar">
+        <header id="top" className="top site-topbar">
           <div className="site-topbar-main">
             <HeaderBrand to="/" />
             <SiteHeaderNav />
@@ -47,7 +48,8 @@ export function Layout() {
           <Outlet />
         </main>
         <footer className="foot">
-          <div className="foot-row">
+          <SiteFooterNav />
+          <div className="foot-row foot-credit">
             <span>
               Contests hosted by{' '}
               {siteHostUsername ? (

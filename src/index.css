@@ -263,7 +263,6 @@ a:hover:not(.button):not(.brand):not(.site-brand):not(.player-card-link):not(.co
   border: 1px solid var(--border);
   border-radius: 0;
   box-shadow: var(--shell-panel-shadow);
-  overflow: hidden;
 }
 
 .site-shell-panel .main-shell {
@@ -2676,7 +2675,22 @@ html[data-theme='light'] .site-shell .site-topbar {
 
 .site-shell .site-nav-link.is-active {
   color: #ffffff;
+  font-weight: 700;
   text-decoration: underline;
+}
+
+.site-shell .site-nav--desktop .site-nav-link.is-active {
+  color: var(--site-header-bg);
+  background: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  padding: 0.15rem 0.5rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.site-shell .site-nav--mobile .site-nav-link.is-active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  text-decoration: none;
 }
 
 .site-shell .site-nav-link:focus-visible,
@@ -2971,6 +2985,37 @@ html[data-theme='light'] .site-shell .main .site-upload-panel .button:not(.prima
   border-top: 1px solid var(--border);
   font-size: 11px;
   text-align: center;
+}
+
+.site-shell .foot-nav {
+  margin: 0 0 0.65rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.site-shell .foot-nav .site-nav-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.site-shell .foot-nav .site-nav-link:hover {
+  text-decoration: underline;
+}
+
+.site-shell .foot-nav .site-nav-link.is-active {
+  color: var(--heading);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.site-shell .foot-nav-sep {
+  color: var(--muted);
+  user-select: none;
+}
+
+.site-shell .foot-credit {
+  justify-content: center;
 }
 
 .site-shell .main input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='hidden']),
@@ -3473,6 +3518,17 @@ html[data-theme='light'] .comment-editor-tool {
   .site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row > h2 {
     font-size: 13px;
     padding: 0.45rem 0.65rem;
+  }
+
+  .site-shell .foot-nav {
+    font-size: 13px;
+  }
+
+  .site-shell .foot-nav .site-nav-link {
+    display: inline-block;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.2rem;
+    line-height: 1.6;
   }
 
   .site-toolbar .button.small {
