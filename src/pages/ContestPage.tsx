@@ -1,12 +1,13 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { ContestEntryForm } from '../components/ContestEntryForm'
 import { getSupabase } from '../lib/supabase'
 import type { ContestWithHosts, GradingMark, Submission, Track, TrackAnswer } from '../lib/types'
 import { parseTrackAnswer } from '../lib/trackAnswer'
 import { contestClosed } from '../lib/deadline'
 import { Countdown } from '../components/Countdown'
-import { ContestTrackAudio, type ContestTrackAudioHandle } from '../components/ContestTrackAudio'
+import type { TrackAudioPlayerHandle } from '../components/TrackAudioPlayer'
 import { ContestResults } from '../components/ContestResults'
 import { ContestHostName } from '../components/ContestHostName'
 import { pageTitle } from '../lib/pageTitle'
@@ -58,6 +59,7 @@ export function ContestPage() {
   const [revealLoadedContestId, setRevealLoadedContestId] = useState<string | null>(null)
 
   const previousSlugRef = useRef<string | undefined>(undefined)
+  const contestIdRef = useRef<string | null>(null)
 
   useDocumentTitle(documentTitle)
 
@@ -65,13 +67,16 @@ export function ContestPage() {
     if (!slug) {
       setDocumentTitle(pageTitle('Contest'))
       previousSlugRef.current = undefined
+      contestIdRef.current = null
       return
     }
 
     const slugChanged = previousSlugRef.current !== slug
     previousSlugRef.current = slug
 
-    async function loadContestPage() {
+    let cancelled = false
+
+    async function loadContestCore() {
       if (slugChanged) {
         setContestRowReady(false)
         setRevealLoadedContestId(null)
@@ -85,6 +90,7 @@ export function ContestPage() {
         setProfileUsernameByUserId(new Map())
         setDisplayNameStyleByUserId(new Map())
         setContestMod(false)
+        contestIdRef.current = null
       }
 
       setLoadError(null)
@@ -94,6 +100,8 @@ export function ContestPage() {
         .select(`*, ${CONTEST_HOST_EMBED_SELECT}`)
         .eq('slug', slug)
         .maybeSingle()
+
+      if (cancelled) return
 
       setContestRowReady(true)
 
@@ -112,6 +120,7 @@ export function ContestPage() {
 
       const contestData = contestRow as ContestWithHosts
       setContest(contestData)
+      contestIdRef.current = contestData.id
       setDocumentTitle(pageTitle(contestData.title))
 
       const { data: trackRows, error: tracksError } = await supabase
@@ -120,30 +129,48 @@ export function ContestPage() {
         .eq('contest_id', contestData.id)
         .order('sort_order', { ascending: true })
 
+      if (cancelled) return
+
       if (tracksError) {
         setLoadError(tracksError.message)
         return
       }
 
-      const trackList = (trackRows ?? []) as Track[]
-      setTracks(trackList)
+      setTracks((trackRows ?? []) as Track[])
 
       const { data: sessionData } = await supabase.auth.getSession()
+      if (cancelled) return
+
       let isContestMod = false
       if (sessionData.session?.user) {
         const { data: modResult } = await supabase.rpc('is_contest_mod', { p_contest_id: contestData.id })
         isContestMod = Boolean(modResult)
       }
-      setContestMod(isContestMod)
+      if (!cancelled) setContestMod(isContestMod)
+    }
 
-      const deadlinePassed = contestClosed(contestData.deadline)
-      const resultsPublished = Boolean(contestData.results_published)
+    void loadContestCore()
+
+    return () => {
+      cancelled = true
+    }
+  }, [slug, supabase])
+
+  useEffect(() => {
+    const contestId = contest?.id ?? contestIdRef.current
+    if (!contestId || tracks.length === 0) return
+
+    let cancelled = false
+
+    async function loadRevealData() {
+      const deadlinePassed = contestClosed(contest!.deadline)
+      const resultsPublished = Boolean(contest!.results_published)
       const loadRevealData =
         (deadlinePassed && resultsPublished) ||
         (ready && isAdmin) ||
-        (deadlinePassed && isContestMod)
+        (deadlinePassed && contestMod)
 
-      const trackIds = trackList.map((t) => t.id)
+      const trackIds = tracks.map((t) => t.id)
 
       if (!loadRevealData) {
         setAnswers([])
@@ -170,10 +197,12 @@ export function ContestPage() {
         supabase
           .from('submissions')
           .select('*')
-          .eq('contest_id', contestData.id)
+          .eq('contest_id', contestId)
           .order('created_at', { ascending: true }),
         fetchGameTooltips(supabase, trackIds),
       ])
+
+      if (cancelled) return
 
       setAnswers(answersList)
       const submissionList = (submissionsResult.data ?? []) as Submission[]
@@ -186,8 +215,10 @@ export function ContestPage() {
         trackIds.length > 0
           ? supabase.from('grading_marks').select('*').in('track_id', trackIds)
           : Promise.resolve({ data: [] as GradingMark[] }),
-        supabase.rpc('profiles_for_contest', { p_contest_id: contestData.id }),
+        supabase.rpc('profiles_for_contest', { p_contest_id: contestId }),
       ])
+
+      if (cancelled) return
 
       const marksForSubmissions =
         trackIds.length > 0
@@ -203,11 +234,15 @@ export function ContestPage() {
       setDisplayNameByUserId(new Map(Object.entries(profilesJson?.display_names ?? {})))
       setProfileUsernameByUserId(new Map(Object.entries(profilesJson?.usernames ?? {})))
       setDisplayNameStyleByUserId(displayNameStyleMapFromRpc(profilesJson?.display_name_styles))
-      setRevealLoadedContestId(contestData.id)
+      setRevealLoadedContestId(contestId)
     }
 
-    void loadContestPage()
-  }, [slug, isAdmin, ready, supabase])
+    void loadRevealData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [contest, tracks, ready, isAdmin, contestMod, supabase])
 
   const contestHosts = useMemo(
     () => (contest ? buildContestHostsFromEmbed(contest) : emptyContestHosts),
@@ -235,15 +270,9 @@ export function ContestPage() {
   }, [showResults, submissions, marks, trackIds, tracks, displayNameByUserId])
 
   const alwaysRevealSpoilers = Boolean(profile?.always_reveal_spoilers)
-  const tracksPlayerRef = useRef<ContestTrackAudioHandle>(null)
-  const tracksFoldRef = useRef<HTMLDetailsElement>(null)
-  const [tracksFoldOpen, setTracksFoldOpen] = useState(true)
-
-  useLayoutEffect(() => {
-    if (!contest) return
-    const closed = contestClosed(contest.deadline)
-    setTracksFoldOpen(!closed || alwaysRevealSpoilers)
-  }, [contest, alwaysRevealSpoilers])
+  const entryFormRef = useRef<TrackAudioPlayerHandle>(null)
+  const entrySectionRef = useRef<HTMLDivElement>(null)
+  const showEntrySection = Boolean(contest && tracks.length > 0)
 
   if (!slug) return null
   if (loadError) return <p className="banner warn">{loadError}</p>
@@ -290,40 +319,19 @@ export function ContestPage() {
           {deadlinePassed ? ' (closed)' : null}
         </p>
         {!deadlinePassed ? <Countdown deadlineIso={contest.deadline} /> : null}
-        {!deadlinePassed ? (
-          <div>
-            <p>
-              <Link className="button" to={`/contests/${contest.slug}/submit`}>
-                Submit answers
-              </Link>
-            </p>
-          </div>
-        ) : null}
       </header>
 
-      <section className="section contest-tracks-section">
-        <h2>
-          Tracks
-          {tracks.length > 0 ? (
-            <span className="muted small contest-tracks-count"> ({tracks.length})</span>
-          ) : null}
-        </h2>
-        <details
-          ref={tracksFoldRef}
-          className="spoiler tracks-fold"
-          open={tracksFoldOpen}
-          onToggle={(event) => setTracksFoldOpen(event.currentTarget.open)}
-        >
-          <summary className="tracks-fold-summary">Show tracks</summary>
-          <div className="tracks-fold-body">
-            {tracks.length === 0 ? (
-              <p className="muted">Loading tracks...</p>
-            ) : (
-              <ContestTrackAudio ref={tracksPlayerRef} tracks={tracks} />
-            )}
-          </div>
-        </details>
-      </section>
+      {showEntrySection ? (
+        <div ref={entrySectionRef}>
+          <ContestEntryForm
+            key={contest.id}
+            ref={entryFormRef}
+            contest={contest}
+            tracks={tracks}
+            slug={slug}
+          />
+        </div>
+      ) : null}
 
       {showResultsPreviewBanner ? (
         <p className="banner" role="status">
@@ -347,10 +355,9 @@ export function ContestPage() {
             canModerateComments={canModerateComments}
             alwaysRevealSpoilers={alwaysRevealSpoilers}
             onPlayTrack={(trackId) => {
-              setTracksFoldOpen(true)
-              tracksPlayerRef.current?.playTrack(trackId)
+              entryFormRef.current?.playTrack(trackId)
               requestAnimationFrame(() => {
-                tracksFoldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                entrySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
               })
             }}
           />

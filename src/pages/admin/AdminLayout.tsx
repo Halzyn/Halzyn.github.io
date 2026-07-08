@@ -7,6 +7,7 @@ import { ThemeToggle } from '../../components/ThemeToggle'
 import { getSupabase } from '../../lib/supabase'
 import { signOutAndReloadHome } from '../../lib/auth'
 import { contestIdFromModeratorAdminPath, normalizePathname } from '../../lib/adminPaths'
+import { isNavLinkActive, siteNavLinkClass, type SiteNavLink } from '../../lib/siteNav'
 
 function FloatingThemeLayout({ children }: { children: ReactNode }) {
   return (
@@ -28,28 +29,53 @@ function SessionToolbar() {
   )
 }
 
-function AdminNav() {
+function AdminHeaderNav({ links, label }: { links: SiteNavLink[]; label: string }) {
+  const location = useLocation()
+
   return (
-    <nav className="nav site-nav">
-      <Link to="/admin/contests">Contests</Link>
-      <Link to="/admin/games">Games</Link>
-      <Link to="/admin/users">Users</Link>
-      <Link to="/">Site</Link>
-      <SessionToolbar />
-    </nav>
+    <div className="top-end">
+      <nav className="nav site-nav site-nav--desktop" aria-label={label}>
+        {links.map(({ to, label: linkLabel, end }) => {
+          const active = isNavLinkActive(location.pathname, to, end)
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={siteNavLinkClass(active)}
+              aria-current={active ? 'page' : undefined}
+            >
+              {linkLabel}
+            </Link>
+          )
+        })}
+      </nav>
+      <div className="top-end-toolbar">
+        <SessionToolbar />
+      </div>
+    </div>
   )
+}
+
+const ADMIN_NAV_LINKS: SiteNavLink[] = [
+  { to: '/admin/contests', label: 'Contests' },
+  { to: '/admin/games', label: 'Games' },
+  { to: '/admin/users', label: 'Users' },
+  { to: '/', label: 'Site', end: true },
+]
+
+function AdminNav() {
+  return <AdminHeaderNav links={ADMIN_NAV_LINKS} label="Admin" />
 }
 
 function ModeratorNav({ contestId }: { contestId: string }) {
   const contestBase = `/admin/contests/${contestId}`
-  return (
-    <nav className="nav site-nav">
-      <Link to={contestBase}>Contest</Link>
-      <Link to={`${contestBase}/grade`}>Grade</Link>
-      <Link to="/">Site</Link>
-      <SessionToolbar />
-    </nav>
-  )
+  const links: SiteNavLink[] = [
+    { to: contestBase, label: 'Contest', end: true },
+    { to: `${contestBase}/grade`, label: 'Grade' },
+    { to: '/', label: 'Site', end: true },
+  ]
+
+  return <AdminHeaderNav links={links} label="Moderator" />
 }
 
 function SiteShell({
@@ -67,10 +93,12 @@ function SiteShell({
     <div className="shell site-shell">
       <div className="site-shell-panel">
         <header className="top site-topbar">
-          <HeaderBrand to={brandHref} label={brandLabel}>
-            {brandLabel !== 'VGMGC' ? <span className="site-brand-label">{brandLabel}</span> : null}
-          </HeaderBrand>
-          <div className="top-end">{headerEnd}</div>
+          <div className="site-topbar-main">
+            <HeaderBrand to={brandHref} label={brandLabel}>
+              {brandLabel !== 'VGMGC' ? <span className="site-brand-label">{brandLabel}</span> : null}
+            </HeaderBrand>
+            {headerEnd}
+          </div>
         </header>
         <main className="main main-shell">
           <Outlet />
@@ -139,7 +167,13 @@ export function AdminLayout() {
       <SiteShell
         brandHref="/"
         brandLabel="VGMGC"
-        headerEnd={<ThemeToggle />}
+        headerEnd={
+          <div className="top-end">
+            <div className="top-end-toolbar">
+              <ThemeToggle />
+            </div>
+          </div>
+        }
         footerLabel="Admin sign-in ◦ VGMGC"
       />
     )

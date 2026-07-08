@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { isProfileNavActive, siteNavLinkClass } from '../lib/siteNav'
 
 type Props = {
   profileTo: string
 }
 
 export function ProfileNavDropdown({ profileTo }: Props) {
+  const location = useLocation()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
   const menuId = useId()
+  const profileActive = isProfileNavActive(location.pathname, profileTo)
 
   const close = useCallback(() => setOpen(false), [])
 
@@ -31,7 +34,13 @@ export function ProfileNavDropdown({ profileTo }: Props) {
 
   return (
     <span className="profile-nav-dropdown" ref={rootRef}>
-      <Link to={profileTo}>Profile</Link>
+      <Link
+        to={profileTo}
+        className={siteNavLinkClass(profileActive)}
+        aria-current={profileActive ? 'page' : undefined}
+      >
+        Profile
+      </Link>
       <button
         type="button"
         className="profile-nav-dropdown-toggle"
