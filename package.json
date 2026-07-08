@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "postbuild": "node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "trim-logos": "node scripts/trim-logos.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",
@@ -27,6 +28,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "sharp": "^0.34.5",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
     "vite": "^5.4.11"
