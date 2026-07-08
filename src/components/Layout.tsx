@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link, Outlet } from 'react-router-dom'
-import { ThemeToggle } from './ThemeToggle'
+import { Outlet } from 'react-router-dom'
 import { HeaderBrand } from './HeaderBrand'
-import { AuthBar } from './AuthBar'
+import { SiteHeaderNav } from './SiteHeaderNav'
 import { DisplayNameStyled } from './DisplayNameStyled'
 import { ContestHostName } from './ContestHostName'
 import { getSupabase } from '../lib/supabase'
@@ -39,17 +38,9 @@ export function Layout() {
     <div className="shell site-shell">
       <div className="site-shell-panel">
         <header className="top site-topbar">
-          <HeaderBrand to="/" />
-          <div className="top-end">
-            <nav className="nav site-nav">
-              <Link to="/">Home</Link>
-              <Link to="/contests">Contests</Link>
-              <Link to="/rules">Rules</Link>
-              <Link to="/games">Games</Link>
-              <Link to="/players">Players</Link>
-            </nav>
-            <AuthBar />
-            <ThemeToggle />
+          <div className="site-topbar-main">
+            <HeaderBrand to="/" />
+            <SiteHeaderNav />
           </div>
         </header>
         <main className="main main-shell">

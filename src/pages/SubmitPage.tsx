@@ -502,7 +502,7 @@ export function SubmitPage() {
 
   return (
     <div className="page narrow submit-page">
-      <h1>Submit — {contest.title}</h1>
+      <h1>Submit ◦ {contest.title}</h1>
       {renderTopBanner()}
       {canUseForm ? (
         <>
