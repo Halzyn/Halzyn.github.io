@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useAuth } from '../auth/AuthContext'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
@@ -77,7 +76,6 @@ function title(profile: ProfileJson): string {
 
 export function ProfilePage() {
   const supabase = getSupabase()
-  const { userId: sessionUserId } = useAuth()
   const { username: usernameFromRoute } = useParams()
   const [profile, setProfile] = useState<ProfileJson | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -173,7 +171,6 @@ export function ProfilePage() {
     return <p className="muted">Loading...</p>
   }
 
-  const viewingOwnProfile = sessionUserId !== null && sessionUserId === profile.id
   const experienceBarPercent =
     rpgStats.xpForNextLevel > 0
       ? Math.min(100, (100 * rpgStats.xpIntoLevel) / rpgStats.xpForNextLevel)
@@ -181,16 +178,6 @@ export function ProfilePage() {
 
   return (
     <div className="page">
-      <div className="profile-page-top">
-        <p className="muted small profile-page-top-back">
-          <Link to="/players">← Players</Link>
-        </p>
-        {viewingOwnProfile ? (
-          <Link to="/profile/edit" className="profile-page-edit-link">
-            Edit profile
-          </Link>
-        ) : null}
-      </div>
       <div className="profile-rpg-stats-row">
           <div className="profile-rpg-ff" aria-label="RPG status">
             <div className="profile-rpg-ff-top">
@@ -293,19 +280,18 @@ export function ProfilePage() {
           <ul className="card-list">
             {contestStats.contests.map(({ contest, rank, total, score, pp }) => (
               <li key={contest.id} className="card">
-                <Link to={`/contests/${contest.slug}`}>
-                  <span className="card-title">{contest.title}</span>
-                  <span className="muted small">
-                    {rank > 0 && total > 0 ? (
-                      <>
-                        Place {rank} / {total} Score {score.toFixed(1)} {(pp ?? 0).toFixed(2)}pp
-                      </>
-                    ) : (
-                      <>
-                        Score {score.toFixed(1)} {(pp ?? 0).toFixed(2)}pp
-                      </>
-                    )}
+                <Link to={`/contests/${contest.slug}`} className="profile-contest-card-link">
+                  <span className="profile-contest-card-text">
+                    <span className="card-title">{contest.title}</span>
+                    <span className="muted small">
+                      {rank > 0 && total > 0 ? (
+                        <>Place {rank} / {total} - Score {score.toFixed(1)}</>
+                      ) : (
+                        <>Score {score.toFixed(1)}</>
+                      )}
+                    </span>
                   </span>
+                  <span className="player-card-pp">{(pp ?? 0).toFixed(2)}pp</span>
                 </Link>
               </li>
             ))}

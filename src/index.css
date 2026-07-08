@@ -1229,6 +1229,19 @@ h2 {
   flex-wrap: nowrap;
 }
 
+.card a.profile-contest-card-link {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.profile-contest-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
 .player-card-pp {
   margin-left: auto;
   flex-shrink: 0;

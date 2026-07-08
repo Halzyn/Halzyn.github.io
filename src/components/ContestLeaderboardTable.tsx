@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { formatContestPp } from '../lib/performancePoints'
 import { contestPlaceForIndex, type ContestRankRow } from '../lib/scoring'
 import type { DisplayNameStyleInfo } from '../lib/displayNameStyle'
 import { DisplayNameStyled } from './DisplayNameStyled'
@@ -54,6 +55,7 @@ export function ContestLeaderboardTable({
             <th>#</th>
             <th>Name</th>
             <th>Score</th>
+            <th>PP</th>
             <th>Correct games</th>
             <th>Correct franchise</th>
             <th>Solo guesses</th>
@@ -73,6 +75,7 @@ export function ContestLeaderboardTable({
                 />
               </td>
               <td>{row.score.toFixed(1)}</td>
+              <td>{formatContestPp(row.pp)}</td>
               <td>{row.correctGames}</td>
               <td>{row.correctFranchise}</td>
               <td>{row.solo}</td>

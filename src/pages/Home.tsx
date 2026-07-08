@@ -64,6 +64,22 @@ export function Home() {
     [contests, modContestIds, isAdmin],
   )
 
+  const publicOpenContests = useMemo(
+    () => contests.filter((contest) => !contestClosed(contest.deadline) && contest.published),
+    [contests],
+  )
+
+  const lastConcludedContest = useMemo(
+    () =>
+      contests.find(
+        (contest) =>
+          contestClosed(contest.deadline) && contest.published && contest.results_published,
+      ) ?? null,
+    [contests],
+  )
+
+  const showPreviousResults = publicOpenContests.length === 0 && lastConcludedContest !== null
+
   const showCurrentContests =
     scheduledTeasers.length <= 0 || (scheduledTeasers.length > 0 && openContests.length > 0)
   const showScheduledContests = scheduledTeasers.length > 0
@@ -105,6 +121,26 @@ export function Home() {
           </ul>
         )}
       </section>)}
+
+      {showPreviousResults && (
+        <section className="section">
+          <h2>Previous contest results</h2>
+          <ul className="card-list">
+            <li className="card">
+              <Link to={`/contests/${lastConcludedContest.slug}`}>
+                <ContestTitleWithHosts
+                  title={lastConcludedContest.title}
+                  hosts={hostsByContestId.get(lastConcludedContest.id)}
+                  hostsNestedInLink
+                />
+                <span className="muted small contest-card-deadline">
+                  Concluded {new Date(lastConcludedContest.deadline).toLocaleString()}
+                </span>
+              </Link>
+            </li>
+          </ul>
+        </section>
+      )}
 
       {showScheduledContests && (
         <section className="section">

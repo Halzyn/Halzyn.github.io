@@ -1,4 +1,5 @@
 import type { GradingMark, Submission, Track } from './types'
+import { contestRawPp } from './performancePoints'
 import { pushToMappedList } from './utils'
 
 export function soloGameWinnerByTrack(marks: GradingMark[]): Map<string, string> {
@@ -90,6 +91,7 @@ export type ContestRankRow = {
   user_id?: string | null
   name: string
   score: number
+  pp: number
   solo: number
   correctGames: number
   correctFranchise: number
@@ -152,18 +154,22 @@ export function buildContestRankRows(
   displayNameByUserId?: Map<string, string>,
 ): ContestRankRow[] {
   const solo = soloGameWinnerByTrack(marks)
-  const rows: ContestRankRow[] = submissions.map((submission) => ({
-    id: submission.id,
-    user_id: submission.user_id ?? null,
-    name: submissionDisplayNameForRank(submission, displayNameByUserId),
-    score: scoreForSubmission(submission.id, trackOrder, marks),
-    solo: countSoloMarks(submission.id, solo),
-    correctGames: countCorrectGameMarks(submission.id, marks),
-    correctFranchise: countCorrectFranchiseMarks(submission.id, marks),
-    correctInsane: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'insane'),
-    correctHard: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'hard'),
-    correctMedium: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'medium'),
-  }))
+  const rows: ContestRankRow[] = submissions.map((submission) => {
+    const score = scoreForSubmission(submission.id, trackOrder, marks)
+    return {
+      id: submission.id,
+      user_id: submission.user_id ?? null,
+      name: submissionDisplayNameForRank(submission, displayNameByUserId),
+      score,
+      pp: contestRawPp(tracks, score),
+      solo: countSoloMarks(submission.id, solo),
+      correctGames: countCorrectGameMarks(submission.id, marks),
+      correctFranchise: countCorrectFranchiseMarks(submission.id, marks),
+      correctInsane: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'insane'),
+      correctHard: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'hard'),
+      correctMedium: countCorrectGamesOnDifficulty(submission.id, marks, tracks, 'medium'),
+    }
+  })
   rows.sort(compareContestRank)
   return rows
 }
