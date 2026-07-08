@@ -459,7 +459,7 @@ html[data-theme='light'] .theme-toggle--floating {
 .profile-favorite-column h2,
 .site-shell .section > h2:first-child,
 .site-shell .profile-rpg-stats-row .profile-totals-column--rpg-row > h2:first-child,
-.site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row > h2:first-child {
+.site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row .profile-favorite-stack > h2:first-child {
   margin-top: 0;
 }
 
@@ -608,12 +608,13 @@ html[data-theme='light'] .theme-toggle--floating {
 }
 .game-page-cover {
   flex: 0 0 auto;
-  max-width: 11rem;
+  max-width: 18rem;
 }
 .game-page-cover img,
-.profile-favorite-cover img {
+.profile-favorite-cover-link img {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
   border-radius: 0px;
   border: 1px solid var(--border);
@@ -810,8 +811,7 @@ h2 {
   margin: 0;
 }
 
-.profile-page-edit-link,
-.profile-favorite-column--rpg-row .profile-favorite-cover {
+.profile-page-edit-link {
   margin-left: auto;
 }
 
@@ -1091,6 +1091,32 @@ h2 {
   text-align: right;
 }
 
+.profile-favorite-stack {
+  display: inline-block;
+  margin-left: auto;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.profile-favorite-stack > h2 {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-favorite-cover-link {
+  display: block;
+  width: 0;
+  min-width: 100%;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.profile-favorite-cover-link:hover img {
+  border-color: var(--accent);
+}
+
 @media (max-width: 960px) {
   .profile-rpg-stats-row,
   .profile-rpg-stats-row:not(:has(.profile-favorite-column--rpg-row)) {
@@ -1110,13 +1136,9 @@ h2 {
     text-align: left;
   }
 
-  .profile-favorite-column--rpg-row .profile-favorite-cover {
+  .profile-favorite-stack {
     margin-left: 0;
   }
-}
-
-.profile-favorite-cover {
-  max-width: 11rem;
 }
 
 .profile-edit-favorite-picked {
@@ -3117,7 +3139,7 @@ html[data-theme='dark'] .site-shell .pill {
 
 .site-shell .section > h2,
 .site-shell .profile-rpg-stats-row .profile-totals-column--rpg-row > h2,
-.site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row > h2 {
+.site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row .profile-favorite-stack > h2 {
   margin: 0 0 1rem;
   padding: 0.35rem 0.55rem;
   font-family: var(--heading-font);
@@ -3809,7 +3831,7 @@ html[data-theme='light'] .comment-editor-tool {
 
   .site-shell .section > h2,
   .site-shell .profile-rpg-stats-row .profile-totals-column--rpg-row > h2,
-  .site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row > h2 {
+  .site-shell .profile-rpg-stats-row .profile-favorite-column--rpg-row .profile-favorite-stack > h2 {
     font-size: 13px;
     padding: 0.45rem 0.65rem;
   }

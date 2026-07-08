@@ -22,6 +22,7 @@ type ProfileJson = {
   is_admin?: boolean
   is_contest_moderator?: boolean
   favorite_soundtrack_cover_url?: string | null
+  favorite_soundtrack_game_slug?: string | null
 }
 
 type PrecomputedProfileStats = {
@@ -57,12 +58,14 @@ function ProfileStatsPanel({ stats }: { stats: ProfileContestStatsResult }) {
   )
 }
 
-function FavoriteSoundtrackCover({ imageUrl }: { imageUrl: string }) {
+function FavoriteSoundtrackCover({ imageUrl, gameSlug }: { imageUrl: string; gameSlug: string }) {
   return (
     <div className="profile-favorite-column profile-favorite-column--rpg-row">
-      <h2>Favorite soundtrack</h2>
-      <div className="profile-favorite-cover">
-        <img src={imageUrl} alt="" loading="lazy" decoding="async" />
+      <div className="profile-favorite-stack">
+        <h2>Favorite soundtrack</h2>
+        <Link to={`/games/${encodeURIComponent(gameSlug)}`} className="profile-favorite-cover-link">
+          <img src={imageUrl} alt="" loading="lazy" decoding="async" />
+        </Link>
       </div>
     </div>
   )
@@ -267,8 +270,11 @@ export function ProfilePage() {
           <div className="profile-totals-column profile-totals-column--rpg-row">
             <ProfileStatsPanel stats={contestStats} />
           </div>
-          {profile.favorite_soundtrack_cover_url ? (
-            <FavoriteSoundtrackCover imageUrl={profile.favorite_soundtrack_cover_url} />
+          {profile.favorite_soundtrack_cover_url && profile.favorite_soundtrack_game_slug ? (
+            <FavoriteSoundtrackCover
+              imageUrl={profile.favorite_soundtrack_cover_url}
+              gameSlug={profile.favorite_soundtrack_game_slug}
+            />
           ) : null}
       </div>
 
