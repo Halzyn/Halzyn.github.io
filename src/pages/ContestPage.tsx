@@ -274,12 +274,7 @@ export function ContestPage() {
           <p className="muted small contest-hosts-line">
             Hosted by {contestHosts.entries.map((host, index) => (
               <Fragment key={host.hostKey}>
-                {index > 0 ? (
-                  <span className="contest-title-with-hosts-sep" aria-hidden>
-                    {' '}
-                    ·{' '}
-                  </span>
-                ) : null}
+                {index > 0 ? ', ' : null}
                 <ContestHostName
                   displayName={host.displayName}
                   profileUsername={host.profileUsername}

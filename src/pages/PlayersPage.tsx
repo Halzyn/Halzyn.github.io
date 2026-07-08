@@ -7,11 +7,12 @@ import { avatarPublicUrl } from '../lib/avatar'
 import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import type { PublicProfile } from '../lib/types'
+import { computePpRankByUserId, formatPlayerListPp } from '../lib/performancePoints'
 
-type SortMode = 'id' | 'name'
+type SortMode = 'name' | 'pp'
 
 const SORT_CONTROLS: { mode: SortMode; label: string }[] = [
-  { mode: 'id', label: 'Player #' },
+  { mode: 'pp', label: 'PP' },
   { mode: 'name', label: 'Display name' },
 ]
 
@@ -26,7 +27,7 @@ export function PlayersPage() {
   const [displayNameStyleByUserId, setDisplayNameStyleByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
     new Map(),
   )
-  const [sortMode, setSortMode] = useState<SortMode>('id')
+  const [sortMode, setSortMode] = useState<SortMode>('pp')
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -52,12 +53,14 @@ export function PlayersPage() {
     void loadPlayers()
   }, [supabase])
 
+  const ppRankByUserId = useMemo(() => computePpRankByUserId(profiles), [profiles])
+
   const sortedProfiles = useMemo(() => {
     const copy = [...profiles]
     if (sortMode === 'name') {
       copy.sort((a, b) => a.display_name.localeCompare(b.display_name))
     } else {
-      copy.sort((a, b) => (a.player_number ?? 0) - (b.player_number ?? 0))
+      copy.sort((a, b) => (b.performance_points ?? 0) - (a.performance_points ?? 0))
     }
     return copy
   }, [profiles, sortMode])
@@ -82,7 +85,7 @@ export function PlayersPage() {
       </div>
 
       <section className="section">
-        <h2>Public profiles</h2>
+        <h2>Players</h2>
         <ul className="card-list">
           {sortedProfiles.map((profile) => {
             const avatarSrc = avatarPublicUrl(supabase, profile.avatar_path)
@@ -103,13 +106,12 @@ export function PlayersPage() {
                     <span className="player-card-avatar player-card-avatar--placeholder" aria-hidden />
                   )}
                   <span className="player-card-text">
+                    <span className="player-card-rank">#{ppRankByUserId.get(profile.id) ?? '—'}.</span>
                     <span className="card-title">
                       <DisplayNameStyled text={profile.display_name} info={displayNameStyleByUserId.get(profile.id)} />
                     </span>
-                    <span className="muted small">
-                      #{profile.player_number} · @{profile.username}
-                    </span>
                   </span>
+                  <span className="player-card-pp">{formatPlayerListPp(profile.performance_points)}</span>
                 </Link>
               </li>
             )

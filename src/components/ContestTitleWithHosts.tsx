@@ -19,12 +19,11 @@ export function ContestTitleWithHosts({
   return (
     <span className="contest-title-with-hosts">
       <span className={titleClassName}>{title}</span>
-      {hasHosts && hosts
-        ? hosts.entries.map((host) => (
+      {hasHosts && hosts ? (
+        <span className="contest-title-with-hosts-list muted small">
+          {hosts.entries.map((host, index) => (
             <Fragment key={host.hostKey}>
-              <span className="contest-title-with-hosts-sep" aria-hidden>
-                ·
-              </span>
+              {index > 0 ? ', ' : null}
               <ContestHostName
                 displayName={host.displayName}
                 profileUsername={host.profileUsername}
@@ -33,8 +32,9 @@ export function ContestTitleWithHosts({
                 nestedInLink={hostsNestedInLink}
               />
             </Fragment>
-          ))
-        : null}
+          ))}
+        </span>
+      ) : null}
     </span>
   )
 }

@@ -54,7 +54,8 @@ export type ProfileContestStatsResult = {
   totalFranchise: number
   totalSolo: number
   byDiff: Record<Difficulty, number>
-  contests: { contest: Contest; rank: number; total: number; score: number }[]
+  performancePoints?: number
+  contests: { contest: Contest; rank: number; total: number; score: number; pp?: number }[]
 }
 
 export function computeProfileContestStats(

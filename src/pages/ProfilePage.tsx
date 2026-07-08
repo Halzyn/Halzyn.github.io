@@ -4,11 +4,12 @@ import { useAuth } from '../auth/AuthContext'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
-import type { Contest, GradingMark, Submission, SubmissionGuess, Track } from '../lib/types'
-import { computeProfileContestStats, type ProfileContestStatsResult } from '../lib/profileContestStats'
-import { computeProfileRpgStats } from '../lib/profileRpgStats'
+import type { ProfileContestStatsResult } from '../lib/profileContestStats'
+import type { ProfileRpgStats } from '../lib/profileRpgStats'
 import { avatarPublicUrl } from '../lib/avatar'
 import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
+import { computePpRankByUserId } from '../lib/performancePoints'
+import type { PublicProfile } from '../lib/types'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
 
 type ProfileJson = {
@@ -24,31 +25,21 @@ type ProfileJson = {
   favorite_soundtrack_cover_url?: string | null
 }
 
-type ProfileStats = {
-  my_submissions: Submission[]
-  contests: Contest[]
-  tracks: Track[]
-  submissions: Submission[]
-  marks: GradingMark[]
-  guesses: SubmissionGuess[]
+type PrecomputedProfileStats = {
+  performance_points: number
+  contest: ProfileContestStatsResult
+  rpg: ProfileRpgStats
 }
 
 type PublicProfileRpcResponse = {
   profile: ProfileJson
-  stats: {
-    my_submissions?: Submission[]
-    contests?: Contest[]
-    tracks?: Track[]
-    submissions?: Submission[]
-    marks?: GradingMark[]
-    guesses?: SubmissionGuess[]
-  }
+  stats: PrecomputedProfileStats
 }
 
-function ProfileContestTotals({ stats }: { stats: ProfileContestStatsResult }) {
+function ProfileStatsPanel({ stats }: { stats: ProfileContestStatsResult }) {
   return (
     <>
-      <h2>Totals</h2>
+      <h2>Stats</h2>
       <ul className="muted">
         <li>Correct game guesses: {stats.totalGame}</li>
         <li>Correct franchise guesses: {stats.totalFranchise}</li>
@@ -91,32 +82,13 @@ export function ProfilePage() {
   const [profile, setProfile] = useState<ProfileJson | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
-  const [stats, setStats] = useState<ProfileStats | null>(null)
+  const [stats, setStats] = useState<PrecomputedProfileStats | null>(null)
+  const [ppRank, setPpRank] = useState<number | null>(null)
   const [displayNameStyleInfo, setDisplayNameStyleInfo] = useState<DisplayNameStyleInfo | null>(null)
 
-  const contestStats = useMemo(() => {
-    if (!stats) return null
-    return computeProfileContestStats(
-      stats.my_submissions,
-      stats.contests,
-      stats.tracks,
-      stats.submissions,
-      stats.marks,
-    )
-  }, [stats])
-
-  const rpgStats = useMemo(() => {
-    if (!stats || contestStats === null) return null
-    return computeProfileRpgStats(
-      stats.guesses ?? [],
-      stats.submissions,
-      stats.tracks,
-      stats.marks,
-      contestStats,
-      profile?.player_number ?? 0,
-      profile?.id,
-    )
-  }, [stats, contestStats, profile?.player_number, profile?.id])
+  const contestStats = stats?.contest ?? null
+  const rpgStats = stats?.rpg ?? null
+  const performancePoints = stats?.performance_points ?? null
 
   useEffect(() => {
     if (!usernameFromRoute) {
@@ -127,9 +99,13 @@ export function ProfilePage() {
     async function loadPublicProfile() {
       setLoadError(null)
       setDisplayNameStyleInfo(null)
-      const { data, error } = await supabase.rpc('get_public_profile_page_data', {
-        p_username: usernameFromRoute,
-      })
+      setPpRank(null)
+      const [{ data, error }, { data: playersData, error: playersError }] = await Promise.all([
+        supabase.rpc('get_public_profile_page_data', {
+          p_username: usernameFromRoute,
+        }),
+        supabase.rpc('list_players_public'),
+      ])
       if (error) {
         setLoadError(error.message)
         setProfile(null)
@@ -155,15 +131,11 @@ export function ProfilePage() {
         setDisplayNameStyleInfo(displayNameStyleMapFromRpc(styleBlob).get(pid) ?? null)
       }
 
-      const rawStats = payload.stats
-      setStats({
-        my_submissions: (rawStats?.my_submissions ?? []) as Submission[],
-        contests: (rawStats?.contests ?? []) as Contest[],
-        tracks: (rawStats?.tracks ?? []) as Track[],
-        submissions: (rawStats?.submissions ?? []) as Submission[],
-        marks: (rawStats?.marks ?? []) as GradingMark[],
-        guesses: (rawStats?.guesses ?? []) as SubmissionGuess[],
-      })
+      setStats(payload.stats)
+      if (!playersError && playersData) {
+        const rank = computePpRankByUserId(playersData as PublicProfile[]).get(pid) ?? null
+        setPpRank(rank)
+      }
       setProfileLoading(false)
     }
 
@@ -220,9 +192,6 @@ export function ProfilePage() {
         ) : null}
       </div>
       <div className="profile-rpg-stats-row">
-          <div className="profile-totals-column profile-totals-column--rpg-row">
-            <ProfileContestTotals stats={contestStats} />
-          </div>
           <div className="profile-rpg-ff" aria-label="RPG status">
             <div className="profile-rpg-ff-top">
               <div className="profile-rpg-ff-party">
@@ -247,6 +216,11 @@ export function ProfilePage() {
                   </h1>
                   <div className="profile-rpg-ff-job-row">
                     <span className="profile-rpg-ff-job">{title(profile)}</span>
+                  </div>
+                  <div className="profile-rpg-ff-job-row">
+                    <span className="profile-rpg-ff-rank-pp">
+                      {ppRank != null ? `Rank #${ppRank}` : 'Rank —'} - {(performancePoints ?? 0).toFixed(2)}pp
+                    </span>
                   </div>
                   <div className="profile-rpg-ff-line">
                     <span className="profile-rpg-ff-k">Level</span>
@@ -303,6 +277,9 @@ export function ProfilePage() {
               </div>
             ) : null}
           </div>
+          <div className="profile-totals-column profile-totals-column--rpg-row">
+            <ProfileStatsPanel stats={contestStats} />
+          </div>
           {profile.favorite_soundtrack_cover_url ? (
             <FavoriteSoundtrackCover imageUrl={profile.favorite_soundtrack_cover_url} />
           ) : null}
@@ -314,17 +291,19 @@ export function ProfilePage() {
           <p className="muted">None yet. Go enter some contests!</p>
         ) : (
           <ul className="card-list">
-            {contestStats.contests.map(({ contest, rank, total, score }) => (
+            {contestStats.contests.map(({ contest, rank, total, score, pp }) => (
               <li key={contest.id} className="card">
                 <Link to={`/contests/${contest.slug}`}>
                   <span className="card-title">{contest.title}</span>
                   <span className="muted small">
                     {rank > 0 && total > 0 ? (
                       <>
-                        Place {rank} / {total} · Score {score.toFixed(1)}
+                        Place {rank} / {total} Score {score.toFixed(1)} {(pp ?? 0).toFixed(2)}pp
                       </>
                     ) : (
-                      <>Score {score.toFixed(1)}</>
+                      <>
+                        Score {score.toFixed(1)} {(pp ?? 0).toFixed(2)}pp
+                      </>
                     )}
                   </span>
                 </Link>

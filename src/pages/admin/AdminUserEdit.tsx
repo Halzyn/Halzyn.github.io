@@ -140,7 +140,7 @@ export function AdminUserEdit() {
       </p>
       <h1>Edit user</h1>
       <p className="muted small">
-        Player #{profile.player_number ?? '—'} · id <code>{profile.id}</code>
+        Player #{profile.player_number ?? '—'} id <code>{profile.id}</code>
       </p>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
       {successMessage ? <p className="banner success">{successMessage}</p> : null}

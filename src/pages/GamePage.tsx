@@ -100,11 +100,7 @@ function AlternateTitlesLine({ titles }: { titles: GameAlternateTitle[] }) {
           <span className="game-page-alt-label">Alternate titles: </span>
           {titles.map((alternate, index) => (
             <span key={alternate.id}>
-              {index > 0 ? (
-                <span className="game-page-alt-sep" aria-hidden>
-                  {' · '}
-                </span>
-              ) : null}
+              {index > 0 ? ', ' : null}
               {alternate.title}
             </span>
           ))}

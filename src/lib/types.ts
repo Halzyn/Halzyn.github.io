@@ -152,6 +152,7 @@ export type PublicProfile = {
   player_number: number
   created_at: string
   avatar_path?: string | null
+  performance_points?: number | null
 }
 
 export type SubmissionGuess = {

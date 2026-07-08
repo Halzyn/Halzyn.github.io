@@ -867,7 +867,7 @@ export function ProfileEditPage() {
                       <Link to={`/contests/${encodeURIComponent(submission.contest_slug)}/submit`}>
                         {submission.contest_title}
                       </Link>
-                      <span className="muted small"> · View only</span>
+                      <span className="muted small"> View only</span>
                     </li>
                   ))}
                 </ul>
@@ -1067,8 +1067,7 @@ export function ProfileEditPage() {
               <ul className="profile-moderation-links">
                 {moderatedContests.map((contest) => (
                   <li key={contest.id}>
-                    <Link to={`/admin/contests/${contest.id}`}>{contest.title}</Link>
-                    <span className="muted small"> · </span>
+                    <Link to={`/admin/contests/${contest.id}`}>{contest.title}</Link>{' '}
                     <Link to={`/admin/contests/${contest.id}/grade`} className="muted small">
                       Grade
                     </Link>

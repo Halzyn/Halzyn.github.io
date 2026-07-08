@@ -318,7 +318,7 @@ export function AdminGameEdit() {
         {!isNew && game ? (
           <p className="muted small">
             Public page: <Link to={`/games/${encodeURIComponent(game.slug)}`}>/games/{game.slug}</Link>
-            {linkCount != null ? ` · ${linkCount} track link(s)` : null}
+            {linkCount != null ? ` ${linkCount} track link(s)` : null}
           </p>
         ) : null}
       </section>

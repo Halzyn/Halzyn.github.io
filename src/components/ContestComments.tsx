@@ -112,7 +112,7 @@ function CommentEditHistory({ commentId, editCount }: { commentId: string; editC
             {edits.map((edit, index) => (
               <li key={edit.id}>
                 <p className="muted small comment-edit-history-label">
-                  Version {index + 1} · {formatWhen(edit.edited_at)}
+                  Version {index + 1} - {formatWhen(edit.edited_at)}
                 </p>
                 <CommentMarkdownBody body={edit.body} />
               </li>
@@ -255,7 +255,7 @@ function CommentItem({
       <header className="comment-item-meta row spread">
         <span className="muted small comment-item-when">
           {formatWhen(node.created_at)}
-          {node.updated_at !== node.created_at ? <span> · edited</span> : null}
+          {node.updated_at !== node.created_at ? <span> edited</span> : null}
         </span>
         <span className="comment-votes row tight">
           <button
