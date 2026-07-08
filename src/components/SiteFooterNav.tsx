@@ -17,7 +17,7 @@ export function SiteFooterNav() {
             {index > 0 ? (
               <span className="foot-nav-sep" aria-hidden>
                 {' '}
-                ·{' '}
+                ◦{' '}
               </span>
             ) : null}
             {link.external ? (
