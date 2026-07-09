@@ -168,7 +168,7 @@ export function ContestPage() {
       const loadRevealData =
         (deadlinePassed && resultsPublished) ||
         (ready && isAdmin) ||
-        (deadlinePassed && contestMod)
+        (ready && contestMod)
 
       const trackIds = tracks.map((t) => t.id)
 
@@ -256,7 +256,7 @@ export function ContestPage() {
   const showResults = (ready && isAdmin) || showResultsToPublic || contestMod
   const canModerateComments = Boolean(contest && ((ready && isAdmin) || contestMod))
   const showAdminResultsPreview = ready && isAdmin && showResults && !showResultsToPublic
-  const showModResultsPreview = contestMod && showResults && deadlinePassed && !resultsPublished
+  const showModResultsPreview = contestMod && showResults && !showResultsToPublic
   const showResultsPreviewBanner = showAdminResultsPreview || showModResultsPreview
   const canEditContest = Boolean(contest && ((ready && isAdmin) || contestMod))
   const editContestHref = canEditContest ? `/admin/contests/${contest!.id}` : undefined
