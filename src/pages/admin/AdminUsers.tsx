@@ -44,7 +44,7 @@ export function AdminUsers() {
                   {profile.display_name ?? profile.username ?? profile.id.slice(0, 8)}
                 </span>
                 <span className="muted small">
-                  #{profile.player_number ?? '—'} {profile.username ?? 'no username'}
+                  #{profile.player_number ?? '-'} {profile.username ?? 'no username'}
                 </span>
               </Link>
             </li>

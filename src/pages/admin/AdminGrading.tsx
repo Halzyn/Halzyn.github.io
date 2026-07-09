@@ -241,7 +241,7 @@ export function AdminGrading() {
       <p className="muted small">
         <Link to={`/admin/contests/${contest.id}`}>← Contest</Link>
       </p>
-      <h1>Grading — {contest.title}</h1>
+      <h1>Grading ◦ {contest.title}</h1>
       <p className="muted small">
         Each row is a track and each column is a contestant. Click a cell to toggle between X (correct game), ~ (franchise only) and
         empty. If someone sends you a submission in private through Discord, you can add them to the grid with the form below.
@@ -311,8 +311,8 @@ export function AdminGrading() {
                   const rowClass = rowIdx % 2 === 0 ? 'results-row-odd' : 'results-row-even'
                   const trackAnswer = answersByTrack.get(track.id)
                   const gameNames = trackAnswer?.game_names ?? []
-                  const primaryGame = gameNames[0] ?? '—'
-                  const songTitle = trackAnswer?.song_title?.trim() || '—'
+                  const primaryGame = gameNames[0] ?? '-'
+                  const songTitle = trackAnswer?.song_title?.trim() || '-'
                   const alternateGamesTooltip =
                     gameNames.length > 1 ? gameNames.slice(1).join(', ') : undefined
                   return (

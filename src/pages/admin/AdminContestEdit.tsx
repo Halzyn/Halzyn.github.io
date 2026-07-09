@@ -564,6 +564,14 @@ export function AdminContestEdit() {
             {label}
           </button>
         ))}
+        <Link
+          to={`/admin/contests/${contest.id}/grade`}
+          className={tabButtonClass(false)}
+          role="tab"
+          id="contest-tab-grid"
+        >
+          Grid
+        </Link>
         {isAdminUser ? (
           <button
             type="button"

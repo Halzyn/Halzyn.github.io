@@ -85,7 +85,7 @@ export function PlayersPage() {
       </div>
 
       <section className="section">
-        <h2>Players</h2>
+      <h2>Players</h2>
         <ul className="card-list">
           {sortedProfiles.map((profile) => {
             const avatarSrc = avatarPublicUrl(supabase, profile.avatar_path)
@@ -106,7 +106,7 @@ export function PlayersPage() {
                     <span className="player-card-avatar player-card-avatar--placeholder" aria-hidden />
                   )}
                   <span className="player-card-text">
-                    <span className="player-card-rank">#{ppRankByUserId.get(profile.id) ?? '—'}.</span>
+                    <span className="player-card-rank">#{ppRankByUserId.get(profile.id) ?? '-'}.</span>
                     <span className="card-title">
                       <DisplayNameStyled text={profile.display_name} info={displayNameStyleByUserId.get(profile.id)} />
                     </span>

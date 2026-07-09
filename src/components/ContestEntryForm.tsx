@@ -82,8 +82,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       return (
         <>
           Play each track and enter your guesses. The first time you save, you will get a <strong>private edit link</strong>{' '}
-          in the address bar. Bookmark it to edit from another device — this browser will remember your entry
-          automatically.
+          in the address bar. This browser will remember your entry automatically. Bookmark it to edit from another device.
         </>
       )
     }
@@ -98,6 +97,9 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       <section className="section contest-entry-section contest-entry">
         <h2>{sectionTitle}</h2>
         {renderTopBanner()}
+        {entry.closed && entry.isAdmin && !entry.adminSubmissionId ? (
+          <p className="banner">why are you here</p>
+        ) : null}
         {entry.isAdmin && entry.adminSubmissionId ? (
           <p className="banner">Editing this submission in place.</p>
         ) : null}
