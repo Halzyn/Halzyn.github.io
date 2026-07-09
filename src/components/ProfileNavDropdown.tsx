@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 import { isProfileNavActive, siteNavLinkClass } from '../lib/siteNav'
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
 
 export function ProfileNavDropdown({ profileTo }: Props) {
   const location = useLocation()
+  const { hasModerationAccess } = useAuth()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLSpanElement>(null)
   const menuId = useId()
@@ -60,6 +62,11 @@ export function ProfileNavDropdown({ profileTo }: Props) {
           <Link to="/profile/edit?tab=submissions" role="menuitem" onClick={close}>
             My submissions
           </Link>
+          {hasModerationAccess ? (
+            <Link to="/profile/edit?tab=moderation" role="menuitem" onClick={close}>
+              Moderation
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </span>

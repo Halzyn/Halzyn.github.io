@@ -33,8 +33,6 @@ type MyContestSubmissionRow = {
   results_published: boolean
 }
 
-type ModeratedContest = { id: string; slug: string; title: string }
-
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{2,32}$/
 
 const PROFILE_SECTION_TABS: { tab: EditTab; label: string }[] = [
@@ -86,29 +84,10 @@ function parseEditTab(value: string | null): EditTab | null {
   return null
 }
 
-function collectModeratedContestsFromRows(
-  rows: { contests: ModeratedContest | ModeratedContest[] | null }[],
-): ModeratedContest[] {
-  const list: ModeratedContest[] = []
-  const seenIds = new Set<string>()
-  for (const row of rows) {
-    const embedded = row.contests
-    if (!embedded) continue
-    for (const contest of Array.isArray(embedded) ? embedded : [embedded]) {
-      if (contest?.id && !seenIds.has(contest.id)) {
-        seenIds.add(contest.id)
-        list.push(contest)
-      }
-    }
-  }
-  list.sort((a, b) => a.title.localeCompare(b.title))
-  return list
-}
-
 export function ProfileEditPage() {
   useDocumentTitle(pageTitle('Your profile'))
   const supabase = getSupabase()
-  const { refreshProfile } = useAuth()
+  const { refreshProfile, hasModerationAccess, moderatedContests } = useAuth()
   const [searchParams] = useSearchParams()
   const tabFromUrl = parseEditTab(searchParams.get('tab'))
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -131,8 +110,6 @@ export function ProfileEditPage() {
   const [favoriteGameId, setFavoriteGameId] = useState<string | null>(null)
   const [favoriteBusy, setFavoriteBusy] = useState(false)
   const [editTab, setEditTab] = useState<EditTab>('basic')
-  const [moderatedContests, setModeratedContests] = useState<ModeratedContest[]>([])
-  const [moderatedContestsLoaded, setModeratedContestsLoaded] = useState(false)
   const [notifyNewContestEmail, setNotifyNewContestEmail] = useState(false)
   const [notifyEmailBusy, setNotifyEmailBusy] = useState(false)
   const [mySubmissions, setMySubmissions] = useState<MyContestSubmissionRow[] | null>(null)
@@ -193,33 +170,6 @@ export function ProfileEditPage() {
   }, [supabase])
 
   useEffect(() => {
-    if (!profile) return
-    const profileUserId = profile.id
-    if (profile.is_admin) {
-      setModeratedContests([])
-      setModeratedContestsLoaded(true)
-      return
-    }
-    setModeratedContestsLoaded(false)
-
-    async function loadModeratedContests() {
-      const { data, error } = await supabase
-        .from('contest_moderators')
-        .select('contest_id, contests ( id, slug, title )')
-        .eq('user_id', profileUserId)
-      setModeratedContestsLoaded(true)
-      if (error || !data) {
-        setModeratedContests([])
-        return
-      }
-      const rows = data as { contests: ModeratedContest | ModeratedContest[] | null }[]
-      setModeratedContests(collectModeratedContestsFromRows(rows))
-    }
-
-    void loadModeratedContests()
-  }, [profile?.id, profile?.is_admin, supabase])
-
-  useEffect(() => {
     if (!profile?.id) return
     let cancelled = false
 
@@ -263,21 +213,17 @@ export function ProfileEditPage() {
     }
   }, [profile?.id, supabase])
 
-  const showModerationTab = Boolean(
-    profile && (profile.is_admin || (moderatedContestsLoaded && moderatedContests.length > 0)),
-  )
-
   useEffect(() => {
-    if (!showModerationTab && editTab === 'moderation') {
+    if (!hasModerationAccess && editTab === 'moderation') {
       setEditTab('basic')
     }
-  }, [showModerationTab, editTab])
+  }, [hasModerationAccess, editTab])
 
   useEffect(() => {
     if (!tabFromUrl) return
-    if (tabFromUrl === 'moderation' && !showModerationTab) return
+    if (tabFromUrl === 'moderation' && !hasModerationAccess) return
     setEditTab(tabFromUrl)
-  }, [tabFromUrl, showModerationTab])
+  }, [tabFromUrl, hasModerationAccess])
 
   const avatarPreview = useMemo(
     () => (profile ? avatarPublicUrl(supabase, profile.avatar_path) : null),
@@ -613,7 +559,7 @@ export function ProfileEditPage() {
             {label}
           </button>
         ))}
-        {showModerationTab ? (
+        {hasModerationAccess ? (
           <button
             type="button"
             role="tab"
@@ -1032,7 +978,7 @@ export function ProfileEditPage() {
         </section>
       </div>
 
-      {showModerationTab ? (
+      {hasModerationAccess ? (
         <div
           id="profile-panel-moderation"
           role="tabpanel"

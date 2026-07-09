@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { Session, SupabaseClient } from '@supabase/supabase-js'
+import { fetchModeratedContests, type ModeratedContest } from '../lib/moderation'
 import { getSupabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
 
@@ -18,6 +19,8 @@ export type AuthContextValue = {
   ready: boolean
   userId: string | null
   isAdmin: boolean
+  hasModerationAccess: boolean
+  moderatedContests: ModeratedContest[]
   refreshProfile: () => Promise<void>
 }
 
@@ -33,6 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = getSupabase()
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [moderatedContests, setModeratedContests] = useState<ModeratedContest[]>([])
+  const [moderatedContestsLoaded, setModeratedContestsLoaded] = useState(false)
   const [ready, setReady] = useState(false)
   const trackedAuthUserIdRef = useRef<string | null>(null)
   const profileLoadedForUserIdRef = useRef<string | null>(null)
@@ -49,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!nextUserId) {
         setProfile(null)
+        setModeratedContests([])
+        setModeratedContestsLoaded(false)
         setReady(true)
         profileLoadedForUserIdRef.current = null
         profileFetchInFlightForUserIdRef.current = null
@@ -105,6 +112,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase])
 
+  useEffect(() => {
+    if (!profile) {
+      setModeratedContests([])
+      setModeratedContestsLoaded(false)
+      return
+    }
+
+    if (profile.is_admin) {
+      setModeratedContests([])
+      setModeratedContestsLoaded(true)
+      return
+    }
+
+    setModeratedContestsLoaded(false)
+    const profileUserId = profile.id
+    let cancelled = false
+
+    void fetchModeratedContests(supabase, profileUserId).then((contests) => {
+      if (cancelled) return
+      setModeratedContests(contests)
+      setModeratedContestsLoaded(true)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [profile?.id, profile?.is_admin, supabase])
+
   const refreshProfile = useCallback(async () => {
     const uid = session?.user?.id ?? null
     if (!uid) {
@@ -120,8 +155,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(() => {
     const userId = session?.user?.id ?? null
     const isAdmin = Boolean(profile?.is_admin)
-    return { session, profile, ready, userId, isAdmin, refreshProfile }
-  }, [session, profile, ready, refreshProfile])
+    const hasModerationAccess = Boolean(
+      profile && (isAdmin || (moderatedContestsLoaded && moderatedContests.length > 0)),
+    )
+    return {
+      session,
+      profile,
+      ready,
+      userId,
+      isAdmin,
+      hasModerationAccess,
+      moderatedContests,
+      refreshProfile,
+    }
+  }, [session, profile, ready, moderatedContests, moderatedContestsLoaded, refreshProfile])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
