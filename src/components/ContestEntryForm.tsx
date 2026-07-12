@@ -97,9 +97,6 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       <section className="section contest-entry-section contest-entry">
         <h2>{sectionTitle}</h2>
         {renderTopBanner()}
-        {entry.closed && entry.isAdmin && !entry.adminSubmissionId ? (
-          <p className="banner">why are you here</p>
-        ) : null}
         {entry.isAdmin && entry.adminSubmissionId ? (
           <p className="banner">Editing this submission in place.</p>
         ) : null}
