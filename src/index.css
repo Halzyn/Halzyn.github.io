@@ -2245,6 +2245,24 @@ textarea {
   width: 4.5rem;
 }
 
+.track-order-head {
+  align-items: center;
+}
+
+.track-reorder-buttons .button {
+  min-width: 2rem;
+  padding-inline: 0.35rem;
+}
+
+.track-reupload {
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.track-reupload .field.row.tight {
+  margin: 0;
+}
+
 .difficulty-input {
   min-width: 10rem;
   max-width: 18rem;

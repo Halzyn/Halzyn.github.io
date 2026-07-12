@@ -66,6 +66,16 @@ const CONTEST_EDIT_TABS: { tab: Exclude<ContestEditTab, 'access'>; label: string
   { tab: 'tracks', label: 'Tracks' },
 ]
 
+const CONTEST_CYCLE_DAYS = 28
+
+function shiftDatetimeLocalByDays(value: string, days: number): string {
+  if (!value.trim()) return value
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  date.setDate(date.getDate() + days)
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
+
 function tabButtonClass(selected: boolean): string {
   return selected ? 'button small primary' : 'button small ghost'
 }
@@ -122,6 +132,7 @@ export function AdminContestEdit() {
   const [difficulty, setDifficulty] = useState('')
   const [batchFiles, setBatchFiles] = useState<File[]>([])
   const [batchBusy, setBatchBusy] = useState(false)
+  const [reuploadingTrackId, setReuploadingTrackId] = useState<string | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [gamesCatalog, setGamesCatalog] = useState<Game[]>([])
   const [moderators, setModerators] = useState<{ user_id: string; username: string | null }[]>([])
@@ -459,6 +470,79 @@ export function AdminContestEdit() {
     void load()
   }
 
+  async function reuploadTrackAudio(track: Track, file: File) {
+    if (!contest) return
+    setPageError(null)
+    setReuploadingTrackId(track.id)
+    const oldPath = track.audio_path
+    const fileExtension = file.name.includes('.') ? file.name.split('.').pop() : 'mp3'
+    const objectPath = `${contest.id}/${crypto.randomUUID()}.${fileExtension}`
+
+    const { error: uploadError } = await supabase.storage.from('contest-audio').upload(objectPath, file, {
+      contentType: file.type || 'audio/mpeg',
+    })
+    if (uploadError) {
+      setPageError(`Upload failed: ${uploadError.message}`)
+      setReuploadingTrackId(null)
+      return
+    }
+
+    const { error: updateError } = await supabase
+      .from('tracks')
+      .update({ audio_path: objectPath })
+      .eq('id', track.id)
+    if (updateError) {
+      await supabase.storage.from('contest-audio').remove([objectPath])
+      setPageError(updateError.message)
+      setReuploadingTrackId(null)
+      return
+    }
+
+    const { error: storageErr } = await supabase.storage.from('contest-audio').remove([oldPath])
+    if (storageErr) {
+      console.warn('Old audio file could not be removed from storage:', storageErr)
+    }
+
+    setReuploadingTrackId(null)
+    void load()
+  }
+
+  async function swapTrackOrder(a: Track, b: Track) {
+    setPageError(null)
+    const tempOrder = Math.max(...tracks.map((track) => track.sort_order), 0) + 1000
+
+    const { error: moveAtoTempError } = await supabase
+      .from('tracks')
+      .update({ sort_order: tempOrder })
+      .eq('id', a.id)
+    if (moveAtoTempError) {
+      setPageError(moveAtoTempError.message)
+      return
+    }
+
+    const { error: moveBtoAError } = await supabase
+      .from('tracks')
+      .update({ sort_order: a.sort_order })
+      .eq('id', b.id)
+    if (moveBtoAError) {
+      setPageError(moveBtoAError.message)
+      void load()
+      return
+    }
+
+    const { error: moveAtoBError } = await supabase
+      .from('tracks')
+      .update({ sort_order: b.sort_order })
+      .eq('id', a.id)
+    if (moveAtoBError) {
+      setPageError(moveAtoBError.message)
+      void load()
+      return
+    }
+
+    void load()
+  }
+
   async function removeTrack(t: Track) {
     if (!window.confirm(`Delete track ${t.sort_order}?`)) return
     const { error } = await supabase.from('tracks').delete().eq('id', t.id)
@@ -630,6 +714,24 @@ export function AdminContestEdit() {
           <p className="muted small">
             Contest will automatically go live at this time.
           </p>
+          <div className="row tight">
+            <button
+              type="button"
+              className="button ghost small"
+              onClick={() => {
+                setDeadline((current) => shiftDatetimeLocalByDays(current, CONTEST_CYCLE_DAYS))
+                if (!published && scheduledPublishAt.trim()) {
+                  setScheduledPublishAt((current) => shiftDatetimeLocalByDays(current, CONTEST_CYCLE_DAYS))
+                }
+              }}
+            >
+              +{CONTEST_CYCLE_DAYS} days
+            </button>
+          </div>
+          <p className="muted small">
+            Shifts the deadline{published ? '' : ' and scheduled go-live'} by one contest cycle. Save contest to
+            apply.
+          </p>
           <label className="field">
             <span>Tagline</span>
             <textarea
@@ -763,19 +865,56 @@ export function AdminContestEdit() {
         <h2>Tracks & answers</h2>
         {tracks.length === 0 ? <p className="muted">No tracks yet.</p> : null}
         <ul className="stack">
-          {tracks.map((track) => {
+          {tracks.map((track, trackIndex) => {
             const trackAnswer = answers[track.id]
             const audioSrc = publicAudioUrl(track.audio_path)
+            const isReuploading = reuploadingTrackId === track.id
             return (
               <li key={track.id} className="site-inset">
                 <div className="site-inset-head row spread">
-                  <strong>#{track.sort_order}</strong>
+                  <div className="row tight track-order-head">
+                    <strong>#{track.sort_order}</strong>
+                    <div className="track-reorder-buttons row tight">
+                      <button
+                        type="button"
+                        className="button ghost small"
+                        disabled={trackIndex === 0}
+                        onClick={() => void swapTrackOrder(track, tracks[trackIndex - 1])}
+                        aria-label={`Move track ${track.sort_order} up`}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="button ghost small"
+                        disabled={trackIndex === tracks.length - 1}
+                        onClick={() => void swapTrackOrder(track, tracks[trackIndex + 1])}
+                        aria-label={`Move track ${track.sort_order} down`}
+                      >
+                        ↓
+                      </button>
+                    </div>
+                  </div>
                   <button type="button" className="button ghost small" onClick={() => void removeTrack(track)}>
                     Delete
                   </button>
                 </div>
                 <div className="site-inset-body">
                   {audioSrc ? <TrackPreviewAudio src={audioSrc} /> : null}
+                  <label className="field row tight track-reupload">
+                    <span className="muted small">Replace audio</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      disabled={isReuploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        e.target.value = ''
+                        if (file) void reuploadTrackAudio(track, file)
+                      }}
+                    />
+                    {isReuploading ? <span className="muted small">Uploading...</span> : null}
+                  </label>
                   <AnswerForm
                     key={track.id}
                     track={track}
