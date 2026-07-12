@@ -6,6 +6,7 @@ import { getSupabase } from '../lib/supabase'
 import type { ContestWithHosts, GradingMark, Submission, Track, TrackAnswer } from '../lib/types'
 import { parseTrackAnswer } from '../lib/trackAnswer'
 import { contestClosed } from '../lib/deadline'
+import { ContestCalendarLink } from '../components/ContestCalendarLink'
 import { Countdown } from '../components/Countdown'
 import type { TrackAudioPlayerHandle } from '../components/TrackAudioPlayer'
 import { ContestResults } from '../components/ContestResults'
@@ -314,9 +315,34 @@ export function ContestPage() {
           </p>
         ) : null}
         {contest.description ? <p className="lede lede--preline">{contest.description}</p> : null}
+        {contest.scheduled_publish_at ? (
+          <p className="muted small">
+            Goes live {new Date(contest.scheduled_publish_at).toLocaleString()}
+            {' ◦ '}
+            <ContestCalendarLink
+              contestId={contest.id}
+              contestSlug={contest.slug}
+              contestTitle={contest.title}
+              scheduledPublishAtIso={contest.scheduled_publish_at}
+              events={['go-live']}
+            />
+          </p>
+        ) : null}
         <p className="muted small">
           Deadline: {new Date(contest.deadline).toLocaleString()}
           {deadlinePassed ? ' (closed)' : null}
+          {!deadlinePassed ? (
+            <>
+              {' ◦ '}
+              <ContestCalendarLink
+                contestId={contest.id}
+                contestSlug={contest.slug}
+                contestTitle={contest.title}
+                deadlineIso={contest.deadline}
+                events={['deadline']}
+              />
+            </>
+          ) : null}
         </p>
         {!deadlinePassed ? <Countdown deadlineIso={contest.deadline} /> : null}
       </header>

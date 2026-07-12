@@ -9,6 +9,7 @@ import {
   contestHostsFromScheduledTeaser,
   hostsMapFromContests,
 } from '../lib/contestHosts'
+import { ContestCalendarLink } from '../components/ContestCalendarLink'
 import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
 import type { ContestWithHosts, ScheduledContestTeaser } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
@@ -114,6 +115,14 @@ export function Home() {
                   />
                   <span className="muted small contest-card-deadline">
                     Deadline {new Date(contest.deadline).toLocaleString()}
+                    {' ◦ '}
+                    <ContestCalendarLink
+                      contestId={contest.id}
+                      contestSlug={contest.slug}
+                      contestTitle={contest.title}
+                      deadlineIso={contest.deadline}
+                      events={['deadline']}
+                    />
                   </span>
                 </Link>
               </li>
@@ -158,6 +167,13 @@ export function Home() {
                   {liveAt ? (
                     <span className="muted small scheduled-contest-live">
                       Goes live {new Date(liveAt).toLocaleString()}
+                      {' ◦ '}
+                      <ContestCalendarLink
+                        contestId={row.id}
+                        contestTitle={row.title}
+                        scheduledPublishAtIso={liveAt}
+                        events={['go-live']}
+                      />
                     </span>
                   ) : null}
                   {row.schedule_tagline?.trim() ? (

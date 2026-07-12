@@ -337,7 +337,7 @@ export function AdminGrading() {
                           submission.id,
                           track.id,
                         )
-                        const gradeLabel = mark === 'game' ? 'X' : mark === 'franchise' ? '~' : '·'
+                        const gradeLabel = mark === 'game' ? 'X' : mark === 'franchise' ? '~' : '◦'
                         const guessText =
                           guessBySubmissionTrack.get(`${submission.id}:${track.id}`) ?? ''
                         const stripeClass = markVisual ? markVisual.cellClass : 'results-stripe'
