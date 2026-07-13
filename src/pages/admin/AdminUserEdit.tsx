@@ -7,6 +7,7 @@ import { getSupabase } from '../../lib/supabase'
 import type { Profile } from '../../lib/types'
 import { useAuth } from '../../auth/AuthContext'
 import { useAdminUserProfile } from '../../hooks/useAdminQueries'
+import { useToast } from '../../toast/ToastContext'
 
 const SUBMISSION_UUID_RE = /^[0-9a-f-]{36}$/i
 
@@ -22,12 +23,11 @@ export function AdminUserEdit() {
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
   const [submissionIdInput, setSubmissionIdInput] = useState('')
+  const { success: toastSuccess } = useToast()
   const [pageError, setPageError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const clearFeedback = useCallback(() => {
     setPageError(null)
-    setSuccessMessage(null)
   }, [])
 
   const documentTitle = useMemo(
@@ -64,7 +64,7 @@ export function AdminUserEdit() {
       setPageError(error.message)
       return
     }
-    setSuccessMessage('Saved.')
+    toastSuccess('Saved.')
   }
 
   async function assignSubmission(event: FormEvent) {
@@ -84,7 +84,7 @@ export function AdminUserEdit() {
       setPageError(error.message)
       return
     }
-    setSuccessMessage('Submission assigned.')
+    toastSuccess('Submission assigned.')
     setSubmissionIdInput('')
   }
 
@@ -130,7 +130,6 @@ export function AdminUserEdit() {
         Player #{profile.player_number ?? '-'} id <code>{profile.id}</code>
       </p>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
-      {successMessage ? <p className="banner success">{successMessage}</p> : null}
 
       <section className="section">
         <h2>Profile</h2>

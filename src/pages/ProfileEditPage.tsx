@@ -18,6 +18,7 @@ import {
   DEFAULT_SITE_BACKGROUND_PATTERN,
   parseSiteBackgroundPattern,
 } from '../theme/siteBackground'
+import { useToast } from '../toast/ToastContext'
 import {
   useFavoriteSoundtrackGames,
   useMyContestSubmissions,
@@ -49,8 +50,8 @@ export function ProfileEditPage() {
   const [bio, setBio] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
+  const { success: toastSuccess } = useToast()
   const [pageError, setPageError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [submitBusy, setSubmitBusy] = useState(false)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [email, setEmail] = useState('')
@@ -88,7 +89,6 @@ export function ProfileEditPage() {
 
   const clearFeedback = useCallback(() => {
     setPageError(null)
-    setSuccessMessage(null)
   }, [])
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export function ProfileEditPage() {
     }
     setProfile(updated as Profile)
     await refreshProfile()
-    setSuccessMessage('Theme saved.')
+    toastSuccess('Theme saved.')
   }, [clearFeedback, profile, refreshProfile, siteBackgroundPattern, supabase])
 
   const saveBehavior = useCallback(async () => {
@@ -193,7 +193,7 @@ export function ProfileEditPage() {
     }
     setProfile(updated as Profile)
     await refreshProfile()
-    setSuccessMessage('Behavior saved.')
+    toastSuccess('Behavior saved.')
   }, [alwaysRevealSpoilers, clearFeedback, profile, refreshProfile, supabase])
 
   const saveFavorite = useCallback(async () => {
@@ -212,7 +212,7 @@ export function ProfileEditPage() {
       return
     }
     setProfile(updated as Profile)
-    setSuccessMessage('Favorite soundtrack saved.')
+    toastSuccess('Favorite soundtrack saved.')
   }, [clearFeedback, favoriteGameId, profile, supabase])
 
   async function savePublic(event: FormEvent) {
@@ -260,7 +260,7 @@ export function ProfileEditPage() {
     setNameColor2(row.display_name_color_2?.trim() ?? '')
     setNameEffect(parseDisplayNameEffect(row.display_name_effect))
     await refreshProfile()
-    setSuccessMessage('Profile saved.')
+    toastSuccess('Profile saved.')
   }
 
   async function saveNotifyNewContestEmail(enabled: boolean) {
@@ -281,7 +281,7 @@ export function ProfileEditPage() {
     }
     setProfile(updated as Profile)
     setNotifyNewContestEmail(enabled)
-    setSuccessMessage(
+    toastSuccess(
       enabled
         ? 'You will get an email when a new contest is published.'
         : 'Contest announcement emails turned off.',
@@ -298,7 +298,7 @@ export function ProfileEditPage() {
       setPageError(error.message)
       return
     }
-    setSuccessMessage('Check your inbox to confirm the new email if required.')
+    toastSuccess('Check your inbox to confirm the new email if required.')
   }
 
   async function savePassword(event: FormEvent) {
@@ -321,7 +321,7 @@ export function ProfileEditPage() {
     }
     setNewPassword('')
     setPasswordConfirm('')
-    setSuccessMessage('Password updated.')
+    toastSuccess('Password updated.')
   }
 
   async function onAvatarFile(event: ChangeEvent<HTMLInputElement>) {
@@ -355,7 +355,7 @@ export function ProfileEditPage() {
         return
       }
       setProfile(updated as Profile)
-      setSuccessMessage('Profile picture updated.')
+      toastSuccess('Profile picture updated.')
       if (previousPath && previousPath !== newPath) {
         await supabase.storage.from('avatars').remove([previousPath])
       }
@@ -388,7 +388,7 @@ export function ProfileEditPage() {
       return
     }
     setProfile(updated as Profile)
-    setSuccessMessage('Profile picture removed.')
+    toastSuccess('Profile picture removed.')
   }
 
   if (!sessionReady) {
@@ -419,7 +419,6 @@ export function ProfileEditPage() {
         <h1>Your profile</h1>
       </header>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
-      {successMessage ? <p className="banner success">{successMessage}</p> : null}
 
       <div className="row tight site-toolbar profile-edit-tabs" role="tablist" aria-label="Profile sections">
         {PROFILE_SECTION_TABS.map(({ tab, label }) => (

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Game, Track, TrackAnswer } from '../../lib/types'
+import { useToast } from '../../toast/ToastContext'
 
 type AnswerFormProps = {
   track: Track
@@ -25,14 +26,14 @@ export function AdminAnswerForm({
   onSave,
 }: AnswerFormProps) {
   const listId = `game-datalist-${initial?.track_id ?? track.id}`
+  const { success: toastSuccess } = useToast()
   const [sortOrderDraft, setSortOrderDraft] = useState(() => String(track.sort_order))
   const [difficultyDraft, setDifficultyDraft] = useState(() => track.difficulty ?? '')
   const [primaryTitle, setPrimaryTitle] = useState(() => (initial?.game_names ?? [])[0] ?? '')
   const [sharedText, setSharedText] = useState(() => (initial?.shared_music_titles ?? []).join('\n'))
   const [song, setSong] = useState(() => initial?.song_title ?? '')
   const [notes, setNotes] = useState(() => initial?.notes ?? '')
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
-  const savedTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving'>('idle')
 
   useEffect(() => {
     setSortOrderDraft(String(track.sort_order))
@@ -45,24 +46,6 @@ export function AdminAnswerForm({
     setSong(initial?.song_title ?? '')
     setNotes(initial?.notes ?? '')
   }, [initial?.track_id, initial?.game_names, initial?.song_title, initial?.notes, initial?.shared_music_titles])
-
-  useEffect(() => {
-    return () => {
-      if (savedTimerRef.current != null) window.clearTimeout(savedTimerRef.current)
-    }
-  }, [])
-
-  function bumpSavedTimer() {
-    if (savedTimerRef.current != null) window.clearTimeout(savedTimerRef.current)
-    savedTimerRef.current = window.setTimeout(() => {
-      savedTimerRef.current = null
-      setSaveStatus((s) => (s === 'saved' ? 'idle' : s))
-    }, 2200)
-  }
-
-  function clearSavedOnEdit() {
-    setSaveStatus((s) => (s === 'saved' ? 'idle' : s))
-  }
 
   return (
     <form
@@ -87,8 +70,8 @@ export function AdminAnswerForm({
             setSaveStatus('idle')
             return
           }
-          setSaveStatus('saved')
-          bumpSavedTimer()
+          setSaveStatus('idle')
+          toastSuccess('Saved.')
         })()
       }}
     >
@@ -100,10 +83,7 @@ export function AdminAnswerForm({
             min={1}
             step={1}
             value={sortOrderDraft}
-            onChange={(e) => {
-              clearSavedOnEdit()
-              setSortOrderDraft(e.target.value)
-            }}
+            onChange={(e) => setSortOrderDraft(e.target.value)}
             className="track-order-input"
           />
         </label>
@@ -111,10 +91,7 @@ export function AdminAnswerForm({
           <span className="muted">Difficulty</span>
           <input
             value={difficultyDraft}
-            onChange={(e) => {
-              clearSavedOnEdit()
-              setDifficultyDraft(e.target.value)
-            }}
+            onChange={(e) => setDifficultyDraft(e.target.value)}
             placeholder="Easy / Medium / etc."
             className="difficulty-input"
           />
@@ -130,10 +107,7 @@ export function AdminAnswerForm({
         <input
           list={listId}
           value={primaryTitle}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setPrimaryTitle(e.target.value)
-          }}
+          onChange={(e) => setPrimaryTitle(e.target.value)}
           maxLength={300}
           required
           placeholder="e.g. Super Mario Bros."
@@ -148,47 +122,23 @@ export function AdminAnswerForm({
         <span>Other games with the same music</span>
         <textarea
           value={sharedText}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setSharedText(e.target.value)
-          }}
+          onChange={(e) => setSharedText(e.target.value)}
           rows={3}
           placeholder={'List each game title on its own line'}
         />
       </label>
       <label className="field">
         <span>Song title</span>
-        <input
-          value={song}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setSong(e.target.value)
-          }}
-        />
+        <input value={song} onChange={(e) => setSong(e.target.value)} />
       </label>
       <label className="field">
         <span>Personal notes</span>
-        <input
-          value={notes}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setNotes(e.target.value)
-          }}
-        />
+        <input value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
       <div className="row tight save-answer-actions">
-        <button
-          type="submit"
-          className={`button small${saveStatus === 'saved' ? ' button-saved-ok' : ''}`}
-          disabled={saveStatus === 'saving'}
-        >
-          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save answer'}
+        <button type="submit" className="button small" disabled={saveStatus === 'saving'}>
+          {saveStatus === 'saving' ? 'Saving...' : 'Save answer'}
         </button>
-        {saveStatus === 'saved' ? (
-          <span className="save-answer-hint" role="status">
-            Saved.
-          </span>
-        ) : null}
       </div>
     </form>
   )

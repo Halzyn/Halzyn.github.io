@@ -232,17 +232,6 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
 
           {entry.showSubmissionFields ? (
             <>
-              {entry.saveNotice ? (
-                <p className="banner success" role="status">
-                  {entry.saveNotice}
-                  {entry.canCopyEditLink ? (
-                    <>
-                      {' '}
-                      <CopyEditLinkButton url={entry.editUrl} />.
-                    </>
-                  ) : null}
-                </p>
-              ) : null}
               {entry.pageError && !entry.showAdminDraftError ? (
                 <p className="banner warn">{entry.pageError}</p>
               ) : null}

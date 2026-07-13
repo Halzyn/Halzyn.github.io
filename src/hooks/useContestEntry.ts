@@ -20,6 +20,7 @@ import {
   getStoredEditToken,
   setStoredContestEntry,
 } from '../lib/contestEntryStorage'
+import { useToast } from '../toast/ToastContext'
 import { getSupabase } from '../lib/supabase'
 import type { Contest, Track } from '../lib/types'
 
@@ -53,8 +54,8 @@ export function useContestEntry({
   const [guesses, setGuesses] = useState<Record<string, string>>(() =>
     emptyGuessesForTracks(tracks),
   )
+  const { success: toastSuccess } = useToast()
   const [pageError, setPageError] = useState<string | null>(null)
-  const [saveNotice, setSaveNotice] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [draftLoading, setDraftLoading] = useState(false)
   const [nameReadOnly, setNameReadOnly] = useState(false)
@@ -85,7 +86,6 @@ export function useContestEntry({
     setName('')
     setGuesses(emptyGuessesForTracks(tracks))
     setPageError(null)
-    setSaveNotice(null)
     setNameReadOnly(false)
     setUseAdminApi(false)
     setOwnerClosedOutcome('unset')
@@ -146,7 +146,6 @@ export function useContestEntry({
 
     setClaiming(true)
     setPageError(null)
-    setSaveNotice(null)
     try {
       const { data, error } = await supabase.rpc('claim_submission_for_edit', {
         p_contest_id: contest.id,
@@ -162,16 +161,16 @@ export function useContestEntry({
       invalidateDraftLoad()
       const result = data as { already_claimed?: boolean } | null
       if (result?.already_claimed) {
-        setSaveNotice('This submission is already linked to your account.')
+        toastSuccess('This submission is already linked to your account.')
       } else {
-        setSaveNotice(
+        toastSuccess(
           'Submission linked to your account. You can keep editing here or return while signed in next time.',
         )
       }
     } finally {
       setClaiming(false)
     }
-  }, [contest.id, contest.published, invalidateDraftLoad, urlEditToken, supabase, userId])
+  }, [contest.id, contest.published, invalidateDraftLoad, toastSuccess, urlEditToken, supabase, userId])
 
   const handleSubmit = useCallback(
     async (event: FormEvent) => {
@@ -183,7 +182,6 @@ export function useContestEntry({
       }
       setSubmitting(true)
       setPageError(null)
-      setSaveNotice(null)
       const guessPayload = tracks.map((t) => ({
         track_id: t.id,
         text: guesses[t.id] ?? '',
@@ -208,7 +206,7 @@ export function useContestEntry({
             )
             return
           }
-          setSaveNotice('Saved.')
+          toastSuccess('Saved.')
           setHasSubmission(true)
           commitSavedSnapshot(name, guesses)
           return
@@ -234,7 +232,7 @@ export function useContestEntry({
         invalidateDraftLoad()
         if (nextEditToken && !userId) {
           persistEditToken(nextEditToken)
-          setSaveNotice(
+          toastSuccess(
             submitEditToken
               ? 'Saved.'
               : 'Saved. Copy your edit link below to continue from another device.',
@@ -253,7 +251,7 @@ export function useContestEntry({
               },
             )
           }
-          setSaveNotice('Saved.')
+          toastSuccess('Saved.')
         }
         setHasSubmission(true)
         commitSavedSnapshot(name, guesses)
@@ -280,6 +278,7 @@ export function useContestEntry({
       useAdminApi,
       userId,
       commitSavedSnapshot,
+      toastSuccess,
     ],
   )
 
@@ -378,7 +377,6 @@ export function useContestEntry({
     guesses,
     setGuesses,
     pageError,
-    saveNotice,
     submitting,
     draftLoading,
     claiming,

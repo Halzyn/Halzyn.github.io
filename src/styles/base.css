@@ -250,6 +250,18 @@ html[data-theme='light'] .banner.success {
   border-color: rgba(5, 150, 105, 0.35);
 }
 
+html[data-theme='light'] .toast--success {
+  background: rgba(16, 185, 129, 0.14);
+  color: #065f46;
+  border-color: rgba(5, 150, 105, 0.35);
+}
+
+html[data-theme='light'] .toast--warn {
+  background: rgba(180, 35, 24, 0.08);
+  color: #991b1b;
+  border-color: rgba(180, 35, 24, 0.28);
+}
+
 html[data-theme='light'] .banner.warn {
   background: rgba(180, 35, 24, 0.08);
   color: #991b1b;

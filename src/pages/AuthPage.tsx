@@ -5,6 +5,7 @@ import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { authRedirectUrl } from '../lib/auth'
+import { useToast } from '../toast/ToastContext'
 
 type Mode = 'signIn' | 'signUp' | 'forgot'
 
@@ -32,14 +33,13 @@ export function AuthPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
+  const { toast } = useToast()
   const [pageError, setPageError] = useState<string | null>(null)
-  const [noticeMessage, setNoticeMessage] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [shouldRedirectHome, setShouldRedirectHome] = useState(false)
 
   const clearFeedback = useCallback(() => {
     setPageError(null)
-    setNoticeMessage(null)
   }, [])
 
   const selectMode = useCallback(
@@ -126,7 +126,7 @@ export function AuthPage() {
         setPageError(error.message)
         return
       }
-      setNoticeMessage(
+      toast(
         'Check your email for a confirmation link from Supabase. After confirming, you can sign in with your username or email.',
       )
       setMode('signIn')
@@ -147,7 +147,7 @@ export function AuthPage() {
         setPageError(error.message)
         return
       }
-      setNoticeMessage('If an account exists for that email, a reset link has been sent.')
+      toast('If an account exists for that email, a reset link has been sent.')
     } finally {
       setSubmitting(false)
     }
@@ -171,7 +171,6 @@ export function AuthPage() {
       </div>
 
       {pageError ? <p className="banner warn">{pageError}</p> : null}
-      {noticeMessage ? <p className="banner success">{noticeMessage}</p> : null}
 
       {mode === 'signIn' ? (
         <form className="form auth-form" onSubmit={handleSignIn}>

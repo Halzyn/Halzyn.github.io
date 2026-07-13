@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
+import { useToast } from '../toast/ToastContext'
 
 const MIN_PASSWORD_LENGTH = 8
 
@@ -38,11 +39,17 @@ function PasswordField({
 export function ResetPasswordPage() {
   useDocumentTitle(pageTitle('New password'))
   const supabase = getSupabase()
+  const { success: toastSuccess } = useToast()
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [pageError, setPageError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [passwordUpdated, setPasswordUpdated] = useState(false)
+
+  useEffect(() => {
+    if (!passwordUpdated) return
+    toastSuccess('Password updated.')
+  }, [passwordUpdated, toastSuccess])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -68,9 +75,7 @@ export function ResetPasswordPage() {
   if (passwordUpdated) {
     return (
       <div className="page">
-        <p className="banner success" role="status">
-          Password updated.
-        </p>
+        <p className="muted">Your password has been updated.</p>
         <p>
           <Link to="/">Home</Link>
         </p>
@@ -89,9 +94,6 @@ export function ResetPasswordPage() {
           {submitting ? '...' : 'Save'}
         </button>
       </form>
-      <p className="muted small">
-        <Link to="/auth">← Sign in</Link>
-      </p>
     </div>
   )
 }

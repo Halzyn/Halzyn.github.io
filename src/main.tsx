@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { ensureSupabase, supabase } from './lib/supabase'
 import { queryClient } from './lib/queryClient'
 import { ThemeProvider } from './theme/ThemeContext'
+import { ToastProvider } from './toast/ToastContext'
 
 ensureSupabase()
 
@@ -23,7 +24,9 @@ if (!supabase) {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </StrictMode>,
