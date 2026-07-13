@@ -1,7 +1,8 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react'
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { TrackAudioPlayer, type TrackAudioPlayerHandle, type TrackPlaybackState } from './TrackAudioPlayer'
 import { useContestEntry } from '../hooks/useContestEntry'
+import { useContestEntryKeyboard } from '../hooks/useContestEntryKeyboard'
 import { countAnsweredGuesses } from '../lib/contestEntry'
 import type { Contest, Track } from '../lib/types'
 
@@ -35,6 +36,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
   function ContestEntryForm({ contest, tracks, slug }, ref) {
     const entry = useContestEntry({ contest, tracks, slug })
     const playerRef = useRef<TrackAudioPlayerHandle>(null)
+    const guessInputRef = useRef<HTMLInputElement>(null)
     const [trackPlayback, setTrackPlayback] = useState<TrackPlaybackState>({
       activeId: null,
       isPlaying: false,
@@ -45,6 +47,9 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       () => ({
         playTrack: (trackId) => playerRef.current?.playTrack(trackId),
         selectTrack: (trackId, options) => playerRef.current?.selectTrack(trackId, options),
+        togglePlayPause: () => playerRef.current?.togglePlayPause(),
+        goPrev: () => playerRef.current?.goPrev(),
+        goNext: () => playerRef.current?.goNext(),
       }),
       [],
     )
@@ -58,10 +63,22 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       [tracks, activeTrackId],
     )
 
-    function selectTrack(trackId: string, play = true) {
+    const selectTrack = useCallback((trackId: string, play = true) => {
       if (play) playerRef.current?.playTrack(trackId)
       else playerRef.current?.selectTrack(trackId, { play: false })
-    }
+    }, [])
+
+    const canFocusGuess =
+      entry.showSubmissionFields && !entry.ownerClosedReadOnly && !entry.draftLoading
+
+    useContestEntryKeyboard({
+      enabled: entry.showPlaySection && tracks.length > 0,
+      tracks,
+      playerRef,
+      guessInputRef,
+      focusGuessOnTrackJump: canFocusGuess,
+      onSelectTrack: (trackId) => selectTrack(trackId),
+    })
 
     function renderTopBanner(): ReactNode {
       if (entry.showAdminChecking) {
@@ -180,6 +197,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
                 <label className="field contest-entry-guess-field">
                   <span>Your guess for track {activeTrack.sort_order}</span>
                   <input
+                    ref={guessInputRef}
                     value={entry.guesses[activeTrack.id] ?? ''}
                     onChange={(e) =>
                       entry.setGuesses((previous) => ({ ...previous, [activeTrack.id]: e.target.value }))

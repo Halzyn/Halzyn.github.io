@@ -6,6 +6,9 @@ import { SiteAudioPlayer } from './SiteAudioPlayer'
 export type TrackAudioPlayerHandle = {
   playTrack: (trackId: string) => void
   selectTrack: (trackId: string, options?: { play?: boolean }) => void
+  togglePlayPause: () => void
+  goPrev: () => void
+  goNext: () => void
 }
 
 export type { TrackPlaybackState }
@@ -26,8 +29,11 @@ export const TrackAudioPlayer = forwardRef<TrackAudioPlayerHandle, TrackAudioPla
       () => ({
         playTrack: engine.playTrack,
         selectTrack: engine.selectTrack,
+        togglePlayPause: engine.togglePlayPause,
+        goPrev: engine.goPrev,
+        goNext: engine.goNext,
       }),
-      [engine.playTrack, engine.selectTrack],
+      [engine.playTrack, engine.selectTrack, engine.togglePlayPause, engine.goPrev, engine.goNext],
     )
 
     if (tracks.length === 0) return null

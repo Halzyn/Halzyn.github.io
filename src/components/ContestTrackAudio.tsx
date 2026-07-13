@@ -51,6 +51,15 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
       selectTrack: (trackId: string, options?: { play?: boolean }) => {
         playerRef.current?.selectTrack(trackId, options)
       },
+      togglePlayPause: () => {
+        playerRef.current?.togglePlayPause()
+      },
+      goPrev: () => {
+        playerRef.current?.goPrev()
+      },
+      goNext: () => {
+        playerRef.current?.goNext()
+      },
     }),
     [],
   )
