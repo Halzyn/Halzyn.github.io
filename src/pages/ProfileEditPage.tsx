@@ -16,6 +16,7 @@ import {
 } from '../lib/displayNameStyle'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import { contestClosed } from '../lib/deadline'
+import { tabButtonClass } from '../lib/tabButtonClass'
 import { useAuth } from '../auth/AuthContext'
 import {
   DEFAULT_SITE_BACKGROUND_PATTERN,
@@ -65,10 +66,6 @@ const NAME_EFFECT_OPTIONS: { value: DisplayNameEffect; label: string }[] = [
 ]
 
 const NAME_COLOR_FALLBACK = '#4488cc'
-
-function tabButtonClass(selected: boolean): string {
-  return selected ? 'button small primary' : 'button small ghost'
-}
 
 function parseEditTab(value: string | null): EditTab | null {
   if (

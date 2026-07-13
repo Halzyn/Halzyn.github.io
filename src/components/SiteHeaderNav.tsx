@@ -1,7 +1,8 @@
-import { useEffect, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AuthBar } from './AuthBar'
 import { ThemeToggle } from './ThemeToggle'
+import { useEscapeKey } from '../hooks/useEscapeKey'
 import { isNavLinkActive, MAIN_NAV_LINKS, siteNavLinkClass } from '../lib/siteNav'
 
 function navLinksFor(locationPathname: string, onNavigate?: () => void) {
@@ -30,16 +31,9 @@ export function SiteHeaderNav() {
     setMenuOpen(false)
   }, [location.pathname])
 
-  useEffect(() => {
-    if (!menuOpen) return
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMenuOpen(false)
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [menuOpen])
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
 
-  const closeMenu = () => setMenuOpen(false)
+  useEscapeKey(menuOpen, closeMenu)
 
   return (
     <>

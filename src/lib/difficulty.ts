@@ -1,7 +1,11 @@
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'insane' | 'joke' | 'other'
 
+export function normalizeDifficultyKey(diff: string | null | undefined): string {
+  return diff?.trim().toLowerCase() ?? ''
+}
+
 export function difficulty(diff: string | null | undefined): Difficulty {
-  const cleanedDiff = diff?.trim().toLowerCase() ?? ''
+  const cleanedDiff = normalizeDifficultyKey(diff)
   switch (cleanedDiff) {
     case 'easy':
     case 'medium':

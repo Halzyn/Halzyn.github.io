@@ -17,17 +17,16 @@ export function useAudioVolumeSync(audioRef: RefObject<HTMLAudioElement | null>,
       if (isApplyingProgrammaticVolume()) return
       writeGlobalAudioVolume(audioElement.volume)
     }
-    const onSync = () => applyGlobalVolumeToAudioElement(audioElement)
-    const onLoadedMeta = () => applyGlobalVolumeToAudioElement(audioElement)
+    const applyVolume = () => applyGlobalVolumeToAudioElement(audioElement)
 
     audioElement.addEventListener('volumechange', onVol)
-    audioElement.addEventListener('loadedmetadata', onLoadedMeta)
-    window.addEventListener(AUDIO_VOLUME_SYNC_EVENT, onSync)
+    audioElement.addEventListener('loadedmetadata', applyVolume)
+    window.addEventListener(AUDIO_VOLUME_SYNC_EVENT, applyVolume)
 
     return () => {
       audioElement.removeEventListener('volumechange', onVol)
-      audioElement.removeEventListener('loadedmetadata', onLoadedMeta)
-      window.removeEventListener(AUDIO_VOLUME_SYNC_EVENT, onSync)
+      audioElement.removeEventListener('loadedmetadata', applyVolume)
+      window.removeEventListener(AUDIO_VOLUME_SYNC_EVENT, applyVolume)
     }
   }, [audioRef, enabled])
 }

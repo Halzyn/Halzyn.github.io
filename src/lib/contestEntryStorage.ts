@@ -50,8 +50,3 @@ export function listStoredContestEntries(): { slug: string; editToken: string }[
     .filter(([, editToken]) => editToken.length > 0)
     .map(([slug, editToken]) => ({ slug, editToken }))
 }
-
-export function buildContestEditUrl(slug: string, editToken: string): string {
-  const origin = typeof window === 'undefined' ? '' : window.location.origin
-  return `${origin}/contests/${encodeURIComponent(slug)}?edit=${encodeURIComponent(editToken)}`
-}

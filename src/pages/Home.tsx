@@ -10,6 +10,7 @@ import {
   hostsMapFromContests,
 } from '../lib/contestHosts'
 import { ContestCalendarLink } from '../components/ContestCalendarLink'
+import { ContestCard } from '../components/ContestCard'
 import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
 import type { ContestWithHosts, ScheduledContestTeaser } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
@@ -130,26 +131,15 @@ export function Home() {
         ) : (
           <ul className="card-list">
             {openContests.map((contest) => (
-              <li key={contest.id} className="card">
-                <Link to={`/contests/${contest.slug}`}>
-                  <ContestTitleWithHosts
-                    title={contest.title}
-                    hosts={hostsByContestId.get(contest.id)}
-                    hostsNestedInLink
-                  />
-                  <span className="muted small contest-card-deadline">
-                    Deadline {new Date(contest.deadline).toLocaleString()}
-                    {' ◦ '}
-                    <ContestCalendarLink
-                      contestId={contest.id}
-                      contestSlug={contest.slug}
-                      contestTitle={contest.title}
-                      deadlineIso={contest.deadline}
-                      events={['deadline']}
-                    />
-                  </span>
-                </Link>
-              </li>
+              <ContestCard
+                key={contest.id}
+                slug={contest.slug}
+                contestId={contest.id}
+                title={contest.title}
+                deadline={contest.deadline}
+                hosts={hostsByContestId.get(contest.id)}
+                status="open"
+              />
             ))}
           </ul>
         )}
@@ -159,18 +149,14 @@ export function Home() {
         <section className="section">
           <h2>Previous contest results</h2>
           <ul className="card-list">
-            <li className="card">
-              <Link to={`/contests/${lastConcludedContest.slug}`}>
-                <ContestTitleWithHosts
-                  title={lastConcludedContest.title}
-                  hosts={hostsByContestId.get(lastConcludedContest.id)}
-                  hostsNestedInLink
-                />
-                <span className="muted small contest-card-deadline">
-                  Concluded {new Date(lastConcludedContest.deadline).toLocaleString()}
-                </span>
-              </Link>
-            </li>
+            <ContestCard
+              slug={lastConcludedContest.slug}
+              contestId={lastConcludedContest.id}
+              title={lastConcludedContest.title}
+              deadline={lastConcludedContest.deadline}
+              hosts={hostsByContestId.get(lastConcludedContest.id)}
+              status="closed"
+            />
           </ul>
         </section>
       )}

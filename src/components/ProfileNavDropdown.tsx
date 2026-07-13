@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useEscapeKey } from '../hooks/useEscapeKey'
 import { isProfileNavActive, siteNavLinkClass } from '../lib/siteNav'
 
 type Props = {
@@ -17,20 +18,17 @@ export function ProfileNavDropdown({ profileTo }: Props) {
 
   const close = useCallback(() => setOpen(false), [])
 
+  useEscapeKey(open, close)
+
   useEffect(() => {
     if (!open) return
     const onPointerDown = (event: PointerEvent) => {
       const root = rootRef.current
       if (root && !root.contains(event.target as Node)) close()
     }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
-    }
     document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
     }
   }, [open, close])
 

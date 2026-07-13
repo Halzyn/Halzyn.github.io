@@ -20,7 +20,6 @@ import {
   contestEntryLoadErrorMessage,
 } from '../lib/contestEntry'
 import {
-  buildContestEditUrl,
   clearStoredContestEntry,
   getStoredEditToken,
   setStoredContestEntry,
@@ -548,7 +547,8 @@ export function useContestEntry({
   const editToken = urlEditToken || anonymousEditToken
   const editUrl = useMemo(() => {
     if (!editToken) return ''
-    return buildContestEditUrl(slug, editToken)
+    const origin = typeof window === 'undefined' ? '' : window.location.origin
+    return `${origin}/contests/${encodeURIComponent(slug)}?edit=${encodeURIComponent(editToken)}`
   }, [editToken, slug])
   const canCopyEditLink =
     Boolean(editToken) && !adminSubmissionId && !useAdminApi
@@ -585,7 +585,7 @@ export function useContestEntry({
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [shouldBlockNavigation])
-  
+
   return {
     name,
     setName,

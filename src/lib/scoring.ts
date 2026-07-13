@@ -1,4 +1,5 @@
 import type { GradingMark, Submission, Track } from './types'
+import { normalizeDifficultyKey } from './difficulty'
 import { contestRawPp } from './performancePoints'
 import { pushToMappedList } from './utils'
 
@@ -39,10 +40,6 @@ export function scoreForSubmission(
   return total
 }
 
-function normDifficulty(difficulty: string | null | undefined): string {
-  return difficulty?.trim().toLowerCase() ?? ''
-}
-
 function countMarksOfKind(
   submissionId: string,
   marks: GradingMark[],
@@ -77,7 +74,7 @@ export function countCorrectGamesOnDifficulty(
   tracks: Track[],
   difficulty: 'insane' | 'hard' | 'medium',
 ): number {
-  const diffByTrack = new Map(tracks.map((t) => [t.id, normDifficulty(t.difficulty)]))
+  const diffByTrack = new Map(tracks.map((t) => [t.id, normalizeDifficultyKey(t.difficulty)]))
   let count = 0
   for (const mark of marks) {
     if (mark.submission_id !== submissionId || mark.mark !== 'game') continue

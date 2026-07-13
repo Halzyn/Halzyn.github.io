@@ -13,6 +13,7 @@ import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { AdminContestSubmissions } from './AdminContestSubmissions'
 import { firstOf } from '../../lib/utils'
+import { tabButtonClass } from '../../lib/tabButtonClass'
 
 function mergeAnswersFromTrackGameRows(
   answersByTrackId: Record<string, TrackAnswer>,
@@ -74,10 +75,6 @@ function shiftDatetimeLocalByDays(value: string, days: number): string {
   if (Number.isNaN(date.getTime())) return value
   date.setDate(date.getDate() + days)
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-}
-
-function tabButtonClass(selected: boolean): string {
-  return selected ? 'button small primary' : 'button small ghost'
 }
 
 function TrackPreviewAudio({ src }: { src: string }) {

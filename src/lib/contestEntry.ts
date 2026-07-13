@@ -1,11 +1,4 @@
 import type { Track } from './types'
-import { difficulty, type Difficulty } from './difficulty'
-
-export type TrackDifficultyGroup = {
-  difficultyKey: Difficulty
-  heading: string
-  tracks: Track[]
-}
 
 export type EditDraftPayload = {
   submission_id?: string
@@ -52,24 +45,6 @@ export function mergeDraftIntoGuessesState(
     next[t.id] = draftByTrack.get(t.id) ?? previous[t.id] ?? ''
   }
   return next
-}
-
-export function groupTracksByDifficulty(trackList: Track[]): TrackDifficultyGroup[] {
-  const groups: TrackDifficultyGroup[] = []
-  for (const track of trackList) {
-    const difficultyKey = difficulty(track.difficulty)
-    const last = groups[groups.length - 1]
-    if (last?.difficultyKey === difficultyKey) {
-      last.tracks.push(track)
-    } else {
-      groups.push({
-        difficultyKey,
-        heading: track.difficulty?.trim() || 'Other',
-        tracks: [track],
-      })
-    }
-  }
-  return groups
 }
 
 export function countAnsweredGuesses(guesses: Record<string, string>): number {

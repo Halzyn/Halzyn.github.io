@@ -1,5 +1,6 @@
 import type { GradingMark } from './types'
 import type { GameTooltip } from './gameTooltip'
+import { difficulty } from './difficulty'
 
 function labeledLines(singular: string, plural: string, items: string[]): string | undefined {
   if (items.length === 0) return undefined
@@ -30,8 +31,8 @@ const DIFFICULTY_CLASSES: Record<string, string> = {
   joke: 'results-diff-joke',
 }
 
-export function difficultyClass(difficulty: string | null): string {
-  const key = difficulty?.trim().toLowerCase() ?? ''
+export function difficultyClass(difficultyLabel: string | null): string {
+  const key = difficulty(difficultyLabel)
   return DIFFICULTY_CLASSES[key] ?? 'results-diff-unknown'
 }
 
