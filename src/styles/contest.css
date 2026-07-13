@@ -1,0 +1,522 @@
+.card-list > .card > a:hover .contest-host-name-link:hover .display-name-styled-wrap {
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+.tracks-player-shell--list .tracks-universal-audio-row,
+.tracks-player-shell--list .tracks-universal-audio-wrap {
+  margin-top: 0.65rem;
+}
+
+.tracks-player-shell--list .tracks-universal-audio-row {
+  justify-content: flex-start;
+}
+
+.page-head .contest-hosts-line {
+  margin: 0 0 0.65rem;
+}
+
+.muted,
+.countdown.done {
+  color: var(--muted);
+}
+
+.scheduled-contest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scheduled-contest-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  background: var(--site-row-a);
+  border: 1px solid var(--border);
+}
+
+.scheduled-contest-title {
+  font-family: var(--heading-font);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.scheduled-contest-live {
+  display: block;
+}
+
+.contest-title-with-hosts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35rem;
+  row-gap: 0.2rem;
+  min-width: 0;
+}
+
+.contest-title-with-hosts-sep {
+  color: var(--muted);
+  user-select: none;
+}
+
+.contest-host-name-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.contest-card-deadline {
+  display: block;
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 0.4rem;
+}
+
+.contest-calendar-links {
+  display: inline;
+  white-space: nowrap;
+}
+
+.contest-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  width: 100%;
+}
+
+.contest-card-head .contest-title-with-hosts {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.scheduled-contest-tagline {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.tracks-fold {
+  margin-top: 0.35rem;
+  padding: 0.65rem 1rem 1rem;
+}
+
+.tracks-fold-summary {
+  cursor: pointer;
+  color: var(--heading);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.tracks-fold-body {
+  margin-top: 0.5rem;
+}
+
+.tracks-player-audio {
+  width: 100%;
+  max-width: 36rem;
+}
+
+.contest-entry-player {
+  margin-top: 0.1rem;
+}
+
+.tracks-universal-audio-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem 1rem;
+  width: 100%;
+  max-width: 40rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tracks-universal-audio-row .tracks-universal-audio-wrap {
+  flex: 1 1 16rem;
+  min-width: 0;
+  max-width: 36rem;
+}
+
+.contest-autoplay-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--heading);
+  user-select: none;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.contest-autoplay-label input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent, #6d9eeb);
+}
+
+.tracks-player-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.tracks-universal-audio-wrap {
+  width: 100%;
+  max-width: 36rem;
+  display: flex;
+  justify-content: center;
+}
+
+.tracks-player-shell > .tracks-universal-audio-wrap {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tracks-universal-audio {
+  width: 100%;
+  min-height: 2.75rem;
+}
+
+.countdown {
+  margin: 0.75rem 0 0;
+}
+
+.spoiler-all {
+  margin-top: 0.5rem;
+  padding: 0.65rem 1rem 1rem;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.spoiler-all-summary {
+  cursor: pointer;
+  color: var(--heading);
+  font-weight: 600;
+}
+
+.submit-page .tracks-player-shell {
+  margin: 0.75rem 0 1rem;
+}
+
+.contest-entry .tracks-player-shell {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.contest-entry-section h2 {
+  margin-bottom: 0.35rem;
+}
+
+.contest-entry-intro {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.contest-entry-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.contest-entry-focus-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+
+.contest-entry-focus-label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.contest-entry-progress {
+  margin: 0;
+}
+
+.contest-entry-track-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.contest-entry-track-pill {
+  min-width: 2rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.contest-entry-track-pill:hover {
+  border-color: var(--heading);
+}
+
+.contest-entry-track-pill-active {
+  border-color: var(--heading);
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.contest-entry-track-pill-answered {
+  background: color-mix(in srgb, var(--heading) 12%, var(--input-bg));
+}
+
+.contest-entry-track-pill-playing {
+  box-shadow: 0 0 0 1px var(--heading);
+}
+
+.contest-entry-focus-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.contest-entry-guess-field {
+  margin: 0;
+}
+
+.contest-entry-save-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.contest-entry-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 0 1 12rem;
+  min-width: 8rem;
+  max-width: 14rem;
+}
+
+.contest-entry-name-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.contest-entry-name-field input {
+  width: 100%;
+  min-width: 0;
+}
+
+.contest-entry-all-tracks {
+  margin-top: 0.5rem;
+}
+
+.contest-entry-all-tracks > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.contest-entry .submit-track-num.contest-entry-track-jump {
+  border: none;
+  background: transparent;
+  color: var(--heading);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.contest-entry .submit-track-num.contest-entry-track-jump:hover {
+  text-decoration: underline;
+}
+
+.contest-entry .submit-name-row,
+.submit-page .submit-name-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.contest-entry .submit-name-row input,
+.submit-page .submit-name-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.contest-entry .field input.submit-name-locked,
+.submit-page .field input.submit-name-locked {
+  cursor: default;
+  color: var(--muted);
+  background: var(--surface);
+  border-color: var(--border);
+  opacity: 0.92;
+}
+
+.contest-entry .submit-difficulty-section,
+.submit-page .submit-difficulty-section {
+  margin-top: 1.1rem;
+}
+
+.contest-entry .submit-difficulty-section:first-of-type,
+.submit-page .submit-difficulty-section:first-of-type {
+  margin-top: 0.25rem;
+}
+
+.contest-entry .submit-difficulty-heading,
+.submit-page .submit-difficulty-heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.contest-entry .submit-track-row,
+.submit-page .submit-track-row {
+  display: grid;
+  grid-template-columns: auto 3ch minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.2rem;
+  row-gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.contest-entry .submit-track-row .submit-track-num,
+.submit-page .submit-track-row .submit-track-num {
+  flex-shrink: 0;
+  justify-self: start;
+  font-variant-numeric: tabular-nums;
+}
+
+.contest-entry .submit-track-row input,
+.submit-page .submit-track-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.contest-entry .submit-track-play,
+.submit-page .submit-track-play {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 0.1rem;
+  border: none;
+  background: transparent;
+  color: var(--heading);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.contest-entry .submit-track-play:disabled,
+.submit-page .submit-track-play:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.reveal-bundle {
+  margin-top: 0.75rem;
+  padding-bottom: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+
+  overflow-x: visible;
+  box-sizing: border-box;
+}
+
+.reveal-subhead {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.site-shell .contest-tracks-section > h2,
+.site-shell .contest-results-section > h2 {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.site-shell .contest-tracks-section > h2 .muted {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.site-shell .contest-tracks-section > .tracks-fold {
+  margin-top: 0;
+  margin-bottom: 0;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  border-top: none;
+  background: var(--site-row-a);
+  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.08);
+}
+
+.site-shell .tracks-fold-summary,
+.site-shell .contest-results-section .spoiler-all-summary,
+.site-shell .card-title {
+  font-family: var(--heading-font);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.site-shell .contest-tracks-section .track-pick-cell {
+  border-radius: 0;
+}
+
+.site-shell .contest-results-intro,
+.site-shell .site-section-blurb {
+  margin: 0;
+  padding: 0.45rem 0.65rem 0.55rem;
+  border: 1px solid var(--border);
+  background: var(--site-row-b);
+}
+
+.site-shell .contest-results-intro {
+  border-top: none;
+}
+
+.site-shell .contest-results-section > .spoiler-all {
+  margin-top: 0;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  border-top: none;
+  background: var(--site-row-a);
+  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.08);
+}
+
+.site-shell .contest-results-section .reveal-bundle .reveal-subhead {
+  font-family: var(--heading-font);
+  font-size: 12px;
+}
+
+.contest-comments {
+  margin-top: 1.25rem;
+}
+
+.contest-comments-head {
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.contest-comments-sort select {
+  min-width: 9rem;
+}

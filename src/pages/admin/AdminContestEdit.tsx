@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { applyGlobalVolumeToAudioElement, publicAudioUrl } from '../../lib/audio'
 import { useAudioVolumeSync } from '../../hooks/useAudioVolumeSync'
 import type { FormEvent } from 'react'
@@ -6,60 +7,16 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { getSupabase } from '../../lib/supabase'
 import type { Contest, Game, Submission, Track, TrackAnswer } from '../../lib/types'
-import { parseTrackAnswer } from '../../lib/trackAnswer'
 import { syncTrackGameAssignments } from '../../lib/syncTrackGames'
 import { parseTrackNumberFromFileName } from '../../lib/trackFileName'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { useAdminContestEditData } from '../../hooks/useAdminContestEditData'
+import { queryKeys } from '../../lib/queries/keys'
 import { AdminContestSubmissions } from './AdminContestSubmissions'
 import { AdminAnswerForm } from './AdminAnswerForm'
 import { AdminContestAccessPanel, useContestAccess } from './AdminContestAccessPanel'
-import { firstOf } from '../../lib/utils'
 import { tabButtonClass } from '../../lib/tabButtonClass'
-
-function mergeAnswersFromTrackGameRows(
-  answersByTrackId: Record<string, TrackAnswer>,
-  trackIds: string[],
-  trackGameRows: unknown[],
-): void {
-  if (!trackIds.length || !trackGameRows.length) return
-
-  type TrackGameRow = {
-    track_id: string
-    link_kind: string
-    games: { id: string; primary_title: string } | { id: string; primary_title: string }[] | null
-  }
-
-  type TrackGameInfos = { primaryGameId?: string; sharedMusicGameTitles: string[] }
-
-  const trackGameInfosByTrackId = new Map<string, TrackGameInfos>()
-  for (const rawRow of trackGameRows) {
-    const row = rawRow as TrackGameRow
-    const game = firstOf(row.games)
-    if (!game) continue
-    const infos = trackGameInfosByTrackId.get(row.track_id) ?? { sharedMusicGameTitles: [] }
-    if (row.link_kind === 'primary') {
-      infos.primaryGameId = game.id
-    } else if (row.link_kind === 'shared_music') {
-      infos.sharedMusicGameTitles.push(game.primary_title)
-    }
-    trackGameInfosByTrackId.set(row.track_id, infos)
-  }
-
-  for (const trackId of trackIds) {
-    const mergedFromTrackGame = trackGameInfosByTrackId.get(trackId)
-    const existingAnswer = answersByTrackId[trackId]
-    if (existingAnswer && mergedFromTrackGame?.primaryGameId) {
-      answersByTrackId[trackId] = {
-        ...existingAnswer,
-        primary_game_id: mergedFromTrackGame.primaryGameId,
-        shared_music_titles: mergedFromTrackGame.sharedMusicGameTitles.length
-          ? mergedFromTrackGame.sharedMusicGameTitles
-          : undefined,
-      }
-    }
-  }
-}
 
 type ContestEditTab = 'general' | 'submissions' | 'tracks' | 'access'
 
@@ -70,6 +27,11 @@ const CONTEST_EDIT_TABS: { tab: Exclude<ContestEditTab, 'access'>; label: string
 ]
 
 const CONTEST_CYCLE_DAYS = 28
+
+function isoToDatetimeLocal(iso: string): string {
+  const utc = new Date(iso)
+  return new Date(utc.getTime() - utc.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
 
 function shiftDatetimeLocalByDays(value: string, days: number): string {
   if (!value.trim()) return value
@@ -114,8 +76,10 @@ function TrackPreviewAudio({ src }: { src: string }) {
 
 export function AdminContestEdit() {
   const supabase = getSupabase()
+  const queryClient = useQueryClient()
   const { isAdmin: isAdminUser } = useAuth()
   const { id } = useParams()
+  const { data, error: queryError, isLoading } = useAdminContestEditData(id)
   const [contest, setContest] = useState<Contest | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
   const [answers, setAnswers] = useState<Record<string, TrackAnswer>>({})
@@ -140,143 +104,40 @@ export function AdminContestEdit() {
   const [guestHostName, setGuestHostName] = useState('')
   const [editTab, setEditTab] = useState<ContestEditTab>('general')
 
-  const load = useCallback(async () => {
+  const refreshContest = useCallback(() => {
     if (!id) return
+    void queryClient.invalidateQueries({ queryKey: queryKeys.adminContest(id) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.contests })
+  }, [id, queryClient])
+
+  useEffect(() => {
+    if (!data) return
     setPageError(null)
-
-    const contestQuery = supabase.from('contests').select('*').eq('id', id).single()
-    const tracksQuery = supabase
-      .from('tracks')
-      .select('*')
-      .eq('contest_id', id)
-      .order('sort_order', { ascending: true })
-    const submissionsQuery = supabase
-      .from('submissions')
-      .select('*')
-      .eq('contest_id', id)
-      .order('created_at', { ascending: true })
-    const gamesCatalogQuery = supabase
-      .from('games')
-      .select('id, primary_title, slug, created_at, updated_at')
-      .order('primary_title', { ascending: true })
-
-    const [contestResult, tracksResult, submissionsResult, gamesCatalogResult] = await Promise.all([
-      contestQuery,
-      tracksQuery,
-      submissionsQuery,
-      gamesCatalogQuery,
-    ])
-
-    if (contestResult.error || !contestResult.data) {
-      setPageError(contestResult.error?.message ?? 'Not found')
-      setContest(null)
-      return
-    }
-    if (tracksResult.error) {
-      setPageError(tracksResult.error.message)
-      setContest(null)
-      return
-    }
-
-    const loadedContest = contestResult.data as Contest
+    const loadedContest = data.contest
     setContest(loadedContest)
     setTitle(loadedContest.title)
     setSlug(loadedContest.slug)
     setDescription(loadedContest.description ?? '')
     setPublished(loadedContest.published)
     setResultsPublished(loadedContest.results_published ?? false)
-    const deadlineUtc = new Date(loadedContest.deadline)
-    const deadlineForDatetimeLocal = new Date(deadlineUtc.getTime() - deadlineUtc.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16)
-    setDeadline(deadlineForDatetimeLocal)
-
-    const scheduleIso = loadedContest.scheduled_publish_at
-    if (scheduleIso) {
-      const scheduleUtc = new Date(scheduleIso)
-      const scheduleForDatetimeLocal = new Date(
-        scheduleUtc.getTime() - scheduleUtc.getTimezoneOffset() * 60000,
-      )
-        .toISOString()
-        .slice(0, 16)
-      setScheduledPublishAt(scheduleForDatetimeLocal)
-    } else {
-      setScheduledPublishAt('')
-    }
+    setDeadline(isoToDatetimeLocal(loadedContest.deadline))
+    setScheduledPublishAt(
+      loadedContest.scheduled_publish_at ? isoToDatetimeLocal(loadedContest.scheduled_publish_at) : '',
+    )
     setScheduleTagline(loadedContest.schedule_tagline ?? '')
-
-    const trackList = (tracksResult.data ?? []) as Track[]
-    setTracks(trackList)
-    setSubmissions((submissionsResult.data ?? []) as Submission[])
-    setGamesCatalog((gamesCatalogResult.data ?? []) as Game[])
-
-    const trackIds = trackList.map((track) => track.id)
-    let rawAnswerRows: TrackAnswer[] = []
-    let trackGameJoinRows: unknown[] = []
-    if (trackIds.length) {
-      const trackAnswersQuery = supabase.from('track_answers').select('*').in('track_id', trackIds)
-      const trackGameJoinQuery = supabase
-        .from('track_game')
-        .select(
-          `
-          track_id,
-          link_kind,
-          games ( id, primary_title )
-        `,
-        )
-        .in('track_id', trackIds)
-      const [answersResult, trackGameJoinResult] = await Promise.all([trackAnswersQuery, trackGameJoinQuery])
-      if (answersResult.error) {
-        setPageError(answersResult.error.message)
-        setAnswers({})
-        return
-      }
-      rawAnswerRows = (answersResult.data ?? []) as TrackAnswer[]
-      trackGameJoinRows = trackGameJoinResult.error ? [] : (trackGameJoinResult.data ?? [])
-    }
-
-    const answersByTrackId: Record<string, TrackAnswer> = {}
-    for (const rawAnswer of rawAnswerRows) {
-      const answer = parseTrackAnswer(rawAnswer)
-      answersByTrackId[answer.track_id] = answer
-    }
-    mergeAnswersFromTrackGameRows(answersByTrackId, trackIds, trackGameJoinRows)
-    setAnswers(answersByTrackId)
-
-    const { data: moderatorRows } = await supabase.from('contest_moderators').select('user_id').eq('contest_id', id)
-    const moderatorUserIds = (moderatorRows ?? []).map((row) => row.user_id as string)
-    if (moderatorUserIds.length === 0) {
-      setModerators([])
-    } else {
-      const { data: profileRows } = await supabase
-        .from('profiles')
-        .select('id, username')
-        .in('id', moderatorUserIds)
-      type ProfileRow = { id: string; username: string | null }
-      setModerators(
-        ((profileRows ?? []) as ProfileRow[]).map((profile) => ({
-          user_id: profile.id,
-          username: profile.username,
-        })),
-      )
-    }
-
-    const { data: guestHostRows, error: guestHostError } = await supabase
-      .from('contest_guest_hosts')
-      .select('id, display_name, sort_order')
-      .eq('contest_id', id)
-      .order('sort_order', { ascending: true })
-    type GuestHostRow = { id: string; display_name: string; sort_order: number }
-    if (guestHostError) {
-      setGuestHosts([])
-    } else {
-      setGuestHosts(((guestHostRows ?? []) as GuestHostRow[]).map((row) => ({ ...row })))
-    }
-  }, [id, supabase])
+    setTracks(data.tracks)
+    setSubmissions(data.submissions)
+    setGamesCatalog(data.gamesCatalog)
+    setAnswers(data.answers)
+    setModerators(data.moderators)
+    setGuestHosts(data.guestHosts)
+  }, [data])
 
   useEffect(() => {
-    void load()
-  }, [load])
+    if (!queryError) return
+    setPageError(queryError instanceof Error ? queryError.message : 'Not found')
+    setContest(null)
+  }, [queryError])
 
   useEffect(() => {
     if (editTab === 'access' && !isAdminUser) {
@@ -293,7 +154,7 @@ export function AdminContestEdit() {
 
   const { addModerator, removeModerator, addGuestHost, removeGuestHost } = useContestAccess(
     contest,
-    () => void load(),
+    refreshContest,
     setPageError,
   )
 
@@ -318,7 +179,7 @@ export function AdminContestEdit() {
       setPageError(error.message)
       return
     }
-    void load()
+    void refreshContest()
   }
 
   async function addTracksBatch(e: FormEvent) {
@@ -366,7 +227,7 @@ export function AdminContestEdit() {
     const failBatchUploadAndReload = (message: string) => {
       setPageError(message)
       setBatchBusy(false)
-      void load()
+      void refreshContest()
     }
 
     for (const { file, order } of filesWithTrackOrder) {
@@ -394,7 +255,7 @@ export function AdminContestEdit() {
 
     setBatchFiles([])
     setBatchBusy(false)
-    void load()
+    void refreshContest()
   }
 
   async function reuploadTrackAudio(track: Track, file: File) {
@@ -431,7 +292,7 @@ export function AdminContestEdit() {
     }
 
     setReuploadingTrackId(null)
-    void load()
+    void refreshContest()
   }
 
   async function swapTrackOrder(a: Track, b: Track) {
@@ -453,7 +314,7 @@ export function AdminContestEdit() {
       .eq('id', b.id)
     if (moveBtoAError) {
       setPageError(moveBtoAError.message)
-      void load()
+      void refreshContest()
       return
     }
 
@@ -463,11 +324,11 @@ export function AdminContestEdit() {
       .eq('id', a.id)
     if (moveAtoBError) {
       setPageError(moveAtoBError.message)
-      void load()
+      void refreshContest()
       return
     }
 
-    void load()
+    void refreshContest()
   }
 
   async function removeTrack(t: Track) {
@@ -481,7 +342,7 @@ export function AdminContestEdit() {
     if (storageErr) {
       console.warn('Audio file could not be removed from storage:', storageErr)
     }
-    void load()
+    void refreshContest()
   }
 
   async function saveTrackAndAnswer(
@@ -540,12 +401,13 @@ export function AdminContestEdit() {
       setPageError(answersError.message)
       return false
     }
-    void load()
+    void refreshContest()
     return true
   }
 
   if (!id) return null
   if (pageError && !contest) return <p className="banner warn">{pageError}</p>
+  if (isLoading && !contest) return <p className="muted">Loading...</p>
   if (!contest) return <p className="muted">Loading...</p>
 
   return (
@@ -719,7 +581,7 @@ export function AdminContestEdit() {
           contestId={contest.id}
           contestSlug={contest.slug}
           submissions={submissions}
-          onReload={() => void load()}
+          onReload={() => void refreshContest()}
           onError={setPageError}
         />
       </div>

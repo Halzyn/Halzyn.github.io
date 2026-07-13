@@ -1,0 +1,118 @@
+.site-audio-player {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.site-audio-player-transport {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex: 0 0 auto;
+}
+
+.site-audio-player-btn {
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--heading);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.site-audio-player-btn:hover:not(:disabled) {
+  border-color: var(--heading);
+}
+
+.site-audio-player-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.site-audio-player-btn-primary {
+  min-width: 1.85rem;
+  font-size: 0.85rem;
+}
+
+.site-audio-player-btn-ghost {
+  background: transparent;
+  padding-inline: 0.25rem;
+}
+
+.site-audio-player-scrub {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1 1 9rem;
+  min-width: 7rem;
+}
+
+.site-audio-player-time {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 2rem;
+}
+
+.site-audio-player-time:last-child {
+  text-align: right;
+}
+
+.site-audio-player-scrub-input,
+.site-audio-player-volume-input {
+  width: 100%;
+  min-width: 0;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent, #6d9eeb);
+}
+
+.site-audio-player-volume {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 0 1 6.5rem;
+  min-width: 4.75rem;
+  max-width: 8rem;
+  cursor: pointer;
+}
+
+.site-audio-player-volume-label {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.site-audio-player-autoplay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--heading);
+  user-select: none;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.site-audio-player-autoplay input {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin: 0;
+  accent-color: var(--accent, #6d9eeb);
+}
+
+.player {
+  width: 100%;
+  margin-top: 0.35rem;
+}

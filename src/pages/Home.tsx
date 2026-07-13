@@ -1,49 +1,22 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { useContests } from '../hooks/useContests'
-import { getSupabase } from '../lib/supabase'
+import { useContests, useModeratedContestIds, useScheduledContestTeasers } from '../hooks/useContests'
 import { contestHostsFromScheduledTeaser } from '../lib/contestHosts'
 import { ContestCalendarLink } from '../components/ContestCalendarLink'
 import { ContestCard } from '../components/ContestCard'
 import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
-import type { ScheduledContestTeaser } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
 import { listStoredContestEntries } from '../lib/contestEntryStorage'
 
 export function Home() {
   useDocumentTitle(pageTitle('Home'))
-  const supabase = getSupabase()
   const { ready, userId, isAdmin } = useAuth()
   const { contests, hostsByContestId } = useContests()
-  const [scheduledTeasers, setScheduledTeasers] = useState<ScheduledContestTeaser[]>([])
-  const [modContestIds, setModContestIds] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    if (!ready) return
-
-    async function loadHomeData() {
-      let moderatedContestIds = new Set<string>()
-      if (userId) {
-        const { data: moderatorRows } = await supabase
-          .from('contest_moderators')
-          .select('contest_id')
-          .eq('user_id', userId)
-        moderatedContestIds = new Set(
-          (moderatorRows ?? []).map((row) => row.contest_id as string),
-        )
-      }
-      setModContestIds(moderatedContestIds)
-
-      const teaserResult = await supabase.rpc('scheduled_contests_teaser')
-      const teaserList = (teaserResult.error ? [] : (teaserResult.data ?? [])) as ScheduledContestTeaser[]
-      setScheduledTeasers(teaserList)
-    }
-
-    void loadHomeData()
-  }, [supabase, ready, userId])
+  const { data: scheduledTeasers = [] } = useScheduledContestTeasers()
+  const { data: modContestIds = new Set<string>() } = useModeratedContestIds(ready ? userId : null)
 
   const openContests = useMemo(
     () =>

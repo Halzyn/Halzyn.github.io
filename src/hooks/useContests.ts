@@ -1,41 +1,41 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CONTEST_HOST_EMBED_SELECT, hostsMapFromContests } from '../lib/contestHosts'
-import { getSupabase } from '../lib/supabase'
-import type { ContestWithHosts } from '../lib/types'
+import { useQuery } from '@tanstack/react-query'
+import {
+  fetchContestsWithHosts,
+  fetchModeratedContestIds,
+  fetchScheduledContestTeasers,
+  hostsByContestIdFromContests,
+} from '../lib/queries/contests'
+import { queryKeys } from '../lib/queries/keys'
 
 export function useContests() {
-  const supabase = getSupabase()
-  const [contests, setContests] = useState<ContestWithHosts[]>([])
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const query = useQuery({
+    queryKey: queryKeys.contests,
+    queryFn: fetchContestsWithHosts,
+  })
 
-  useEffect(() => {
-    let cancelled = false
+  const contests = query.data ?? []
+  const hostsByContestId = hostsByContestIdFromContests(contests)
 
-    async function load() {
-      setLoadError(null)
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('contests')
-        .select(`*, ${CONTEST_HOST_EMBED_SELECT}`)
-        .order('deadline', { ascending: false })
-      if (cancelled) return
-      if (error) {
-        setLoadError(error.message)
-        setContests([])
-      } else {
-        setContests((data ?? []) as ContestWithHosts[])
-      }
-      setLoading(false)
-    }
+  return {
+    contests,
+    hostsByContestId,
+    loadError: query.error instanceof Error ? query.error.message : null,
+    loading: query.isLoading,
+    refetch: query.refetch,
+  }
+}
 
-    void load()
-    return () => {
-      cancelled = true
-    }
-  }, [supabase])
+export function useScheduledContestTeasers() {
+  return useQuery({
+    queryKey: queryKeys.scheduledTeasers,
+    queryFn: fetchScheduledContestTeasers,
+  })
+}
 
-  const hostsByContestId = useMemo(() => hostsMapFromContests(contests), [contests])
-
-  return { contests, hostsByContestId, loadError, loading }
+export function useModeratedContestIds(userId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.moderatedContestIds(userId ?? ''),
+    queryFn: () => fetchModeratedContestIds(userId!),
+    enabled: Boolean(userId),
+  })
 }

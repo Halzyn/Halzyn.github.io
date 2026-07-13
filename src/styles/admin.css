@@ -1,0 +1,112 @@
+.admin-igdb-dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.admin-igdb-dl dt {
+  margin: 0;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.admin-igdb-dl dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.admin-igdb-desc {
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.admin-igdb-preview {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0px;
+  background: var(--surface);
+}
+
+.admin-igdb-preview-banner {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.admin-igdb-preview-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.admin-igdb-saved-title {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.admin-login-page {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1.25rem 2.5rem;
+  box-sizing: border-box;
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.admin-login-title {
+  margin: 0 0 1.25rem;
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+.admin-login-submit {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.admin-login-footer {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.admin-sub-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 12rem;
+}
+
+.admin-sub-name-input {
+  flex: 1 1 10rem;
+  min-width: 8rem;
+}
+
+.admin-merge-panel {
+  margin-top: 1rem;
+}
+
+.admin-merge-form {
+  align-items: flex-end;
+}
+
+.admin-contest-submissions-lede {
+  white-space: pre-line;
+}
+
+.admin-reset-link-banner code {
+  display: block;
+  word-break: break-all;
+  font-size: 0.82rem;
+  margin: 0.35rem 0;
+}

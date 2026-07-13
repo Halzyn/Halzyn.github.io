@@ -5,13 +5,10 @@ import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { avatarPublicUrl, resizeImageFileToAvatarJpeg } from '../lib/avatar'
-import { compareGameTitles } from '../lib/gamesIndex'
-import type { DisplayNameEffect, Game, Profile, SiteBackgroundPattern } from '../lib/types'
+import type { DisplayNameEffect, Profile, SiteBackgroundPattern } from '../lib/types'
 import {
   normalizeDisplayNameHex,
   parseDisplayNameEffect,
-  parseDisplayNameStyleCaps,
-  type DisplayNameStyleCaps,
   type DisplayNameStyleInfo,
 } from '../lib/displayNameStyle'
 import { contestClosed } from '../lib/deadline'
@@ -21,6 +18,11 @@ import {
   DEFAULT_SITE_BACKGROUND_PATTERN,
   parseSiteBackgroundPattern,
 } from '../theme/siteBackground'
+import {
+  useFavoriteSoundtrackGames,
+  useMyContestSubmissions,
+  useProfileNameStyleCaps,
+} from '../hooks/useProfileEditQueries'
 import { ProfileEditAppearanceTab } from './profileEdit/ProfileEditAppearanceTab'
 import { ProfileEditBasicTab } from './profileEdit/ProfileEditBasicTab'
 import { ProfileEditFunTab } from './profileEdit/ProfileEditFunTab'
@@ -54,17 +56,12 @@ export function ProfileEditPage() {
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const [noSession, setNoSession] = useState(false)
-  const [games, setGames] = useState<Game[]>([])
-  const [gamesLoading, setGamesLoading] = useState(false)
-  const [gamesLoadError, setGamesLoadError] = useState<string | null>(null)
   const [gameSearch, setGameSearch] = useState('')
   const [favoriteGameId, setFavoriteGameId] = useState<string | null>(null)
   const [favoriteBusy, setFavoriteBusy] = useState(false)
   const [editTab, setEditTab] = useState<EditTab>('basic')
   const [notifyNewContestEmail, setNotifyNewContestEmail] = useState(false)
   const [notifyEmailBusy, setNotifyEmailBusy] = useState(false)
-  const [mySubmissions, setMySubmissions] = useState<MyContestSubmissionRow[] | null>(null)
-  const [submissionsLoadError, setSubmissionsLoadError] = useState<string | null>(null)
   const [siteBackgroundPattern, setSiteBackgroundPattern] = useState<SiteBackgroundPattern>(
     DEFAULT_SITE_BACKGROUND_PATTERN,
   )
@@ -74,10 +71,22 @@ export function ProfileEditPage() {
   const [nameColor1, setNameColor1] = useState('')
   const [nameColor2, setNameColor2] = useState('')
   const [nameEffect, setNameEffect] = useState<DisplayNameEffect>('none')
-  const [styleCaps, setStyleCaps] = useState<DisplayNameStyleCaps>({
-    canGradient: false,
-    canEffect: false,
-  })
+
+  const { data: styleCaps = { canGradient: false, canEffect: false } } = useProfileNameStyleCaps(profile?.id)
+  const {
+    data: mySubmissionsData,
+    isLoading: submissionsLoading,
+    error: submissionsQueryError,
+  } = useMyContestSubmissions(profile?.id)
+  const mySubmissions = submissionsLoading ? null : (mySubmissionsData ?? [])
+  const submissionsLoadError =
+    submissionsQueryError instanceof Error ? submissionsQueryError.message : null
+  const {
+    data: games = [],
+    isLoading: gamesLoading,
+    error: gamesQueryError,
+  } = useFavoriteSoundtrackGames(profile?.id)
+  const gamesLoadError = gamesQueryError instanceof Error ? gamesQueryError.message : null
 
   const clearFeedback = useCallback(() => {
     setPageError(null)
@@ -121,50 +130,6 @@ export function ProfileEditPage() {
   }, [supabase])
 
   useEffect(() => {
-    if (!profile?.id) return
-    let cancelled = false
-
-    async function loadCaps() {
-      const { data, error } = await supabase.rpc('profile_name_style_caps')
-      if (cancelled) return
-      if (error || data == null) {
-        setStyleCaps({ canGradient: false, canEffect: false })
-        return
-      }
-      setStyleCaps(parseDisplayNameStyleCaps(data) ?? { canGradient: false, canEffect: false })
-    }
-
-    void loadCaps()
-    return () => {
-      cancelled = true
-    }
-  }, [profile?.id, supabase])
-
-  useEffect(() => {
-    if (!profile) return
-    let cancelled = false
-    setMySubmissions(null)
-    setSubmissionsLoadError(null)
-
-    async function loadMySubmissions() {
-      const { data, error } = await supabase.rpc('list_my_contest_submissions')
-      if (cancelled) return
-      if (error) {
-        setSubmissionsLoadError(error.message)
-        setMySubmissions([])
-        return
-      }
-      const list = Array.isArray(data) ? (data as MyContestSubmissionRow[]) : []
-      setMySubmissions(list)
-    }
-
-    void loadMySubmissions()
-    return () => {
-      cancelled = true
-    }
-  }, [profile?.id, supabase])
-
-  useEffect(() => {
     if (!hasModerationAccess && editTab === 'moderation') {
       setEditTab('basic')
     }
@@ -180,27 +145,6 @@ export function ProfileEditPage() {
     () => (profile ? avatarPublicUrl(supabase, profile.avatar_path) : null),
     [profile, supabase],
   )
-
-  useEffect(() => {
-    if (!profile) return
-
-    async function loadFavoritePickGames() {
-      setGamesLoadError(null)
-      setGamesLoading(true)
-      const { data, error } = await supabase.rpc('list_games_for_favorite_soundtrack')
-      setGamesLoading(false)
-      if (error) {
-        setGamesLoadError(error.message)
-        setGames([])
-        return
-      }
-      setGames(
-        ((data ?? []) as Game[]).slice().sort((a, b) => compareGameTitles(a.primary_title, b.primary_title)),
-      )
-    }
-
-    void loadFavoritePickGames()
-  }, [profile?.id, supabase])
 
   const filteredGames = useMemo(() => {
     const query = gameSearch.trim().toLowerCase()
