@@ -60,6 +60,9 @@ export function ProfileNavDropdown({ profileTo }: Props) {
           <Link to="/profile/edit?tab=submissions" role="menuitem" onClick={close}>
             My submissions
           </Link>
+          <Link to="/shop" role="menuitem" onClick={close}>
+            Shop
+          </Link>
           {hasModerationAccess ? (
             <Link to="/profile/edit?tab=moderation" role="menuitem" onClick={close}>
               Moderation

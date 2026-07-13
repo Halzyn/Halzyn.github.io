@@ -20,7 +20,7 @@
  * Dexterity is 4 + floor(level * 0.9) + floor(solo * 0.82 + (easy + joke) * 0.26 + games * 0.06)
  * Luck is 3 + floor(level * 0.55) + (playerNumber % 8) + floor(solo * 0.35) + ((Math.floor(totalXp) % 97) % 7) + (games % 5)
  * Speed is 4 + level + floor(games * 0.13 + franchises * 0.1 + solo * 0.44) + floor((games + franchises) / 24)
- * Coins is floor(totalXp * 0.12 + games * 8 + franchises * 6 + solo * 15)
+ * Coins is floor(totalXp * 0.96 + games * 64 + franchises * 48 + solo * 120)
  * These then get tilted by RESOURCE_SPREAD.
  *
  * Stats and level up curves scale per player based on their player number
@@ -32,12 +32,12 @@ import { soloGameWinnerByTrack } from './scoring'
 import { pushToMappedList } from './utils'
 
 const XP_BY_DIFF: Record<Difficulty, number> = {
-  easy: 12,
-  joke: 12,
-  medium: 18,
-  hard: 28,
-  insane: 42,
-  other: 12,
+  easy: 36,
+  joke: 36,
+  medium: 54,
+  hard: 84,
+  insane: 126,
+  other: 36,
 }
 
 const SOLO_XP_MULT = 1.5
@@ -194,7 +194,9 @@ function combatStatsFromContest(
     Math.floor(games * 0.13 + franchises * 0.1 + solo * 0.44) +
     Math.floor((games + franchises) / 24)
 
-  const coinsRaw = Math.floor(totalXp * 0.12 + games * 8 + franchises * 6 + solo * 15)
+  const coinsRaw = Math.floor(
+    totalXp * 0.96 + games * 64 + franchises * 48 + solo * 120,
+  )
 
   return {
     atk: tiltInteger(atkRaw, seed, SALT.atk, STAT_SPREAD),

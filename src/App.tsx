@@ -29,6 +29,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { PlayersPage } from './pages/PlayersPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ProfileEditPage } from './pages/ProfileEditPage'
+import { RpgShopPage } from './pages/RpgShopPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 const router = createBrowserRouter([
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
       { path: 'players', element: <PlayersPage /> },
       { path: 'players/:username', element: <ProfilePage /> },
       { path: 'profile/edit', element: <ProfileEditPage /> },
+      { path: 'shop', element: <RpgShopPage /> },
       { path: 'contests', element: <ContestList /> },
       { path: 'contests/:slug', element: <ContestPage /> },
       { path: 'contests/:slug/submit', element: <SubmitPage /> },

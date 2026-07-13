@@ -13,3 +13,12 @@ export function pushToMappedList<K extends string, V>(map: Map<K, V[]>, key: K, 
 export function uniqSorted(xs: readonly string[]): string[] {
   return [...new Set(xs)].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 }
+
+export function extractErrorMessage(err: unknown, fallback = 'Something went wrong'): string {
+  if (err instanceof Error && err.message) return err.message
+  if (err && typeof err === 'object' && 'message' in err) {
+    const message = (err as { message: unknown }).message
+    if (typeof message === 'string' && message.trim()) return message
+  }
+  return fallback
+}

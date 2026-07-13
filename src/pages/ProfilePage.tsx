@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { profilePageMeta, profileRoleLabel } from '../lib/siteMeta'
 import { usePageMeta } from '../hooks/usePageMeta'
@@ -9,6 +9,14 @@ import type { PublicProfileJson } from '../lib/queries/players'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import { ProfileAchievements } from '../components/ProfileAchievements'
 import { usePublicProfile } from '../hooks/usePlayersQueries'
+import {
+  applyEquipmentToRpgStats,
+  equippedItems,
+  EQUIPMENT_SLOT_KEYS,
+  EQUIPMENT_SLOT_LABELS,
+  parseRpgEquipmentLoadout,
+  type RpgEquipmentLoadout,
+} from '../lib/rpgItems'
 
 function ProfileStatsPanel({ stats }: { stats: ProfileContestStatsResult }) {
   return (
@@ -65,6 +73,33 @@ export function ProfilePage() {
   const contestStats = stats?.contest ?? null
   const rpgStats = stats?.rpg ?? null
   const performancePoints = stats?.performance_points ?? null
+  const [loadout, setLoadout] = useState<RpgEquipmentLoadout | null>(null)
+
+  useEffect(() => {
+    if (!profile?.id) {
+      setLoadout(null)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const { data, error: loadoutError } = await supabase.rpc('rpg_get_profile_loadout', {
+        p_profile_id: profile.id,
+      })
+      if (cancelled || loadoutError) return
+      setLoadout(parseRpgEquipmentLoadout(data))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [profile?.id, supabase])
+
+  const effectiveRpgStats = useMemo(() => {
+    if (!rpgStats) return null
+    if (!loadout) return rpgStats
+    return applyEquipmentToRpgStats(rpgStats, equippedItems(loadout))
+  }, [rpgStats, loadout])
+
+  const displayRpgStats = effectiveRpgStats ?? rpgStats
 
   const displayHeading = useMemo(() => profile?.display_name ?? 'Player', [profile])
 
@@ -102,7 +137,7 @@ export function ProfilePage() {
     )
   }
 
-  if (!stats || !contestStats || !rpgStats) {
+  if (!stats || !contestStats || !rpgStats || !displayRpgStats) {
     return null
   }
 
@@ -150,32 +185,49 @@ export function ProfilePage() {
                     rpg={rpgStats}
                     ppRank={ppRank}
                   />
-                  <div className="profile-rpg-ff-line">
-                    <span className="profile-rpg-ff-k">Level</span>
-                    <span className="profile-rpg-ff-v">{rpgStats.level}</span>
-                  </div>
-                  <div className="profile-rpg-ff-line">
-                    <span className="profile-rpg-ff-k">HP</span>
-                    <span className="profile-rpg-ff-v">
-                      {rpgStats.hpCurrent.toLocaleString()} / {rpgStats.hpMax.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="profile-rpg-ff-line">
-                    <span className="profile-rpg-ff-k">MP</span>
-                    <span className="profile-rpg-ff-v">
-                      {rpgStats.mpCurrent.toLocaleString()} / {rpgStats.mpMax.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="profile-rpg-ff-exp-block">
-                    <div className="profile-rpg-ff-line">
-                      <span className="profile-rpg-ff-k">EXP</span>
-                      <span className="profile-rpg-ff-v">
-                        {rpgStats.xpIntoLevel.toLocaleString()} / {rpgStats.xpForNextLevel.toLocaleString()}
-                        <span className="profile-rpg-ff-exp-total"> ({rpgStats.totalXp.toLocaleString()})</span>
-                      </span>
+                  <div className="profile-rpg-ff-status">
+                    <div className="profile-rpg-ff-vitals">
+                      <div className="profile-rpg-ff-line">
+                        <span className="profile-rpg-ff-k">Level</span>
+                        <span className="profile-rpg-ff-v">{displayRpgStats.level}</span>
+                      </div>
+                      <div className="profile-rpg-ff-line">
+                        <span className="profile-rpg-ff-k">HP</span>
+                        <span className="profile-rpg-ff-v">
+                          {displayRpgStats.hpCurrent.toLocaleString()} / {displayRpgStats.hpMax.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="profile-rpg-ff-line">
+                        <span className="profile-rpg-ff-k">MP</span>
+                        <span className="profile-rpg-ff-v">
+                          {displayRpgStats.mpCurrent.toLocaleString()} / {displayRpgStats.mpMax.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="profile-rpg-ff-exp-block">
+                        <div className="profile-rpg-ff-line">
+                          <span className="profile-rpg-ff-k">EXP</span>
+                          <span className="profile-rpg-ff-v">
+                            {rpgStats.xpIntoLevel.toLocaleString()} / {rpgStats.xpForNextLevel.toLocaleString()}
+                            <span className="profile-rpg-ff-exp-total"> ({rpgStats.totalXp.toLocaleString()})</span>
+                          </span>
+                        </div>
+                        <div className="profile-rpg-ff-exp-track" aria-hidden>
+                          <div className="profile-rpg-ff-exp-fill" style={{ width: `${experienceBarPercent}%` }} />
+                        </div>
+                      </div>
                     </div>
-                    <div className="profile-rpg-ff-exp-track" aria-hidden>
-                      <div className="profile-rpg-ff-exp-fill" style={{ width: `${experienceBarPercent}%` }} />
+                    <div className="profile-rpg-ff-equipment" aria-label="Equipment">
+                      {EQUIPMENT_SLOT_KEYS.map((slot) => {
+                        const item = loadout?.[slot] ?? null
+                        return (
+                          <div key={slot} className="profile-rpg-ff-line">
+                            <span className="profile-rpg-ff-k">{EQUIPMENT_SLOT_LABELS[slot]}</span>
+                            <span className="profile-rpg-ff-v" title={item?.description}>
+                              {item?.name ?? '-'}
+                            </span>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -189,13 +241,13 @@ export function ProfilePage() {
             </div>
             <div className="profile-rpg-ff-combat" aria-label="Combat parameters">
               <div className="profile-rpg-ff-combat-grid">
-                <span>Atk {rpgStats.atk.toLocaleString()}</span>
-                <span>Def {rpgStats.def.toLocaleString()}</span>
-                <span>Int {rpgStats.int.toLocaleString()}</span>
-                <span>MDf {rpgStats.mdf.toLocaleString()}</span>
-                <span>Dex {rpgStats.dex.toLocaleString()}</span>
-                <span>Lck {rpgStats.lck.toLocaleString()}</span>
-                <span>Spd {rpgStats.spd.toLocaleString()}</span>
+                <span>Atk {displayRpgStats.atk.toLocaleString()}</span>
+                <span>Def {displayRpgStats.def.toLocaleString()}</span>
+                <span>Int {displayRpgStats.int.toLocaleString()}</span>
+                <span>MDf {displayRpgStats.mdf.toLocaleString()}</span>
+                <span>Dex {displayRpgStats.dex.toLocaleString()}</span>
+                <span>Lck {displayRpgStats.lck.toLocaleString()}</span>
+                <span>Spd {displayRpgStats.spd.toLocaleString()}</span>
               </div>
             </div>
             {profile.bio ? (
