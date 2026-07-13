@@ -218,7 +218,7 @@ export function profilePageMeta(input) {
     parts.push(`${input.performancePoints.toFixed(2)} performance points`)
   }
 
-  const statsPhrase = parts.length > 0 ? `${parts.join(' · ')}.` : ''
+  const statsPhrase = parts.length > 0 ? `${parts.join(' ◦ ')}.` : ''
   const bioPhrase = input.bio?.trim() ? input.bio.trim() : 'VGMGC contestant profile with stats and achievements.'
 
   return {

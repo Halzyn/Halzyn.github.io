@@ -127,15 +127,17 @@ async function main() {
     const { data: profilePayload } = await supabase.rpc('get_public_profile_page_data', {
       p_username: player.username,
     })
+    const profile = profilePayload?.profile
     const stats = profilePayload?.stats
+    if (!profile) continue
 
     await writeEmbedPage(
       baseHtml,
       profilePageMeta({
-        displayName: player.display_name,
-        username: player.username,
-        bio: player.bio,
-        avatarUrl: avatarPublicUrl(supabaseUrl, player.avatar_path),
+        displayName: profile.display_name,
+        username: profile.username,
+        bio: profile.bio,
+        avatarUrl: avatarPublicUrl(supabaseUrl, profile.avatar_path),
         level: stats?.rpg?.level,
         ppRank: ppRankByUserId.get(player.id) ?? null,
         performancePoints:
@@ -144,7 +146,7 @@ async function main() {
             : typeof player.performance_points === 'number'
               ? player.performance_points
               : undefined,
-        roleLabel: profileRoleLabel(player),
+        roleLabel: profileRoleLabel(profile),
       }),
       `players/${player.username}`,
     )

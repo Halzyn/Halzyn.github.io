@@ -208,10 +208,10 @@ export function profilePageMeta(input: {
   if (typeof input.level === 'number') parts.push(`Level ${input.level}`)
   if (input.ppRank != null) parts.push(`Rank #${input.ppRank}`)
   if (typeof input.performancePoints === 'number') {
-    parts.push(`${input.performancePoints.toFixed(2)} performance points`)
+    parts.push(`${input.performancePoints.toFixed(2)}pp`)
   }
 
-  const statsPhrase = parts.length > 0 ? `${parts.join(' · ')}.` : ''
+  const statsPhrase = parts.length > 0 ? `${parts.join(' ◦ ')}.` : ''
   const bioPhrase = input.bio?.trim() ? input.bio.trim() : 'VGMGC contestant profile with stats and achievements.'
 
   return {
