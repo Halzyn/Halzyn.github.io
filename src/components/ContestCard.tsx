@@ -25,7 +25,8 @@ export function ContestCard({
   status,
   showStatusPill = false,
 }: ContestCardProps) {
-  const open = status ?? !contestClosed(deadline)
+  const open =
+    status === 'open' ? true : status === 'closed' ? false : !contestClosed(deadline)
   const deadlinePrefix = open ? 'Deadline' : 'Concluded'
 
   return (
