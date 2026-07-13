@@ -11,20 +11,22 @@ import { RulesPage } from './pages/RulesPage'
 import { GamesPage } from './pages/GamesPage'
 import { GamePage } from './pages/GamePage'
 import { AdminLayout } from './pages/admin/AdminLayout'
-import { AdminLogin } from './pages/admin/AdminLogin'
-import { AdminContests } from './pages/admin/AdminContests'
-import { AdminContestEdit } from './pages/admin/AdminContestEdit'
-import { AdminGrading } from './pages/admin/AdminGrading'
-import { AdminGames } from './pages/admin/AdminGames'
-import { AdminGameEdit } from './pages/admin/AdminGameEdit'
+import {
+  AdminContestEdit,
+  AdminContests,
+  AdminGameEdit,
+  AdminGames,
+  AdminGrading,
+  AdminLogin,
+  AdminUserEdit,
+  AdminUsers,
+} from './pages/admin/lazyAdminPages'
 import { AuthPage } from './pages/AuthPage'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { PlayersPage } from './pages/PlayersPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ProfileEditPage } from './pages/ProfileEditPage'
-import { AdminUsers } from './pages/admin/AdminUsers'
-import { AdminUserEdit } from './pages/admin/AdminUserEdit'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 const router = createBrowserRouter([

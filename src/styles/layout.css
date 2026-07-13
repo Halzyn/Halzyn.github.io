@@ -620,7 +620,7 @@ html[data-theme='light'] .site-shell .main .site-upload-panel .button:not(.prima
     display: inline-flex;
   }
 
-  .site-nav--desktop {
+  .nav.site-nav--desktop {
     display: none;
   }
 

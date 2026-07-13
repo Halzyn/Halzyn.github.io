@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { HeaderBrand } from '../../components/HeaderBrand'
@@ -101,7 +101,9 @@ function SiteShell({
           </div>
         </header>
         <main className="main main-shell">
-          <Outlet />
+          <Suspense fallback={<p className="muted">Loading...</p>}>
+            <Outlet />
+          </Suspense>
         </main>
         <footer className="foot">
           <div className="foot-row">
