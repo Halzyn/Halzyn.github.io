@@ -136,8 +136,8 @@ export function contestPageMeta({ contest, trackCount }) {
   if (closed) {
     parts.push(
       contest.results_published
-        ? 'Results are published for this VGMGC contest.'
-        : 'This VGMGC contest has closed.',
+        ? 'Results are live for this contest.'
+        : 'This contest has closed.',
     )
   } else {
     parts.push(`Open until ${formatDeadline(contest.deadline)}.`)
