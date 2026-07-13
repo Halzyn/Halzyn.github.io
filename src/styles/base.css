@@ -1,17 +1,17 @@
 @font-face {
   font-family: 'Reactor7';
-  src: url('../../Reactor7.otf') format('opentype');
+  src: url('/Reactor7.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
   font-family: 'MSX BIOS Screen 0';
-  src: url('../../MSX-BIOS-Screen0.woff2') format('woff2');
+  src: url('/MSX-BIOS-Screen0.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 :root {
