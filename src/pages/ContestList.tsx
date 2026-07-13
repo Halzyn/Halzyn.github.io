@@ -1,11 +1,11 @@
-import { pageTitle } from '../lib/pageTitle'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { contestsListMeta } from '../lib/siteMeta'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { useContests } from '../hooks/useContests'
 import { ContestCard } from '../components/ContestCard'
 
 export function ContestList() {
-  useDocumentTitle(pageTitle('Contests'))
   const { contests, hostsByContestId, loadError } = useContests()
+  usePageMeta(contestsListMeta(contests.length))
 
   return (
     <div className="page">

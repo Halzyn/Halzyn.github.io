@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { pageTitle } from '../lib/pageTitle'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { rulesPageMeta } from '../lib/siteMeta'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 const GOAL_BODY = `The contest consists of a series of unlabeled video game songs. Your goal is to identify in which specific game the song is played.
 The songs are typically divided into 5 categories: easy, medium, hard, insane and joke songs.`
@@ -31,7 +31,7 @@ const TIEBREAKER_BODY = `In the event of two people getting equal scores, ties a
 If all of the above are equal, then the players are truly tied.`
 
 export function RulesPage() {
-  useDocumentTitle(pageTitle('Rules'))
+  usePageMeta(rulesPageMeta())
 
   return (
     <div className="page rules-page">

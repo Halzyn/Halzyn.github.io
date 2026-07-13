@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { pageTitle } from '../lib/pageTitle'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { gamesListMeta } from '../lib/siteMeta'
+import { usePageMeta } from '../hooks/usePageMeta'
 import type { Game } from '../lib/types'
 import {
   GAMES_INDEX_ORDER,
@@ -14,9 +14,9 @@ import { useGamesCatalog } from '../hooks/useGamesQueries'
 import { prefetchGamePage, prefetchOnIntent } from '../lib/queryPrefetch'
 
 export function GamesPage() {
-  useDocumentTitle(pageTitle('Games'))
   const location = useLocation()
   const { data: games = [], error, isPending: catalogPending } = useGamesCatalog()
+  usePageMeta(gamesListMeta(games.length))
   const loadError = error instanceof Error ? error.message : null
 
   const gamesByIndex = useMemo(() => {

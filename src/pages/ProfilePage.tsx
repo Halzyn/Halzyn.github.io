@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { pageTitle } from '../lib/pageTitle'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { profilePageMeta, profileRoleLabel } from '../lib/siteMeta'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { getSupabase } from '../lib/supabase'
 import type { ProfileContestStatsResult } from '../lib/profileContestStats'
 import { avatarPublicUrl } from '../lib/avatar'
@@ -68,12 +68,21 @@ export function ProfilePage() {
 
   const displayHeading = useMemo(() => profile?.display_name ?? 'Player', [profile])
 
-  const documentTitle = useMemo(
-    () => (profile ? pageTitle(profile.display_name) : pageTitle('Player')),
-    [profile],
-  )
+  const pageMeta = useMemo(() => {
+    if (!profile || !stats) return null
+    return profilePageMeta({
+      displayName: profile.display_name,
+      username: profile.username,
+      bio: profile.bio,
+      avatarUrl: avatarPublicUrl(supabase, profile.avatar_path),
+      level: stats.rpg.level,
+      ppRank,
+      performancePoints: stats.performance_points,
+      roleLabel: profileRoleLabel(profile),
+    })
+  }, [profile, stats, ppRank, supabase])
 
-  useDocumentTitle(documentTitle)
+  usePageMeta(pageMeta)
 
   const avatarSrc = useMemo(
     () => (profile ? avatarPublicUrl(supabase, profile.avatar_path) : null),

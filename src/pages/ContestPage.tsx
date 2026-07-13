@@ -8,8 +8,8 @@ import { Countdown } from '../components/Countdown'
 import type { TrackAudioPlayerHandle } from '../components/TrackAudioPlayer'
 import { ContestResults } from '../components/ContestResults'
 import { ContestHostName } from '../components/ContestHostName'
-import { pageTitle } from '../lib/pageTitle'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { contestPageMeta, contestsListMeta } from '../lib/siteMeta'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { buildContestRankRows } from '../lib/scoring'
 import { buildContestHostsFromEmbed, emptyContestHosts } from '../lib/contestHosts'
 import { useContestCore, useContestReveal } from '../hooks/useContestPageQueries'
@@ -53,15 +53,14 @@ export function ContestPage() {
     contestMod,
   )
 
-  const documentTitle = useMemo(() => {
-    if (!slug) return pageTitle('Contest')
-    if (corePending && !core) return pageTitle('Contest')
-    if (coreError) return pageTitle('Contest')
-    if (!contest) return pageTitle('Contest not found')
-    return pageTitle(contest.title)
-  }, [slug, corePending, core, coreError, contest])
+  const pageMeta = useMemo(() => {
+    if (contest) return contestPageMeta({ contest, trackCount: tracks.length })
+    if (!slug) return contestsListMeta()
+    if (corePending && !core) return contestsListMeta()
+    return contestsListMeta()
+  }, [contest, tracks.length, slug, corePending, core])
 
-  useDocumentTitle(documentTitle)
+  usePageMeta(pageMeta)
 
   const contestHosts = useMemo(
     () => (contest ? buildContestHostsFromEmbed(contest) : emptyContestHosts),

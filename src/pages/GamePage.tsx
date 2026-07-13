@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ContestTrackAudio } from '../components/ContestTrackAudio'
-import { pageTitle } from '../lib/pageTitle'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { gamePageMeta, gamesListMeta } from '../lib/siteMeta'
+import { usePageMeta } from '../hooks/usePageMeta'
 import type { Contest, Game, GameAlternateTitle, Track } from '../lib/types'
 import { trackAppearanceDedupeKey, trackLineLabel } from '../lib/trackDisplay'
 import type { GamePageContestGroup } from '../lib/queries/games'
@@ -149,14 +149,19 @@ export function GamePage() {
   const contestGroups = data?.contestGroups ?? []
   const loadError = error instanceof Error ? error.message : null
 
-  const documentTitle = useMemo(() => {
-    if (!slug) return pageTitle('Game')
-    if (isPending && !data) return pageTitle('Game')
-    if (!game) return pageTitle('Game not found')
-    return pageTitle(game.primary_title)
-  }, [slug, isPending, data, game])
+  const pageMeta = useMemo(() => {
+    if (game) {
+      return gamePageMeta({
+        game,
+        trackCount: contestGroups.reduce((count, group) => count + group.tracks.length, 0),
+        contestCount: contestGroups.length,
+      })
+    }
+    if (!slug || isPending) return gamesListMeta()
+    return gamesListMeta()
+  }, [game, contestGroups, slug, isPending])
 
-  useDocumentTitle(documentTitle)
+  usePageMeta(pageMeta)
 
   const mergedTrackRows = useMergedTrackRows(game, contestGroups)
   const mergedTracks = useMemo(() => mergedTrackRows.map((row) => row.track), [mergedTrackRows])

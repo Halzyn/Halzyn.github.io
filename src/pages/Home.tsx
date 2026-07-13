@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { pageTitle } from '../lib/pageTitle'
-import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { homePageMeta } from '../lib/siteMeta'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { useContests, useModeratedContestIds, useScheduledContestTeasers } from '../hooks/useContests'
 import { contestHostsFromScheduledTeaser } from '../lib/contestHosts'
 import { ContestCalendarLink } from '../components/ContestCalendarLink'
@@ -12,7 +12,7 @@ import { contestClosed } from '../lib/deadline'
 import { listStoredContestEntries } from '../lib/contestEntryStorage'
 
 export function Home() {
-  useDocumentTitle(pageTitle('Home'))
+  usePageMeta(homePageMeta())
   const { sessionReady, userId, isAdmin } = useAuth()
   const { contests, hostsByContestId, loading: contestsLoading } = useContests()
   const { data: scheduledTeasers = [], isPending: teasersPending } = useScheduledContestTeasers()
