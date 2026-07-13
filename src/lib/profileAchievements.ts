@@ -40,6 +40,7 @@ export type AchievementId =
   | 'soundtrack_soul'
   | 'face_card'
   | 'wordsmith'
+  | 'bill_rizer'
 
 export type ProfileAchievement = {
   id: AchievementId
@@ -53,6 +54,7 @@ type ProfileAchievementContext = {
   rpg: ProfileRpgStats
   profile: PublicProfileJson
   ppRank: number | null
+  secretAchievementIds?: AchievementId[]
 }
 
 type AchievementDef = ProfileAchievement & {
@@ -352,6 +354,14 @@ const ACHIEVEMENT_DEFS: AchievementDef[] = [
     tier: 'common',
     sortOrder: 620,
     check: ({ profile }) => Boolean(profile.bio?.trim()),
+  },
+  {
+    id: 'bill_rizer',
+    name: 'Bill Rizer',
+    description: '?',
+    tier: 'legendary',
+    sortOrder: 900,
+    check: ({ secretAchievementIds }) => secretAchievementIds?.includes('bill_rizer') ?? false,
   },
 ]
 

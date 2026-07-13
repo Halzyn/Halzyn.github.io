@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
+import { KonamiCodeListener } from './components/KonamiCodeListener'
 import { Layout } from './components/Layout'
 import { QueryWarmup } from './components/QueryWarmup'
 import { SiteBackgroundSync } from './components/SiteBackgroundSync'
@@ -73,6 +74,7 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <AuthProvider>
+      <KonamiCodeListener />
       <QueryWarmup />
       <SiteBackgroundSync />
       <RouterProvider router={router} />

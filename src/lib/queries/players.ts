@@ -41,6 +41,7 @@ export type PublicProfileJson = {
   is_contest_moderator?: boolean
   favorite_soundtrack_cover_url?: string | null
   favorite_soundtrack_game_slug?: string | null
+  secret_achievements?: string[] | null
 }
 
 export type PublicProfileStats = {

@@ -261,6 +261,13 @@ export function AchievementIcon({ id, className }: Props) {
           <path d="M14 8l2 2" />
         </SvgRoot>
       )
+    case 'bill_rizer':
+      return (
+        <SvgRoot className={className}>
+          <path d="M9.5 8.5a3 3 0 0 1 5.2 2.1c0 2-2.2 2.4-2.2 4.4" />
+          <circle cx="12" cy="17.5" r="1" fill="currentColor" stroke="none" />
+        </SvgRoot>
+      )
     default:
       return (
         <SvgRoot className={className}>
