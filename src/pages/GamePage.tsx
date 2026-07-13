@@ -142,7 +142,7 @@ function useMergedTrackRows(game: Game | null, contestGroups: GamePageContestGro
 
 export function GamePage() {
   const { slug } = useParams()
-  const { data, error, isLoading } = useGamePage(slug)
+  const { data, error, isPending } = useGamePage(slug)
 
   const game = data?.game ?? null
   const alternates = data?.alternates ?? []
@@ -151,10 +151,10 @@ export function GamePage() {
 
   const documentTitle = useMemo(() => {
     if (!slug) return pageTitle('Game')
-    if (isLoading) return pageTitle('Game')
+    if (isPending && !data) return pageTitle('Game')
     if (!game) return pageTitle('Game not found')
     return pageTitle(game.primary_title)
-  }, [slug, isLoading, game])
+  }, [slug, isPending, data, game])
 
   useDocumentTitle(documentTitle)
 
@@ -167,7 +167,8 @@ export function GamePage() {
 
   if (!slug) return null
   if (loadError && !game) return <p className="banner warn">{loadError}</p>
-  if (isLoading || !game) return <p className="muted">Loading...</p>
+  if (isPending && !data) return <p className="muted">Loading...</p>
+  if (!game) return <p>Game not found.</p>
 
   return (
     <div className="page">

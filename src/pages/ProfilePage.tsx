@@ -53,7 +53,7 @@ function title(profile: PublicProfileJson): string {
 export function ProfilePage() {
   const supabase = getSupabase()
   const { username: usernameFromRoute } = useParams()
-  const { data, error, isLoading } = usePublicProfile(usernameFromRoute)
+  const { data, error, isPending } = usePublicProfile(usernameFromRoute)
 
   const profile = data?.profile ?? null
   const stats = data?.stats ?? null
@@ -79,7 +79,7 @@ export function ProfilePage() {
     [profile, supabase],
   )
 
-  if (isLoading) {
+  if (isPending && !data) {
     return <p className="muted">Loading...</p>
   }
 
@@ -93,7 +93,7 @@ export function ProfilePage() {
   }
 
   if (!stats || !contestStats || !rpgStats) {
-    return <p className="muted">Loading...</p>
+    return null
   }
 
   const experienceBarPercent =

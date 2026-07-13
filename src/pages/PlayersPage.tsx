@@ -6,6 +6,7 @@ import { getSupabase } from '../lib/supabase'
 import { avatarPublicUrl } from '../lib/avatar'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import { computePpRankByUserId, formatPlayerListPp } from '../lib/performancePoints'
+import { prefetchOnIntent, prefetchPublicProfile } from '../lib/queryPrefetch'
 import { usePlayersPublic } from '../hooks/usePlayersQueries'
 
 type SortMode = 'name' | 'pp'
@@ -22,7 +23,7 @@ function toolbarButtonClass(active: boolean): string {
 export function PlayersPage() {
   useDocumentTitle(pageTitle('Players'))
   const supabase = getSupabase()
-  const { data, error, isLoading } = usePlayersPublic()
+  const { data, error, isPending } = usePlayersPublic()
   const [sortMode, setSortMode] = useState<SortMode>('pp')
 
   const profiles = data?.profiles ?? []
@@ -67,7 +68,11 @@ export function PlayersPage() {
             const avatarSrc = avatarPublicUrl(supabase, profile.avatar_path)
             return (
               <li key={profile.id} className="card">
-                <Link to={`/players/${encodeURIComponent(profile.username)}`} className="player-card-link">
+                <Link
+                  to={`/players/${encodeURIComponent(profile.username)}`}
+                  className="player-card-link"
+                  {...prefetchOnIntent(() => prefetchPublicProfile(profile.username))}
+                >
                   {avatarSrc ? (
                     <img
                       key={profile.avatar_path ?? profile.id}
@@ -93,7 +98,7 @@ export function PlayersPage() {
             )
           })}
         </ul>
-        {isLoading && sortedProfiles.length === 0 && !loadError ? (
+        {isPending && sortedProfiles.length === 0 && !loadError ? (
           <p className="muted">Loading profiles...</p>
         ) : null}
       </section>

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { Layout } from './components/Layout'
+import { QueryWarmup } from './components/QueryWarmup'
 import { SiteBackgroundSync } from './components/SiteBackgroundSync'
 import { Home } from './pages/Home'
 import { ContestList } from './pages/ContestList'
@@ -68,6 +69,7 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <AuthProvider>
+      <QueryWarmup />
       <SiteBackgroundSync />
       <RouterProvider router={router} />
     </AuthProvider>

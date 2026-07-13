@@ -7,15 +7,15 @@ import {
 } from '../theme/siteBackground'
 
 export function SiteBackgroundSync() {
-  const { profile, ready } = useAuth()
+  const { profile, profileReady } = useAuth()
 
   useLayoutEffect(() => {
-    if (!ready) {
+    if (!profileReady) {
       applySiteBackgroundPattern(DEFAULT_SITE_BACKGROUND_PATTERN)
       return
     }
     applySiteBackgroundPattern(parseSiteBackgroundPattern(profile?.site_background_pattern))
-  }, [ready, profile?.site_background_pattern])
+  }, [profileReady, profile?.site_background_pattern])
 
   return null
 }

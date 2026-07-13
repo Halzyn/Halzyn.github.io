@@ -30,10 +30,10 @@ function ContestPageTop({ editContestHref }: { editContestHref?: string }) {
 }
 
 export function ContestPage() {
-  const { ready, isAdmin, profile } = useAuth()
+  const { profileReady, isAdmin, profile } = useAuth()
   const { slug } = useParams()
 
-  const { data: core, error: coreError, isLoading: coreLoading } = useContestCore(slug)
+  const { data: core, error: coreError, isPending: corePending } = useContestCore(slug)
   const contest = core?.contest ?? null
   const tracks = core?.tracks ?? []
   const contestMod = core?.contestMod ?? false
@@ -42,25 +42,24 @@ export function ContestPage() {
   const resultsPublished = contest ? Boolean(contest.results_published) : false
   const {
     data: reveal,
-    isLoading: revealLoading,
-    isFetching: revealFetching,
+    isPending: revealPending,
   } = useContestReveal(
     contest?.id,
     trackIds,
     contest?.deadline,
     resultsPublished,
-    ready,
+    profileReady,
     isAdmin,
     contestMod,
   )
 
   const documentTitle = useMemo(() => {
     if (!slug) return pageTitle('Contest')
-    if (coreLoading) return pageTitle('Contest')
+    if (corePending && !core) return pageTitle('Contest')
     if (coreError) return pageTitle('Contest')
     if (!contest) return pageTitle('Contest not found')
     return pageTitle(contest.title)
-  }, [slug, coreLoading, coreError, contest])
+  }, [slug, corePending, core, coreError, contest])
 
   useDocumentTitle(documentTitle)
 
@@ -72,14 +71,14 @@ export function ContestPage() {
   const deadlinePassed = contest ? contestClosed(contest.deadline) : false
   const showResultsToPublic = deadlinePassed && resultsPublished
   const commentsOpen = showResultsToPublic
-  const showResults = (ready && isAdmin) || showResultsToPublic || contestMod
-  const canModerateComments = Boolean(contest && ((ready && isAdmin) || contestMod))
-  const showAdminResultsPreview = ready && isAdmin && showResults && !showResultsToPublic
+  const showResults = (profileReady && isAdmin) || showResultsToPublic || contestMod
+  const canModerateComments = Boolean(contest && ((profileReady && isAdmin) || contestMod))
+  const showAdminResultsPreview = profileReady && isAdmin && showResults && !showResultsToPublic
   const showModResultsPreview = contestMod && showResults && !showResultsToPublic
   const showResultsPreviewBanner = showAdminResultsPreview || showModResultsPreview
-  const canEditContest = Boolean(contest && ((ready && isAdmin) || contestMod))
+  const canEditContest = Boolean(contest && ((profileReady && isAdmin) || contestMod))
   const editContestHref = canEditContest ? `/admin/contests/${contest!.id}` : undefined
-  const scoresReady = Boolean(reveal && !revealLoading && !revealFetching)
+  const scoresReady = Boolean(reveal)
 
   const answers = reveal?.answers ?? []
   const submissions = reveal?.submissions ?? []
@@ -103,7 +102,7 @@ export function ContestPage() {
 
   if (!slug) return null
   if (loadError) return <p className="banner warn">{loadError}</p>
-  if (coreLoading) {
+  if (corePending && !core) {
     return (
       <div className="page">
         <ContestPageTop />
@@ -213,12 +212,12 @@ export function ContestPage() {
               })
             }}
           />
-        ) : (
+        ) : revealPending ? (
           <section className="section contest-results-section">
             <h2>Results</h2>
             <p className="muted">Loading...</p>
           </section>
-        )
+        ) : null
       ) : null}
     </div>
   )

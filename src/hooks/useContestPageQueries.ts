@@ -19,7 +19,7 @@ export function useContestReveal(
   trackIds: string[],
   deadline: string | undefined,
   resultsPublished: boolean,
-  ready: boolean,
+  profileReady: boolean,
   isAdmin: boolean,
   contestMod: boolean,
 ) {
@@ -27,7 +27,7 @@ export function useContestReveal(
     contestId &&
       trackIds.length > 0 &&
       deadline &&
-      shouldLoadContestReveal(deadline, resultsPublished, ready, isAdmin, contestMod),
+      shouldLoadContestReveal(deadline, resultsPublished, profileReady, isAdmin, contestMod),
   )
 
   return useQuery({

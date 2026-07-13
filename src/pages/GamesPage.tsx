@@ -11,11 +11,12 @@ import {
   type GamesIndex,
 } from '../lib/gamesIndex'
 import { useGamesCatalog } from '../hooks/useGamesQueries'
+import { prefetchGamePage, prefetchOnIntent } from '../lib/queryPrefetch'
 
 export function GamesPage() {
   useDocumentTitle(pageTitle('Games'))
   const location = useLocation()
-  const { data: games = [], error, isLoading: catalogLoading } = useGamesCatalog()
+  const { data: games = [], error, isPending: catalogPending } = useGamesCatalog()
   const loadError = error instanceof Error ? error.message : null
 
   const gamesByIndex = useMemo(() => {
@@ -38,7 +39,7 @@ export function GamesPage() {
   )
 
   useLayoutEffect(() => {
-    if (catalogLoading || loadError) return
+    if (catalogPending && games.length === 0) return
     const id = location.hash.replace(/^#/, '').trim()
     if (!id) return
 
@@ -50,7 +51,7 @@ export function GamesPage() {
     scrollToHash()
     const animationFrame = window.requestAnimationFrame(scrollToHash)
     return () => window.cancelAnimationFrame(animationFrame)
-  }, [location.pathname, location.hash, catalogLoading, loadError, sectionKeysWithGames])
+  }, [location.pathname, location.hash, catalogPending, loadError, sectionKeysWithGames])
 
   return (
     <div className="page games-page">
@@ -60,7 +61,7 @@ export function GamesPage() {
       </p>
       {loadError ? <p className="banner warn">{loadError}</p> : null}
 
-      {catalogLoading ? (
+      {catalogPending && games.length === 0 && !loadError ? (
         <p className="muted">Loading games...</p>
       ) : games.length === 0 && !loadError ? (
         <p className="muted">Could not load games. Whoops!</p>
@@ -80,7 +81,12 @@ export function GamesPage() {
                     <ul className="games-index-columns">
                       {gamesForSection.map((game) => (
                         <li key={game.id}>
-                          <Link to={`/games/${encodeURIComponent(game.slug)}`}>{game.primary_title}</Link>
+                          <Link
+                            to={`/games/${encodeURIComponent(game.slug)}`}
+                            {...prefetchOnIntent(() => prefetchGamePage(game.slug))}
+                          >
+                            {game.primary_title}
+                          </Link>
                         </li>
                       ))}
                     </ul>

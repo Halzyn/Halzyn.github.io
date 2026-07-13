@@ -20,7 +20,7 @@ export function useContests() {
     contests,
     hostsByContestId,
     loadError: query.error instanceof Error ? query.error.message : null,
-    loading: query.isLoading,
+    loading: query.isPending && query.data === undefined,
     refetch: query.refetch,
   }
 }

@@ -13,10 +13,12 @@ import { listStoredContestEntries } from '../lib/contestEntryStorage'
 
 export function Home() {
   useDocumentTitle(pageTitle('Home'))
-  const { ready, userId, isAdmin } = useAuth()
-  const { contests, hostsByContestId } = useContests()
-  const { data: scheduledTeasers = [] } = useScheduledContestTeasers()
-  const { data: modContestIds = new Set<string>() } = useModeratedContestIds(ready ? userId : null)
+  const { sessionReady, userId, isAdmin } = useAuth()
+  const { contests, hostsByContestId, loading: contestsLoading } = useContests()
+  const { data: scheduledTeasers = [], isPending: teasersPending } = useScheduledContestTeasers()
+  const { data: modContestIds = new Set<string>() } = useModeratedContestIds(
+    sessionReady && userId ? userId : null,
+  )
 
   const openContests = useMemo(
     () =>
@@ -87,7 +89,7 @@ export function Home() {
 
       {showCurrentContests && (<section className="section">
         <h2>Current contests</h2>
-        {openContests.length === 0 ? (
+        {contestsLoading || teasersPending ? null : openContests.length === 0 ? (
           <p className="muted">No open contests right now. Check back soon.</p>
         ) : (
           <ul className="card-list">

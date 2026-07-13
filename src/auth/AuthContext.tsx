@@ -18,6 +18,8 @@ import { useAuthModeratedContests, useAuthProfile } from '../hooks/useAuthQuerie
 export type AuthContextValue = {
   session: Session | null
   profile: Profile | null
+  sessionReady: boolean
+  profileReady: boolean
   ready: boolean
   userId: string | null
   isAdmin: boolean
@@ -76,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [supabase, queryClient])
 
-  const ready = sessionReady && (!userId || (!profileLoading && !profileFetching))
+  const profileReady = !userId || (!profileLoading && !profileFetching)
+  const ready = profileReady
 
   const refreshProfile = useCallback(async () => {
     if (!userId) return
@@ -90,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       session,
       profile,
+      sessionReady,
+      profileReady,
       ready,
       userId,
       isAdmin,
@@ -100,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [
     session,
     profile,
+    sessionReady,
+    profileReady,
     ready,
     userId,
     isAdmin,

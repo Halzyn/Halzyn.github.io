@@ -3,6 +3,7 @@ import { ContestCalendarLink } from './ContestCalendarLink'
 import { ContestTitleWithHosts } from './ContestTitleWithHosts'
 import type { ContestHosts } from '../lib/contestHosts'
 import { contestClosed } from '../lib/deadline'
+import { prefetchContestCore, prefetchOnIntent } from '../lib/queryPrefetch'
 
 type ContestCardProps = {
   slug: string
@@ -31,7 +32,10 @@ export function ContestCard({
 
   return (
     <li className="card">
-      <Link to={`/contests/${slug}`}>
+      <Link
+        to={`/contests/${slug}`}
+        {...prefetchOnIntent(() => prefetchContestCore(slug))}
+      >
         {showStatusPill ? (
           <span className="contest-card-head">
             <ContestTitleWithHosts

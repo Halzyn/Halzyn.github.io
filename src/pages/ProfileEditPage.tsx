@@ -40,7 +40,7 @@ import {
 export function ProfileEditPage() {
   useDocumentTitle(pageTitle('Your profile'))
   const supabase = getSupabase()
-  const { ready: sessionReady, userId, session, profile: authProfile, refreshProfile, hasModerationAccess, moderatedContests } = useAuth()
+  const { sessionReady, userId, session, profile: authProfile, refreshProfile, hasModerationAccess, moderatedContests } = useAuth()
   const [searchParams] = useSearchParams()
   const tabFromUrl = parseEditTab(searchParams.get('tab'))
   const [profile, setProfile] = useState<Profile | null>(null)

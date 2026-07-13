@@ -27,25 +27,28 @@ export async function fetchContestCoreBySlug(slug: string): Promise<ContestCoreB
   }
 
   const contest = contestRow as ContestWithHosts
-  const { data: trackRows, error: tracksError } = await supabase
-    .from('tracks')
-    .select('*')
-    .eq('contest_id', contest.id)
-    .order('sort_order', { ascending: true })
+  const sessionPromise = supabase.auth.getSession()
 
+  const [tracksResult, modResult] = await Promise.all([
+    supabase
+      .from('tracks')
+      .select('*')
+      .eq('contest_id', contest.id)
+      .order('sort_order', { ascending: true }),
+    sessionPromise.then(({ data: sessionData }) =>
+      sessionData.session?.user
+        ? supabase.rpc('is_contest_mod', { p_contest_id: contest.id }).then((r) => r.data)
+        : Promise.resolve(null),
+    ),
+  ])
+
+  const { data: trackRows, error: tracksError } = tracksResult
   if (tracksError) throw tracksError
-
-  const { data: sessionData } = await supabase.auth.getSession()
-  let contestMod = false
-  if (sessionData.session?.user) {
-    const { data: modResult } = await supabase.rpc('is_contest_mod', { p_contest_id: contest.id })
-    contestMod = Boolean(modResult)
-  }
 
   return {
     contest,
     tracks: (trackRows ?? []) as Track[],
-    contestMod,
+    contestMod: Boolean(modResult),
   }
 }
 
@@ -116,10 +119,10 @@ export async function fetchContestRevealBundle(
 export function shouldLoadContestReveal(
   deadline: string,
   resultsPublished: boolean,
-  ready: boolean,
+  profileReady: boolean,
   isAdmin: boolean,
   contestMod: boolean,
 ): boolean {
   const deadlinePassed = contestClosed(deadline)
-  return (deadlinePassed && resultsPublished) || (ready && isAdmin) || (ready && contestMod)
+  return (deadlinePassed && resultsPublished) || (profileReady && isAdmin) || contestMod
 }
