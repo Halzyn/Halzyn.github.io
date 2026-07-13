@@ -4,10 +4,12 @@ import { fileURLToPath } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
 import {
   applyPageMetaToHtml,
+  contestClosed,
   contestPageMeta,
   contestsListMeta,
   gamePageMeta,
   gamesListMeta,
+  tracksListMeta,
   homePageMeta,
   profilePageMeta,
   profileRoleLabel,
@@ -101,6 +103,22 @@ async function main() {
   await writeEmbedPage(baseHtml, contestsListMeta(contestRows.length), 'contests')
   await writeEmbedPage(baseHtml, gamesListMeta(gameRows.length), 'games')
   await writeEmbedPage(baseHtml, rulesPageMeta(), 'rules')
+
+  const publishedContestIds = contestRows
+    .filter((contest) => contest.published && contest.results_published && contestClosed(contest.deadline))
+    .map((contest) => contest.id)
+
+  let publishedTrackCount = 0
+  if (publishedContestIds.length > 0) {
+    const { count, error: publishedTrackCountError } = await supabase
+      .from('tracks')
+      .select('id', { count: 'exact', head: true })
+      .in('contest_id', publishedContestIds)
+    if (publishedTrackCountError) throw publishedTrackCountError
+    publishedTrackCount = count ?? 0
+  }
+
+  await writeEmbedPage(baseHtml, tracksListMeta(publishedTrackCount), 'tracks')
 
   for (const contest of contestRows) {
     await writeEmbedPage(

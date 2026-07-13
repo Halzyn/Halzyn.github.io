@@ -75,6 +75,22 @@ export function contestsListMeta(contestCount?: number): PageMeta {
   }
 }
 
+export function tracksListMeta(trackCount?: number): PageMeta {
+  const countPhrase =
+    typeof trackCount === 'number' && trackCount > 0
+      ? `${trackCount} contest track${trackCount === 1 ? '' : 's'} with published results. `
+      : ''
+  return {
+    title: pageTitle('Tracks'),
+    description: truncateDescription(
+      `${countPhrase}Browse every track from past VGMGCs: games, song titles, contest appearances, and guess stats.`,
+    ),
+    url: absoluteSiteUrl('/tracks'),
+    image: defaultOgImage(),
+    type: 'website',
+  }
+}
+
 export function gamesListMeta(gameCount?: number): PageMeta {
   const countPhrase =
     typeof gameCount === 'number' && gameCount > 0

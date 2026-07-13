@@ -12,6 +12,7 @@ export const queryKeys = {
   commentEdits: (commentId: string) => ['comment-edits', commentId] as const,
   gamesCatalog: ['games-catalog'] as const,
   gamePage: (slug: string) => ['game-page', slug] as const,
+  tracksPage: (viewerKey: string) => ['tracks-page', viewerKey] as const,
   playersPublic: ['players-public'] as const,
   publicProfile: (username: string) => ['public-profile', username] as const,
   siteHost: ['site-host'] as const,

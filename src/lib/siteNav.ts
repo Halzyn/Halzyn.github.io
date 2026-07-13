@@ -11,6 +11,7 @@ export const MAIN_NAV_LINKS: SiteNavLink[] = [
   { to: '/contests', label: 'Contests' },
   { to: '/rules', label: 'Rules' },
   { to: '/games', label: 'Games' },
+  { to: '/tracks', label: 'Tracks' },
   { to: '/players', label: 'Players', end: true },
 ]
 
@@ -19,6 +20,7 @@ export const FOOTER_NAV_LINKS: SiteNavLink[] = [
   { to: '/contests', label: 'Contests' },
   { to: '/rules', label: 'Rules' },
   { to: '/games', label: 'Games' },
+  { to: '/tracks', label: 'Tracks' },
   { to: '/players', label: 'Players', end: true },
   { to: '#top', label: 'Jump to top', hash: true },
 ]

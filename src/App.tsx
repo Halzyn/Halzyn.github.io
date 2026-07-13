@@ -10,6 +10,7 @@ import { SubmitPage } from './pages/SubmitPage'
 import { RulesPage } from './pages/RulesPage'
 import { GamesPage } from './pages/GamesPage'
 import { GamePage } from './pages/GamePage'
+import { TracksPage } from './pages/TracksPage'
 import { AdminLayout } from './pages/admin/AdminLayout'
 import {
   AdminContestEdit,
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
       { path: 'rules', element: <RulesPage /> },
       { path: 'games', element: <GamesPage /> },
       { path: 'games/:slug', element: <GamePage /> },
+      { path: 'tracks', element: <TracksPage /> },
       { path: '404', element: <NotFoundPage /> },
     ],
   },

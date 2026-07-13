@@ -405,3 +405,66 @@
   text-decoration-color: var(--accent);
   text-underline-offset: 0.12em;
 }
+
+.tracks-grid-wrap .results-unified-grid thead th.results-col-contest,
+.tracks-grid-wrap .results-unified-grid thead th.results-col-difficulty {
+  white-space: nowrap;
+}
+
+.tracks-grid-wrap .results-col-contest {
+  min-width: 8rem;
+}
+
+.tracks-grid-wrap .results-col-stat {
+  text-align: center;
+  min-width: 4.5rem;
+  white-space: nowrap;
+}
+
+.tracks-grid-wrap .results-col-difficulty {
+  text-align: center;
+  font-weight: 700;
+  min-width: 4.5rem;
+  white-space: nowrap;
+}
+
+.tracks-grid-wrap td.results-col-song.results-col-has-notes .results-tip-hover {
+  position: absolute;
+  inset: 0;
+  display: block;
+  max-width: none;
+  z-index: 0;
+}
+
+.tracks-grid-wrap td.results-col-song.results-col-has-notes .results-cell-text {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.tracks-page-player {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  margin-bottom: 1rem;
+  padding: 0.35rem 0 0.65rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.tracks-page-player .tracks-player-shell {
+  margin: 0;
+}
+
+.tracks-grid-wrap .tracks-grid-contest-list {
+  display: inline;
+}
+
+.tracks-grid-wrap .tracks-grid-contest-item {
+  display: inline;
+  white-space: normal;
+}
+
+.tracks-grid-wrap .tracks-grid-contest-sep {
+  white-space: pre;
+}

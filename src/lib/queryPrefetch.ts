@@ -5,6 +5,7 @@ import {
 } from './queries/contests'
 import { fetchContestCoreBySlug } from './queries/contestPage'
 import { fetchGamesCatalog, fetchGamePageBundle } from './queries/games'
+import { fetchTracksPageBundle } from './queries/tracks'
 import {
   fetchPlayersPublicBundle,
   fetchPublicProfilePageBundle,
@@ -32,6 +33,10 @@ export function prefetchCoreAppQueries(): void {
   void queryClient.prefetchQuery({
     queryKey: queryKeys.gamesCatalog,
     queryFn: fetchGamesCatalog,
+  })
+  void queryClient.prefetchQuery({
+    queryKey: queryKeys.tracksPage('anon'),
+    queryFn: fetchTracksPageBundle,
   })
 }
 

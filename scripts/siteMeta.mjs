@@ -77,6 +77,8 @@ function contestClosed(deadlineIso) {
   return Date.parse(deadlineIso) <= Date.now()
 }
 
+export { contestClosed }
+
 export function homePageMeta() {
   return {
     title: pageTitle('Home'),
@@ -97,6 +99,22 @@ export function contestsListMeta(contestCount) {
     title: pageTitle('Contests'),
     description: truncateDescription(`${countPhrase}Browse every VGMGC: open entries and past results.`),
     url: absoluteSiteUrl('/contests'),
+    image: defaultOgImage(),
+    type: 'website',
+  }
+}
+
+export function tracksListMeta(trackCount) {
+  const countPhrase =
+    typeof trackCount === 'number' && trackCount > 0
+      ? `${trackCount} contest track${trackCount === 1 ? '' : 's'} with published results. `
+      : ''
+  return {
+    title: pageTitle('Tracks'),
+    description: truncateDescription(
+      `${countPhrase}Browse every track from past VGMGCs: games, song titles, contest appearances, and guess stats.`,
+    ),
+    url: absoluteSiteUrl('/tracks'),
     image: defaultOgImage(),
     type: 'website',
   }
