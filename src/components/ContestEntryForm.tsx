@@ -30,10 +30,12 @@ type ContestEntryFormProps = {
   contest: Contest
   tracks: Track[]
   slug: string
+  stickyPlayerScope?: boolean
+  children?: ReactNode
 }
 
 export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryFormProps>(
-  function ContestEntryForm({ contest, tracks, slug }, ref) {
+  function ContestEntryForm({ contest, tracks, slug, stickyPlayerScope = false, children }, ref) {
     const entry = useContestEntry({ contest, tracks, slug })
     const playerRef = useRef<TrackAudioPlayerHandle>(null)
     const guessInputRef = useRef<HTMLInputElement>(null)
@@ -41,6 +43,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       activeId: null,
       isPlaying: false,
     })
+    const stickyPlayerTail = stickyPlayerScope
 
     useImperativeHandle(
       ref,
@@ -141,7 +144,9 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
     const sectionTitle = entry.showSubmissionFields ? 'Your entry' : 'Tracks'
 
     return (
-      <section className="section contest-entry-section contest-entry">
+      <section
+        className={`section contest-entry-section contest-entry${stickyPlayerTail ? ' contest-entry-section--sticky-player' : ''}`}
+      >
         <h2>{sectionTitle}</h2>
         {renderTopBanner()}
         {entry.isAdmin && entry.adminSubmissionId ? (
@@ -236,15 +241,17 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
                   )
                 })}
               </nav>
+            </div>
+          ) : null}
 
-              {tracks.length > 0 ? (
-                <TrackAudioPlayer
-                  ref={playerRef}
-                  tracks={tracks}
-                  onPlaybackChange={setTrackPlayback}
-                  className="contest-entry-player"
-                />
-              ) : null}
+          {tracks.length > 0 ? (
+            <div className="sticky-page-player">
+              <TrackAudioPlayer
+                ref={playerRef}
+                tracks={tracks}
+                onPlaybackChange={setTrackPlayback}
+                className="contest-entry-player"
+              />
             </div>
           ) : null}
 
@@ -296,6 +303,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
             </>
           ) : null}
         </form>
+        {children}
       </section>
     )
   },

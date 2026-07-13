@@ -442,6 +442,7 @@
   pointer-events: none;
 }
 
+.sticky-page-player,
 .tracks-page-player {
   position: sticky;
   top: 0;
@@ -452,8 +453,26 @@
   border-bottom: 1px solid var(--border);
 }
 
+.contest-entry-section--sticky-player .contest-entry-form {
+  display: contents;
+}
+
+.contest-entry-section .sticky-page-player {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+.contest-page-sticky-scope .sticky-page-player {
+  margin-bottom: 0.75rem;
+}
+
+.sticky-page-player .tracks-player-shell,
 .tracks-page-player .tracks-player-shell {
   margin: 0;
+}
+
+.contest-page-sticky-scope .contest-entry-player {
+  margin-top: 0;
 }
 
 .tracks-grid-wrap .tracks-grid-contest-list {

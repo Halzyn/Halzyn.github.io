@@ -21,7 +21,7 @@ export function TracksPage() {
       </p>
       {loadError ? <p className="banner warn">{loadError}</p> : null}
       {tracks.length > 0 ? (
-        <section className="section tracks-page-player">
+        <section className="section sticky-page-player">
           <ContestTrackAudio ref={playerRef} tracks={tracks} showTrackPicker={false} />
         </section>
       ) : null}

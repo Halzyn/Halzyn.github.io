@@ -93,8 +93,7 @@ export function ContestPage() {
   }, [showResults, submissions, marks, trackIds, tracks, displayNameByUserId])
 
   const alwaysRevealSpoilers = Boolean(profile?.always_reveal_spoilers)
-  const entryFormRef = useRef<TrackAudioPlayerHandle>(null)
-  const entrySectionRef = useRef<HTMLDivElement>(null)
+  const playerRef = useRef<TrackAudioPlayerHandle>(null)
   const showEntrySection = Boolean(contest && tracks.length > 0)
 
   const loadError = coreError instanceof Error ? coreError.message : null
@@ -172,51 +171,45 @@ export function ContestPage() {
       </header>
 
       {showEntrySection ? (
-        <div ref={entrySectionRef}>
-          <ContestEntryForm
-            key={contest.id}
-            ref={entryFormRef}
-            contest={contest}
-            tracks={tracks}
-            slug={slug}
-          />
-        </div>
-      ) : null}
-
-      {showResultsPreviewBanner ? (
-        <p className="banner" role="status">
-          THE TABLE BELOW IS A PREVIEW, SO YOU DON'T HAVE TO WORRY!!
-        </p>
-      ) : null}
-      {showResults ? (
-        scoresReady ? (
-          <ContestResults
-            tracks={tracks}
-            answers={answers}
-            submissions={submissions}
-            marks={marks}
-            leaderboard={leaderboard}
-            gameTooltips={gameTooltips}
-            displayNameByUserId={displayNameByUserId}
-            profileUsernameByUserId={profileUsernameByUserId}
-            displayNameStyleByUserId={displayNameStyleByUserId}
-            contestId={contest.id}
-            commentsOpen={commentsOpen}
-            canModerateComments={canModerateComments}
-            alwaysRevealSpoilers={alwaysRevealSpoilers}
-            onPlayTrack={(trackId) => {
-              entryFormRef.current?.playTrack(trackId)
-              requestAnimationFrame(() => {
-                entrySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-              })
-            }}
-          />
-        ) : revealPending ? (
-          <section className="section contest-results-section">
-            <h2>Results</h2>
-            <p className="muted">Loading...</p>
-          </section>
-        ) : null
+        <ContestEntryForm
+          key={contest.id}
+          ref={playerRef}
+          contest={contest}
+          tracks={tracks}
+          slug={slug}
+          stickyPlayerScope={showResults || showResultsPreviewBanner}
+        >
+          {showResultsPreviewBanner ? (
+            <p className="banner" role="status">
+              THE TABLE BELOW IS A PREVIEW, SO YOU DON'T HAVE TO WORRY!!
+            </p>
+          ) : null}
+          {showResults ? (
+            scoresReady ? (
+              <ContestResults
+                tracks={tracks}
+                answers={answers}
+                submissions={submissions}
+                marks={marks}
+                leaderboard={leaderboard}
+                gameTooltips={gameTooltips}
+                displayNameByUserId={displayNameByUserId}
+                profileUsernameByUserId={profileUsernameByUserId}
+                displayNameStyleByUserId={displayNameStyleByUserId}
+                contestId={contest.id}
+                commentsOpen={commentsOpen}
+                canModerateComments={canModerateComments}
+                alwaysRevealSpoilers={alwaysRevealSpoilers}
+                onPlayTrack={(trackId) => playerRef.current?.playTrack(trackId)}
+              />
+            ) : revealPending ? (
+              <section className="section contest-results-section">
+                <h2>Results</h2>
+                <p className="muted">Loading...</p>
+              </section>
+            ) : null
+          ) : null}
+        </ContestEntryForm>
       ) : null}
     </div>
   )
