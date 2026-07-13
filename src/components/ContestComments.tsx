@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../auth/AuthContext'
 import { avatarPublicUrl } from '../lib/avatar'
 import { getSupabase } from '../lib/supabase'
 import {
   buildCommentTree,
   commentDisplayNameStyle,
-  fetchCommentEdits,
-  fetchContestComments,
   type CommentSortMode,
   type CommentTreeNode,
-  type ContestCommentEdit,
   type ContestCommentRow,
 } from '../lib/contestComments'
 import { COMMENT_MAX_LENGTH } from '../lib/commentMarkdown'
+import { queryKeys } from '../lib/queries/keys'
+import { useCommentEdits, useContestComments } from '../hooks/useContestCommentsQueries'
 import { CommentMarkdownBody } from './CommentMarkdownBody'
 import { CommentMarkdownEditor, CommentMarkdownEditorHint } from './CommentMarkdownEditor'
 import { DisplayNameStyled } from './DisplayNameStyled'
@@ -71,61 +71,43 @@ function CommentAuthorSidebar({ node }: { node: CommentTreeNode }) {
 }
 
 function CommentEditHistory({ commentId, editCount }: { commentId: string; editCount: number }) {
-  const supabase = getSupabase()
-  const [edits, setEdits] = useState<ContestCommentEdit[] | null>(null)
-  const [currentBody, setCurrentBody] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function load() {
-    if (edits !== null) return
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await fetchCommentEdits(supabase, commentId)
-      setEdits(result.edits)
-      setCurrentBody(result.currentBody)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load edit history')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [expanded, setExpanded] = useState(false)
+  const { data, isLoading, error } = useCommentEdits(commentId, expanded && editCount >= 1)
 
   if (editCount < 1) return null
+
+  const edits = data?.edits ?? null
+  const currentBody = data?.currentBody ?? null
+  const errorMessage = error instanceof Error ? error.message : null
 
   return (
     <details
       className="comment-edit-history"
       onToggle={(event) => {
-        if (event.currentTarget.open) void load()
+        setExpanded((event.target as HTMLDetailsElement).open)
       }}
     >
-      <summary className="linkish comment-edit-history-summary">
+      <summary className="linkish small">
         {editCount} edit{editCount === 1 ? '' : 's'}
       </summary>
-      <div className="comment-edit-history-body site-inset">
-        {loading ? <p className="muted small">Loading...</p> : null}
-        {error ? <p className="banner warn small">{error}</p> : null}
-        {edits ? (
-          <ol className="comment-edit-history-list">
-            {edits.map((edit, index) => (
-              <li key={edit.id}>
-                <p className="muted small comment-edit-history-label">
-                  Version {index + 1} ◦ {formatWhen(edit.edited_at)}
-                </p>
-                <CommentMarkdownBody body={edit.body} />
-              </li>
-            ))}
-            {currentBody ? (
-              <li>
-                <p className="muted small comment-edit-history-label">Current</p>
-                <CommentMarkdownBody body={currentBody} />
-              </li>
-            ) : null}
-          </ol>
-        ) : null}
-      </div>
+      {isLoading ? <p className="muted small">Loading edit history...</p> : null}
+      {errorMessage ? <p className="banner warn small">{errorMessage}</p> : null}
+      {edits ? (
+        <ul className="comment-edit-list">
+          {currentBody ? (
+            <li>
+              <span className="muted small">Current</span>
+              <CommentMarkdownBody body={currentBody} />
+            </li>
+          ) : null}
+          {edits.map((edit) => (
+            <li key={edit.id}>
+              <span className="muted small">{formatWhen(edit.edited_at)}</span>
+              <CommentMarkdownBody body={edit.body} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </details>
   )
 }
@@ -136,7 +118,7 @@ type CommentItemProps = {
   commentsOpen: boolean
   canModerate: boolean
   userId: string | null
-  onRefresh: () => Promise<void>
+  onRefresh: () => void
   onVoteUpdate: (commentId: string, patch: Partial<ContestCommentRow>) => void
 }
 
@@ -173,7 +155,7 @@ function CommentItem({
       if (rpcError) throw rpcError
       setReplyBody('')
       setReplyOpen(false)
-      await onRefresh()
+      onRefresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post reply')
     } finally {
@@ -193,7 +175,7 @@ function CommentItem({
       })
       if (rpcError) throw rpcError
       setEditOpen(false)
-      await onRefresh()
+      onRefresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save edit')
     } finally {
@@ -239,7 +221,7 @@ function CommentItem({
         p_comment_id: node.id,
       })
       if (rpcError) throw rpcError
-      await onRefresh()
+      onRefresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete')
     } finally {
@@ -375,46 +357,36 @@ function CommentItem({
 
 export function ContestComments({ contestId, commentsOpen, canModerate }: Props) {
   const supabase = getSupabase()
+  const queryClient = useQueryClient()
   const { userId, ready } = useAuth()
-  const [rows, setRows] = useState<ContestCommentRow[]>([])
   const [sortMode, setSortMode] = useState<CommentSortMode>('top')
   const [body, setBody] = useState('')
-  const [loading, setLoading] = useState(false)
   const [posting, setPosting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [postError, setPostError] = useState<string | null>(null)
+  const [votePatches, setVotePatches] = useState<Record<string, Partial<ContestCommentRow>>>({})
 
-  const load = useCallback(async () => {
-    if (!commentsOpen) {
-      setRows([])
-      return
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      const list = await fetchContestComments(supabase, contestId)
-      setRows(list)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load comments')
-    } finally {
-      setLoading(false)
-    }
-  }, [commentsOpen, contestId, supabase])
+  const { data: rows = [], isLoading, error: loadError } = useContestComments(contestId, commentsOpen)
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  const mergedRows = useMemo(
+    () => rows.map((row) => (votePatches[row.id] ? { ...row, ...votePatches[row.id] } : row)),
+    [rows, votePatches],
+  )
 
-  const tree = useMemo(() => buildCommentTree(rows, sortMode), [rows, sortMode])
+  const tree = useMemo(() => buildCommentTree(mergedRows, sortMode), [mergedRows, sortMode])
+
+  const refreshComments = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.contestComments(contestId) })
+  }
 
   function patchVote(commentId: string, patch: Partial<ContestCommentRow>) {
-    setRows((prev) => prev.map((row) => (row.id === commentId ? { ...row, ...patch } : row)))
+    setVotePatches((prev) => ({ ...prev, [commentId]: { ...prev[commentId], ...patch } }))
   }
 
   async function postComment() {
     const trimmed = body.trim()
     if (!trimmed || !userId) return
     setPosting(true)
-    setError(null)
+    setPostError(null)
     try {
       const { error: rpcError } = await supabase.rpc('post_contest_comment', {
         p_contest_id: contestId,
@@ -423,9 +395,9 @@ export function ContestComments({ contestId, commentsOpen, canModerate }: Props)
       })
       if (rpcError) throw rpcError
       setBody('')
-      await load()
+      refreshComments()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post comment')
+      setPostError(err instanceof Error ? err.message : 'Failed to post comment')
     } finally {
       setPosting(false)
     }
@@ -433,6 +405,8 @@ export function ContestComments({ contestId, commentsOpen, canModerate }: Props)
 
   const signedIn = ready && Boolean(userId)
   const composerDisabled = !commentsOpen || !signedIn || posting
+  const error =
+    postError ?? (loadError instanceof Error ? loadError.message : null)
 
   return (
     <div className="contest-comments">
@@ -484,9 +458,9 @@ export function ContestComments({ contestId, commentsOpen, canModerate }: Props)
             </div>
           </div>
 
-          {loading ? <p className="muted">Loading comments...</p> : null}
+          {isLoading ? <p className="muted">Loading comments...</p> : null}
           {error ? <p className="banner warn">{error}</p> : null}
-          {!loading && tree.length === 0 ? <p className="muted">No comments yet.</p> : null}
+          {!isLoading && tree.length === 0 ? <p className="muted">No comments yet.</p> : null}
 
           <div className="comment-thread">
             {tree.map((node) => (
@@ -497,7 +471,7 @@ export function ContestComments({ contestId, commentsOpen, canModerate }: Props)
                 commentsOpen={commentsOpen}
                 canModerate={canModerate}
                 userId={userId}
-                onRefresh={load}
+                onRefresh={refreshComments}
                 onVoteUpdate={patchVote}
               />
             ))}

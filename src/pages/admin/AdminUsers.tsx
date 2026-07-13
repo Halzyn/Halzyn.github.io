@@ -1,31 +1,13 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
-import { getSupabase } from '../../lib/supabase'
 import type { Profile } from '../../lib/types'
+import { useAdminUsersList } from '../../hooks/useAdminQueries'
 
 export function AdminUsers() {
   useDocumentTitle(pageTitle('Admin', 'Users'))
-  const supabase = getSupabase()
-  const [profiles, setProfiles] = useState<Profile[]>([])
-  const [loadError, setLoadError] = useState<string | null>(null)
-
-  useEffect(() => {
-    async function loadProfiles() {
-      setLoadError(null)
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('player_number', { ascending: true, nullsFirst: false })
-      if (error) {
-        setLoadError(error.message)
-        return
-      }
-      setProfiles((data ?? []) as Profile[])
-    }
-    void loadProfiles()
-  }, [supabase])
+  const { data: profiles = [], error } = useAdminUsersList()
+  const loadError = error instanceof Error ? error.message : null
 
   return (
     <div className="page">
@@ -37,7 +19,7 @@ export function AdminUsers() {
       <section className="section">
         <h2>Directory</h2>
         <ul className="card-list">
-          {profiles.map((profile) => (
+          {profiles.map((profile: Profile) => (
             <li key={profile.id} className="card">
               <Link to={`/admin/users/${profile.id}`}>
                 <span className="card-title">

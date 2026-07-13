@@ -1,8 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { getSupabase } from '../lib/supabase'
 import type { Game } from '../lib/types'
 import {
   GAMES_INDEX_ORDER,
@@ -11,32 +10,13 @@ import {
   gamesSectionDomId,
   type GamesIndex,
 } from '../lib/gamesIndex'
+import { useGamesCatalog } from '../hooks/useGamesQueries'
 
 export function GamesPage() {
   useDocumentTitle(pageTitle('Games'))
   const location = useLocation()
-  const supabase = getSupabase()
-  const [games, setGames] = useState<Game[]>([])
-  const [catalogLoading, setCatalogLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-
-  useEffect(() => {
-    async function loadGames() {
-      setCatalogLoading(true)
-      setLoadError(null)
-      const { data, error } = await supabase
-        .from('games')
-        .select('id, primary_title, slug, created_at, updated_at')
-      setCatalogLoading(false)
-      if (error) {
-        setLoadError(error.message)
-        setGames([])
-        return
-      }
-      setGames((data ?? []) as Game[])
-    }
-    void loadGames()
-  }, [supabase])
+  const { data: games = [], error, isLoading: catalogLoading } = useGamesCatalog()
+  const loadError = error instanceof Error ? error.message : null
 
   const gamesByIndex = useMemo(() => {
     const map = new Map<GamesIndex, Game[]>()

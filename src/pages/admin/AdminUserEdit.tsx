@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import type { Session } from '@supabase/supabase-js'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { getSupabase } from '../../lib/supabase'
 import type { Profile } from '../../lib/types'
+import { useAuth } from '../../auth/AuthContext'
+import { useAdminUserProfile } from '../../hooks/useAdminQueries'
 
 const SUBMISSION_UUID_RE = /^[0-9a-f-]{36}$/i
 
@@ -13,6 +14,8 @@ export function AdminUserEdit() {
   const supabase = getSupabase()
   const { id: userId } = useParams()
   const navigate = useNavigate()
+  const { session, ready: sessionReady } = useAuth()
+  const { data: loadedProfile, error: queryError } = useAdminUserProfile(userId)
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
@@ -21,8 +24,6 @@ export function AdminUserEdit() {
   const [submissionIdInput, setSubmissionIdInput] = useState('')
   const [pageError, setPageError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [sessionLoaded, setSessionLoaded] = useState(false)
 
   const clearFeedback = useCallback(() => {
     setPageError(null)
@@ -40,30 +41,12 @@ export function AdminUserEdit() {
   useDocumentTitle(documentTitle)
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null)
-      setSessionLoaded(true)
-    })
-  }, [supabase])
-
-  useEffect(() => {
-    if (!userId) return
-
-    async function loadProfile() {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
-      if (error || !data) {
-        setPageError(error?.message ?? 'Not found')
-        return
-      }
-      const row = data as Profile
-      setProfile(row)
-      setUsername(row.username ?? '')
-      setDisplayName(row.display_name ?? '')
-      setBio(row.bio ?? '')
-    }
-
-    void loadProfile()
-  }, [userId, supabase])
+    if (!loadedProfile) return
+    setProfile(loadedProfile)
+    setUsername(loadedProfile.username ?? '')
+    setDisplayName(loadedProfile.display_name ?? '')
+    setBio(loadedProfile.bio ?? '')
+  }, [loadedProfile])
 
   async function saveProfile(event: FormEvent) {
     event.preventDefault()
@@ -106,7 +89,9 @@ export function AdminUserEdit() {
   }
 
   const isEditingOwnProfile =
-    sessionLoaded && session !== null && session.user.id === profile?.id
+    sessionReady && session !== null && session.user.id === profile?.id
+
+  const loadError = queryError instanceof Error ? queryError.message : null
 
   async function deleteUser() {
     if (!profile || isEditingOwnProfile) return
@@ -130,7 +115,9 @@ export function AdminUserEdit() {
   }
 
   if (!userId) return null
-  if (pageError && !profile) return <p className="banner warn">{pageError}</p>
+  if ((pageError || loadError) && !profile) {
+    return <p className="banner warn">{pageError ?? loadError}</p>
+  }
   if (!profile) return <p className="muted">Loading...</p>
 
   return (
@@ -191,7 +178,7 @@ export function AdminUserEdit() {
         <p className="muted small">
           Deletes the Supabase auth account and profile. Contest submissions remain with no linked player.
         </p>
-        {!sessionLoaded ? (
+        {!sessionReady ? (
           <p className="muted small">Loading...</p>
         ) : isEditingOwnProfile ? (
           <p className="muted small">What are you doing you dumbass</p>

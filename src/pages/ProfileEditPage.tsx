@@ -40,22 +40,20 @@ import {
 export function ProfileEditPage() {
   useDocumentTitle(pageTitle('Your profile'))
   const supabase = getSupabase()
-  const { refreshProfile, hasModerationAccess, moderatedContests } = useAuth()
+  const { ready: sessionReady, userId, session, profile: authProfile, refreshProfile, hasModerationAccess, moderatedContests } = useAuth()
   const [searchParams] = useSearchParams()
   const tabFromUrl = parseEditTab(searchParams.get('tab'))
   const [profile, setProfile] = useState<Profile | null>(null)
   const [username, setUsername] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
-  const [email, setEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [pageError, setPageError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [submitBusy, setSubmitBusy] = useState(false)
   const [avatarBusy, setAvatarBusy] = useState(false)
-  const [sessionReady, setSessionReady] = useState(false)
-  const [noSession, setNoSession] = useState(false)
+  const [email, setEmail] = useState('')
   const [gameSearch, setGameSearch] = useState('')
   const [favoriteGameId, setFavoriteGameId] = useState<string | null>(null)
   const [favoriteBusy, setFavoriteBusy] = useState(false)
@@ -94,40 +92,24 @@ export function ProfileEditPage() {
   }, [])
 
   useEffect(() => {
-    async function loadSessionAndProfile() {
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.user) {
-        setNoSession(true)
-        setSessionReady(true)
-        return
-      }
-      setEmail(sessionData.session.user.email ?? '')
-      const { data: profileRow, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', sessionData.session.user.id)
-        .single()
-      if (error) {
-        setPageError(error.message)
-        setSessionReady(true)
-        return
-      }
-      const loaded = profileRow as Profile
-      setProfile(loaded)
-      setUsername(loaded.username ?? '')
-      setDisplayName(loaded.display_name ?? '')
-      setBio(loaded.bio ?? '')
-      setFavoriteGameId(loaded.favorite_soundtrack_game_id ?? null)
-      setNotifyNewContestEmail(Boolean(loaded.notify_new_contest_email))
-      setSiteBackgroundPattern(parseSiteBackgroundPattern(loaded.site_background_pattern))
-      setAlwaysRevealSpoilers(Boolean(loaded.always_reveal_spoilers))
-      setNameColor1(loaded.display_name_color?.trim() ?? '')
-      setNameColor2(loaded.display_name_color_2?.trim() ?? '')
-      setNameEffect(parseDisplayNameEffect(loaded.display_name_effect))
-      setSessionReady(true)
-    }
-    void loadSessionAndProfile()
-  }, [supabase])
+    setEmail(session?.user?.email ?? '')
+  }, [session?.user?.email])
+
+  useEffect(() => {
+    if (!authProfile) return
+    const loaded = authProfile
+    setProfile(loaded)
+    setUsername(loaded.username ?? '')
+    setDisplayName(loaded.display_name ?? '')
+    setBio(loaded.bio ?? '')
+    setFavoriteGameId(loaded.favorite_soundtrack_game_id ?? null)
+    setNotifyNewContestEmail(Boolean(loaded.notify_new_contest_email))
+    setSiteBackgroundPattern(parseSiteBackgroundPattern(loaded.site_background_pattern))
+    setAlwaysRevealSpoilers(Boolean(loaded.always_reveal_spoilers))
+    setNameColor1(loaded.display_name_color?.trim() ?? '')
+    setNameColor2(loaded.display_name_color_2?.trim() ?? '')
+    setNameEffect(parseDisplayNameEffect(loaded.display_name_effect))
+  }, [authProfile])
 
   useEffect(() => {
     if (!hasModerationAccess && editTab === 'moderation') {
@@ -412,7 +394,7 @@ export function ProfileEditPage() {
   if (!sessionReady) {
     return <p className="muted">Loading...</p>
   }
-  if (noSession) {
+  if (!userId) {
     return <Navigate to="/auth" replace />
   }
 

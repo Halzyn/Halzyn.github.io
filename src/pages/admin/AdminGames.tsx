@@ -1,32 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { getSupabase } from '../../lib/supabase'
-import type { Game } from '../../lib/types'
-import { compareGameTitles } from '../../lib/gamesIndex'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import type { Game } from '../../lib/types'
+import { compareGameTitles } from '../../lib/gamesIndex'
+import { useGamesCatalog } from '../../hooks/useGamesQueries'
 
 export function AdminGames() {
   useDocumentTitle(pageTitle('Admin', 'Games'))
-  const supabase = getSupabase()
-  const [games, setGames] = useState<Game[]>([])
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const { data: games = [], error, isLoading } = useGamesCatalog()
+  const loadError = error instanceof Error ? error.message : null
 
-  useEffect(() => {
-    async function loadGames() {
-      setLoadError(null)
-      const { data, error } = await supabase
-        .from('games')
-        .select('id, primary_title, slug, created_at, updated_at')
-      if (error) {
-        setLoadError(error.message)
-        return
-      }
-      const rows = (data ?? []) as Game[]
-      setGames([...rows].sort((a, b) => compareGameTitles(a.primary_title, b.primary_title)))
-    }
-    void loadGames()
-  }, [supabase])
+  const sortedGames = useMemo(
+    () => games.slice().sort((a, b) => compareGameTitles(a.primary_title, b.primary_title)),
+    [games],
+  )
 
   return (
     <div className="page">
@@ -42,11 +30,11 @@ export function AdminGames() {
             New game
           </Link>
         </p>
-        {games.length === 0 ? (
+        {isLoading ? (
           <p className="muted">Loading games...</p>
         ) : (
           <ul className="card-list">
-            {games.map((game) => (
+            {sortedGames.map((game: Game) => (
               <li key={game.id} className="card">
                 <Link to={`/admin/games/${game.id}`}>
                   <span className="card-title">{game.primary_title}</span>

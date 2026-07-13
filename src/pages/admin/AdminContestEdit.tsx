@@ -108,6 +108,7 @@ export function AdminContestEdit() {
     if (!id) return
     void queryClient.invalidateQueries({ queryKey: queryKeys.adminContest(id) })
     void queryClient.invalidateQueries({ queryKey: queryKeys.contests })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.adminContestsList })
   }, [id, queryClient])
 
   useEffect(() => {

@@ -1,40 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import type { ProfileContestStatsResult } from '../lib/profileContestStats'
-import type { ProfileRpgStats } from '../lib/profileRpgStats'
 import { avatarPublicUrl } from '../lib/avatar'
-import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
-import { computePpRankByUserId } from '../lib/performancePoints'
-import type { PublicProfile } from '../lib/types'
+import type { PublicProfileJson } from '../lib/queries/players'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
-
-type ProfileJson = {
-  id: string
-  username: string
-  display_name: string
-  bio: string | null
-  player_number: number
-  created_at: string
-  avatar_path?: string | null
-  is_admin?: boolean
-  is_contest_moderator?: boolean
-  favorite_soundtrack_cover_url?: string | null
-  favorite_soundtrack_game_slug?: string | null
-}
-
-type PrecomputedProfileStats = {
-  performance_points: number
-  contest: ProfileContestStatsResult
-  rpg: ProfileRpgStats
-}
-
-type PublicProfileRpcResponse = {
-  profile: ProfileJson
-  stats: PrecomputedProfileStats
-}
+import { usePublicProfile } from '../hooks/usePlayersQueries'
 
 function ProfileStatsPanel({ stats }: { stats: ProfileContestStatsResult }) {
   return (
@@ -71,7 +44,7 @@ function FavoriteSoundtrackCover({ imageUrl, gameSlug }: { imageUrl: string; gam
   )
 }
 
-function title(profile: ProfileJson): string {
+function title(profile: PublicProfileJson): string {
   if (profile.is_admin) return 'Administrator'
   if (profile.is_contest_moderator) return 'Contest Moderator'
   return 'Contestant'
@@ -80,68 +53,17 @@ function title(profile: ProfileJson): string {
 export function ProfilePage() {
   const supabase = getSupabase()
   const { username: usernameFromRoute } = useParams()
-  const [profile, setProfile] = useState<ProfileJson | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [profileLoading, setProfileLoading] = useState(true)
-  const [stats, setStats] = useState<PrecomputedProfileStats | null>(null)
-  const [ppRank, setPpRank] = useState<number | null>(null)
-  const [displayNameStyleInfo, setDisplayNameStyleInfo] = useState<DisplayNameStyleInfo | null>(null)
+  const { data, error, isLoading } = usePublicProfile(usernameFromRoute)
+
+  const profile = data?.profile ?? null
+  const stats = data?.stats ?? null
+  const ppRank = data?.ppRank ?? null
+  const displayNameStyleInfo = data?.displayNameStyleInfo ?? null
+  const loadError = error instanceof Error ? error.message : null
 
   const contestStats = stats?.contest ?? null
   const rpgStats = stats?.rpg ?? null
   const performancePoints = stats?.performance_points ?? null
-
-  useEffect(() => {
-    if (!usernameFromRoute) {
-      setProfileLoading(false)
-      return
-    }
-
-    async function loadPublicProfile() {
-      setLoadError(null)
-      setDisplayNameStyleInfo(null)
-      setPpRank(null)
-      const [{ data, error }, { data: playersData, error: playersError }] = await Promise.all([
-        supabase.rpc('get_public_profile_page_data', {
-          p_username: usernameFromRoute,
-        }),
-        supabase.rpc('list_players_public'),
-      ])
-      if (error) {
-        setLoadError(error.message)
-        setProfile(null)
-        setStats(null)
-        setProfileLoading(false)
-        return
-      }
-      if (!data || typeof data !== 'object') {
-        setProfile(null)
-        setStats(null)
-        setProfileLoading(false)
-        return
-      }
-
-      const payload = data as PublicProfileRpcResponse
-      setProfile(payload.profile)
-
-      const pid = payload.profile.id
-      const { data: styleBlob, error: styleErr } = await supabase.rpc('profile_display_name_styles_for_users', {
-        p_user_ids: [pid],
-      })
-      if (!styleErr) {
-        setDisplayNameStyleInfo(displayNameStyleMapFromRpc(styleBlob).get(pid) ?? null)
-      }
-
-      setStats(payload.stats)
-      if (!playersError && playersData) {
-        const rank = computePpRankByUserId(playersData as PublicProfile[]).get(pid) ?? null
-        setPpRank(rank)
-      }
-      setProfileLoading(false)
-    }
-
-    void loadPublicProfile()
-  }, [usernameFromRoute, supabase])
 
   const displayHeading = useMemo(() => profile?.display_name ?? 'Player', [profile])
 
@@ -157,7 +79,7 @@ export function ProfilePage() {
     [profile, supabase],
   )
 
-  if (profileLoading) {
+  if (isLoading) {
     return <p className="muted">Loading...</p>
   }
 

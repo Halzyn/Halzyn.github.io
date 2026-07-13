@@ -4,14 +4,16 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react'
-import type { Session, SupabaseClient } from '@supabase/supabase-js'
-import { fetchModeratedContests, type ModeratedContest } from '../lib/moderation'
+import { useQueryClient } from '@tanstack/react-query'
+import type { Session } from '@supabase/supabase-js'
+import type { ModeratedContest } from '../lib/moderation'
 import { getSupabase } from '../lib/supabase'
 import type { Profile } from '../lib/types'
+import { queryKeys } from '../lib/queries/keys'
+import { useAuthModeratedContests, useAuthProfile } from '../hooks/useAuthQueries'
 
 export type AuthContextValue = {
   session: Session | null
@@ -26,135 +28,62 @@ export type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-async function fetchProfileRow(client: SupabaseClient, userId: string): Promise<Profile | null> {
-  const { data, error } = await client.from('profiles').select('*').eq('id', userId).maybeSingle()
-  if (error || !data) return null
-  return data as Profile
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = getSupabase()
+  const queryClient = useQueryClient()
   const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [moderatedContests, setModeratedContests] = useState<ModeratedContest[]>([])
-  const [moderatedContestsLoaded, setModeratedContestsLoaded] = useState(false)
-  const [ready, setReady] = useState(false)
-  const trackedAuthUserIdRef = useRef<string | null>(null)
-  const profileLoadedForUserIdRef = useRef<string | null>(null)
-  const profileFetchInFlightForUserIdRef = useRef<string | null>(null)
+  const [sessionReady, setSessionReady] = useState(false)
+
+  const userId = session?.user?.id ?? null
+
+  const {
+    data: profile = null,
+    isLoading: profileLoading,
+    isFetching: profileFetching,
+  } = useAuthProfile(userId)
+
+  const isAdmin = Boolean(profile?.is_admin)
+
+  const {
+    data: moderatedContests = [],
+    isLoading: moderatedContestsLoading,
+    isFetching: moderatedContestsFetching,
+  } = useAuthModeratedContests(userId, isAdmin)
+
+  const moderatedContestsLoaded =
+    !profile || isAdmin || (!moderatedContestsLoading && !moderatedContestsFetching)
 
   useEffect(() => {
-    let providerUnmounted = false
-
-    async function syncAuthState(nextSession: Session | null, authEvent: string) {
-      const nextUserId = nextSession?.user?.id ?? null
-      trackedAuthUserIdRef.current = nextUserId
-
-      setSession(nextSession)
-
-      if (!nextUserId) {
-        setProfile(null)
-        setModeratedContests([])
-        setModeratedContestsLoaded(false)
-        setReady(true)
-        profileLoadedForUserIdRef.current = null
-        profileFetchInFlightForUserIdRef.current = null
-        return
-      }
-
-      if (
-        profileFetchInFlightForUserIdRef.current === nextUserId ||
-        (profileLoadedForUserIdRef.current === nextUserId && authEvent !== 'USER_UPDATED')
-      ) {
-        return
-      }
-
-      profileFetchInFlightForUserIdRef.current = nextUserId
-
-      const sameUserAlreadyLoaded = profileLoadedForUserIdRef.current === nextUserId
-      if (!sameUserAlreadyLoaded) {
-        setReady(false)
-        setProfile((prev) => (prev?.id === nextUserId ? prev : null))
-      }
-
-      try {
-        const loaded = await fetchProfileRow(supabase, nextUserId)
-
-        if (providerUnmounted) return
-        if (trackedAuthUserIdRef.current !== nextUserId) {
-          return
-        }
-
-        setProfile(loaded)
-        setReady(true)
-        profileLoadedForUserIdRef.current = nextUserId
-      } finally {
-        if (profileFetchInFlightForUserIdRef.current === nextUserId) {
-          profileFetchInFlightForUserIdRef.current = null
-        }
-      }
-    }
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      void syncAuthState(nextSession, event)
+      setSession(nextSession)
+      if (event === 'USER_UPDATED' && nextSession?.user?.id) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.authProfile(nextSession.user.id),
+        })
+      }
+      if (!nextSession?.user) {
+        setSessionReady(true)
+      }
     })
 
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      if (providerUnmounted) return
-      void syncAuthState(session ?? null, '')
+    void supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      setSession(initialSession)
+      setSessionReady(true)
     })
 
-    return () => {
-      providerUnmounted = true
-      subscription.unsubscribe()
-    }
-  }, [supabase])
+    return () => subscription.unsubscribe()
+  }, [supabase, queryClient])
 
-  useEffect(() => {
-    if (!profile) {
-      setModeratedContests([])
-      setModeratedContestsLoaded(false)
-      return
-    }
-
-    if (profile.is_admin) {
-      setModeratedContests([])
-      setModeratedContestsLoaded(true)
-      return
-    }
-
-    setModeratedContestsLoaded(false)
-    const profileUserId = profile.id
-    let cancelled = false
-
-    void fetchModeratedContests(supabase, profileUserId).then((contests) => {
-      if (cancelled) return
-      setModeratedContests(contests)
-      setModeratedContestsLoaded(true)
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [profile?.id, profile?.is_admin, supabase])
+  const ready = sessionReady && (!userId || (!profileLoading && !profileFetching))
 
   const refreshProfile = useCallback(async () => {
-    const uid = session?.user?.id ?? null
-    if (!uid) {
-      setProfile(null)
-      return
-    }
-    const loaded = await fetchProfileRow(supabase, uid)
-    if (trackedAuthUserIdRef.current !== uid) return
-    setProfile(loaded)
-    profileLoadedForUserIdRef.current = uid
-  }, [session?.user?.id, supabase])
+    if (!userId) return
+    await queryClient.invalidateQueries({ queryKey: queryKeys.authProfile(userId) })
+  }, [queryClient, userId])
 
   const value = useMemo<AuthContextValue>(() => {
-    const userId = session?.user?.id ?? null
-    const isAdmin = Boolean(profile?.is_admin)
     const hasModerationAccess = Boolean(
       profile && (isAdmin || (moderatedContestsLoaded && moderatedContests.length > 0)),
     )
@@ -168,7 +97,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       moderatedContests,
       refreshProfile,
     }
-  }, [session, profile, ready, moderatedContests, moderatedContestsLoaded, refreshProfile])
+  }, [
+    session,
+    profile,
+    ready,
+    userId,
+    isAdmin,
+    moderatedContests,
+    moderatedContestsLoaded,
+    refreshProfile,
+  ])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

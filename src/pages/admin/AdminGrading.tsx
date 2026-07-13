@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { getSupabase } from '../../lib/supabase'
-import type { Contest, GradingMark, Submission, SubmissionGuess, Track, TrackAnswer } from '../../lib/types'
-import { parseTrackAnswer } from '../../lib/trackAnswer'
+import type { GradingMark } from '../../lib/types'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { difficultyClass, gradeCell, markMapFromMarks } from '../../lib/resultsGrid'
@@ -14,6 +14,8 @@ import {
   sortSubmissionsByContestRank,
 } from '../../lib/scoring'
 import { useResultsGridStickyLead } from '../../hooks/useResultsGridStickyLead'
+import { queryKeys } from '../../lib/queries/keys'
+import { useAdminGrading } from '../../hooks/useAdminQueries'
 
 type Mark = 'game' | 'franchise' | null
 
@@ -28,13 +30,17 @@ function rankMedalRowClass(place: number): string {
 
 export function AdminGrading() {
   const supabase = getSupabase()
+  const queryClient = useQueryClient()
   const { id: contestId } = useParams()
-  const [contest, setContest] = useState<Contest | null>(null)
-  const [tracks, setTracks] = useState<Track[]>([])
-  const [submissions, setSubmissions] = useState<Submission[]>([])
-  const [guesses, setGuesses] = useState<SubmissionGuess[]>([])
-  const [marks, setMarks] = useState<GradingMark[]>([])
-  const [answers, setAnswers] = useState<TrackAnswer[]>([])
+  const { data, error: queryError } = useAdminGrading(contestId)
+
+  const contest = data?.contest ?? null
+  const tracks = data?.tracks ?? []
+  const submissions = data?.submissions ?? []
+  const guesses = data?.guesses ?? []
+  const marks = data?.marks ?? []
+  const answers = data?.answers ?? []
+
   const [pageError, setPageError] = useState<string | null>(null)
   const [newContestantName, setNewContestantName] = useState('')
   const [addingContestant, setAddingContestant] = useState(false)
@@ -44,64 +50,15 @@ export function AdminGrading() {
   const gridScrollRef = useRef<HTMLDivElement>(null)
   useResultsGridStickyLead(gridScrollRef, `${tracks.length}-${submissions.length}`)
 
-  const reloadGradingData = useCallback(async () => {
+  const refreshGrading = useCallback(() => {
     if (!contestId) return
-    setPageError(null)
+    void queryClient.invalidateQueries({ queryKey: queryKeys.adminGrading(contestId) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.contestReveal(contestId) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.adminContest(contestId) })
+  }, [contestId, queryClient])
 
-    const [
-      { data: contestRow, error: contestError },
-      { data: trackRows },
-      { data: submissionRows },
-    ] = await Promise.all([
-      supabase.from('contests').select('*').eq('id', contestId).single(),
-      supabase
-        .from('tracks')
-        .select('*')
-        .eq('contest_id', contestId)
-        .order('sort_order', { ascending: true }),
-      supabase
-        .from('submissions')
-        .select('*')
-        .eq('contest_id', contestId)
-        .order('created_at', { ascending: true }),
-    ])
-
-    if (contestError || !contestRow) {
-      setContest(null)
-      setPageError(contestError?.message ?? 'Not found')
-      return
-    }
-
-    setContest(contestRow as Contest)
-
-    const trackList = (trackRows ?? []) as Track[]
-    const submissionList = (submissionRows ?? []) as Submission[]
-    setTracks(trackList)
-    setSubmissions(submissionList)
-
-    const submissionIds = submissionList.map((s) => s.id)
-    const trackIds = trackList.map((t) => t.id)
-
-    const [guessesResult, marksResult, answersResult] = await Promise.all([
-      submissionIds.length > 0
-        ? supabase.from('submission_guesses').select('*').in('submission_id', submissionIds)
-        : Promise.resolve({ data: [] as SubmissionGuess[] }),
-      trackIds.length > 0
-        ? supabase.from('grading_marks').select('*').in('track_id', trackIds)
-        : Promise.resolve({ data: [] as GradingMark[] }),
-      trackIds.length > 0
-        ? supabase.from('track_answers').select('*').in('track_id', trackIds)
-        : Promise.resolve({ data: [] as Record<string, unknown>[] }),
-    ])
-
-    setGuesses((guessesResult.data ?? []) as SubmissionGuess[])
-    setMarks((marksResult.data ?? []) as GradingMark[])
-    setAnswers((answersResult.data ?? []).map((row) => parseTrackAnswer(row)))
-  }, [contestId, supabase])
-
-  useEffect(() => {
-    void reloadGradingData()
-  }, [reloadGradingData])
+  const loadError = queryError instanceof Error ? queryError.message : null
+  const displayError = pageError ?? loadError
 
   const gradingDocTitle = useMemo(
     () => (contest ? pageTitle('Grading', contest.title) : pageTitle('Grading')),
@@ -168,7 +125,7 @@ export function AdminGrading() {
         if (upsertError) throw upsertError
       }
       setDraftOverrides(new Map())
-      await reloadGradingData()
+      refreshGrading()
     } catch (error: unknown) {
       setPageError(error instanceof Error ? error.message : 'Save failed')
     } finally {
@@ -206,7 +163,7 @@ export function AdminGrading() {
       setPageError(error.message)
       return
     }
-    void reloadGradingData()
+    refreshGrading()
   }
 
   async function addContestant(event: FormEvent) {
@@ -229,11 +186,11 @@ export function AdminGrading() {
       return
     }
     setNewContestantName('')
-    void reloadGradingData()
+    refreshGrading()
   }
 
   if (!contestId) return null
-  if (pageError && !contest) return <p className="banner warn">{pageError}</p>
+  if (displayError && !contest) return <p className="banner warn">{displayError}</p>
   if (!contest) return <p className="muted">Loading...</p>
 
   return (
@@ -246,7 +203,7 @@ export function AdminGrading() {
         Each row is a track and each column is a contestant. Click a cell to toggle between X (correct game), ~ (franchise only) and
         empty. If someone sends you a submission in private through Discord, you can add them to the grid with the form below.
       </p>
-      {pageError ? <p className="banner warn">{pageError}</p> : null}
+      {displayError ? <p className="banner warn">{displayError}</p> : null}
 
       <section className="section">
         <h2>Add contestant to grid</h2>

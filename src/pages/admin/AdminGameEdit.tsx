@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { getSupabase } from '../../lib/supabase'
 import type { Game, GameAlternateTitle, IgdbGamePreview } from '../../lib/types'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { slugifyGameTitle } from '../../lib/slugify'
+import { queryKeys } from '../../lib/queries/keys'
+import { useAdminGameEdit } from '../../hooks/useAdminQueries'
 
 function IgdbRow({
   label,
@@ -90,9 +93,12 @@ function SavedCatalogDetails({ game }: { game: Game }) {
 
 export function AdminGameEdit() {
   const supabase = getSupabase()
+  const queryClient = useQueryClient()
   const { id } = useParams()
   const navigate = useNavigate()
   const isNew = id === 'new'
+
+  const { data, error: queryError } = useAdminGameEdit(id, !isNew)
 
   const [game, setGame] = useState<Game | null>(null)
   const [primaryTitle, setPrimaryTitle] = useState('')
@@ -107,33 +113,27 @@ export function AdminGameEdit() {
   const [igdbManualId, setIgdbManualId] = useState('')
   const [igdbPreview, setIgdbPreview] = useState<IgdbGamePreview | null>(null)
 
-  const loadGame = useCallback(async () => {
+  const refreshGame = useCallback(() => {
     if (!id || isNew) return
-    setPageError(null)
-    const { data: row, error: loadError } = await supabase.from('games').select('*').eq('id', id).maybeSingle()
-    if (loadError || !row) {
-      setPageError(loadError?.message ?? 'Not found')
-      setGame(null)
-      return
-    }
-    const loaded = row as Game
-    setGame(loaded)
-    setPrimaryTitle(loaded.primary_title)
-    setSlug(loaded.slug)
-    const { data: alternateRows } = await supabase
-      .from('game_alternate_titles')
-      .select('*')
-      .eq('game_id', id)
-      .order('title', { ascending: true })
-    setAlternates((alternateRows ?? []) as GameAlternateTitle[])
-
-    const { count } = await supabase.from('track_game').select('*', { count: 'exact', head: true }).eq('game_id', id)
-    setLinkCount(count ?? 0)
-  }, [id, isNew, supabase])
+    void queryClient.invalidateQueries({ queryKey: queryKeys.adminGame(id) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.gamesCatalog })
+  }, [id, isNew, queryClient])
 
   useEffect(() => {
-    void loadGame()
-  }, [loadGame])
+    if (!data) return
+    setGame(data.game)
+    setPrimaryTitle(data.game.primary_title)
+    setSlug(data.game.slug)
+    setAlternates(data.alternates)
+    setLinkCount(data.linkCount)
+    setPageError(null)
+  }, [data])
+
+  useEffect(() => {
+    if (!queryError) return
+    setPageError(queryError instanceof Error ? queryError.message : 'Not found')
+    setGame(null)
+  }, [queryError])
 
   const adminGameDocTitle = useMemo(() => {
     const headline = (game?.primary_title ?? primaryTitle).trim() || 'Game'
@@ -176,7 +176,7 @@ export function AdminGameEdit() {
       setPageError(updateError.message)
       return
     }
-    void loadGame()
+    refreshGame()
   }
 
   async function addAlternate(event: FormEvent) {
@@ -191,7 +191,7 @@ export function AdminGameEdit() {
       return
     }
     setNewAlternateTitle('')
-    void loadGame()
+    refreshGame()
   }
 
   async function removeAlternate(alternate: GameAlternateTitle) {
@@ -202,7 +202,7 @@ export function AdminGameEdit() {
       setPageError(error.message)
       return
     }
-    void loadGame()
+    refreshGame()
   }
 
   async function deleteGame() {
@@ -280,7 +280,7 @@ export function AdminGameEdit() {
       return
     }
     setIgdbPreview(null)
-    void loadGame()
+    refreshGame()
   }
 
   if (!id) return null

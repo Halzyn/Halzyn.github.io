@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../auth/AuthContext'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { getSupabase } from '../../lib/supabase'
 import { slugifyUrlSegment } from '../../lib/slugify'
 import type { Contest } from '../../lib/types'
+import { queryKeys } from '../../lib/queries/keys'
+import { useAdminContestsList } from '../../hooks/useAdminQueries'
 
 export function AdminContests() {
   useDocumentTitle(pageTitle('Admin', 'Contests'))
   const supabase = getSupabase()
+  const queryClient = useQueryClient()
   const { userId } = useAuth()
-  const [contests, setContests] = useState<Contest[]>([])
+  const { data: contests = [], error } = useAdminContestsList()
   const [pageError, setPageError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
@@ -20,21 +24,12 @@ export function AdminContests() {
   const [description, setDescription] = useState('')
   const [published, setPublished] = useState(false)
 
-  const loadContests = useCallback(async () => {
-    const { data, error } = await supabase.from('contests').select('*').order('created_at', {
-      ascending: false,
-    })
-    if (error) {
-      setPageError(error.message)
-      return
-    }
-    setContests((data ?? []) as Contest[])
-    setPageError(null)
-  }, [supabase])
+  const loadError = error instanceof Error ? error.message : null
 
-  useEffect(() => {
-    void loadContests()
-  }, [loadContests])
+  const refreshContests = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.adminContestsList })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.contests })
+  }, [queryClient])
 
   async function createContest(event: FormEvent) {
     event.preventDefault()
@@ -75,13 +70,15 @@ export function AdminContests() {
     setDescription('')
     setDeadline('')
     setPublished(false)
-    void loadContests()
+    setPageError(null)
+    refreshContests()
   }
 
   return (
     <div className="page">
       <h1>Contests</h1>
       {pageError ? <p className="banner warn">{pageError}</p> : null}
+      {loadError ? <p className="banner warn">{loadError}</p> : null}
 
       <section className="section">
         <h2>Create contest</h2>
@@ -128,7 +125,7 @@ export function AdminContests() {
       <section className="section">
         <h2>All contests</h2>
         <ul className="card-list">
-          {contests.map((contest) => (
+          {contests.map((contest: Contest) => (
             <li key={contest.id} className="card">
               <Link to={`/admin/contests/${contest.id}`}>
                 <span className="card-title">{contest.title}</span>

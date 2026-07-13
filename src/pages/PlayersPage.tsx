@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { avatarPublicUrl } from '../lib/avatar'
-import { displayNameStyleMapFromRpc, type DisplayNameStyleInfo } from '../lib/displayNameStyle'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
-import type { PublicProfile } from '../lib/types'
 import { computePpRankByUserId, formatPlayerListPp } from '../lib/performancePoints'
+import { usePlayersPublic } from '../hooks/usePlayersQueries'
 
 type SortMode = 'name' | 'pp'
 
@@ -23,35 +22,12 @@ function toolbarButtonClass(active: boolean): string {
 export function PlayersPage() {
   useDocumentTitle(pageTitle('Players'))
   const supabase = getSupabase()
-  const [profiles, setProfiles] = useState<PublicProfile[]>([])
-  const [displayNameStyleByUserId, setDisplayNameStyleByUserId] = useState<Map<string, DisplayNameStyleInfo>>(
-    new Map(),
-  )
+  const { data, error, isLoading } = usePlayersPublic()
   const [sortMode, setSortMode] = useState<SortMode>('pp')
-  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function loadPlayers() {
-      setLoadError(null)
-      setDisplayNameStyleByUserId(new Map())
-      const { data, error } = await supabase.rpc('list_players_public')
-      if (error) {
-        setLoadError(error.message)
-        return
-      }
-      const list = (data ?? []) as PublicProfile[]
-      setProfiles(list)
-      const ids = list.map((p) => p.id)
-      if (ids.length === 0) return
-      const { data: styleBlob, error: styleErr } = await supabase.rpc('profile_display_name_styles_for_users', {
-        p_user_ids: ids,
-      })
-      if (!styleErr) {
-        setDisplayNameStyleByUserId(displayNameStyleMapFromRpc(styleBlob))
-      }
-    }
-    void loadPlayers()
-  }, [supabase])
+  const profiles = data?.profiles ?? []
+  const displayNameStyleByUserId = data?.displayNameStyleByUserId ?? new Map()
+  const loadError = error instanceof Error ? error.message : null
 
   const ppRankByUserId = useMemo(() => computePpRankByUserId(profiles), [profiles])
 
@@ -117,7 +93,7 @@ export function PlayersPage() {
             )
           })}
         </ul>
-        {sortedProfiles.length === 0 && !loadError ? (
+        {isLoading && sortedProfiles.length === 0 && !loadError ? (
           <p className="muted">Loading profiles...</p>
         ) : null}
       </section>
