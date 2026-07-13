@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { Layout } from './components/Layout'
 import { SiteBackgroundSync } from './components/SiteBackgroundSync'
@@ -26,42 +26,50 @@ import { AdminUsers } from './pages/admin/AdminUsers'
 import { AdminUserEdit } from './pages/admin/AdminUserEdit'
 import { NotFoundPage } from './pages/NotFoundPage'
 
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'auth', element: <AuthPage /> },
+      { path: 'auth/callback', element: <AuthCallbackPage /> },
+      { path: 'auth/reset-password', element: <ResetPasswordPage /> },
+      { path: 'players', element: <PlayersPage /> },
+      { path: 'players/:username', element: <ProfilePage /> },
+      { path: 'profile/edit', element: <ProfileEditPage /> },
+      { path: 'contests', element: <ContestList /> },
+      { path: 'contests/:slug', element: <ContestPage /> },
+      { path: 'contests/:slug/submit', element: <SubmitPage /> },
+      { path: 'rules', element: <RulesPage /> },
+      { path: 'games', element: <GamesPage /> },
+      { path: 'games/:slug', element: <GamePage /> },
+      { path: '404', element: <NotFoundPage /> },
+    ],
+  },
+  {
+    path: '/admin',
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <Navigate to="contests" replace /> },
+      { path: 'login', element: <AdminLogin /> },
+      { path: 'contests', element: <AdminContests /> },
+      { path: 'contests/:id', element: <AdminContestEdit /> },
+      { path: 'contests/:id/grade', element: <AdminGrading /> },
+      { path: 'games', element: <AdminGames /> },
+      { path: 'games/:id', element: <AdminGameEdit /> },
+      { path: 'users', element: <AdminUsers /> },
+      { path: 'users/:id', element: <AdminUserEdit /> },
+    ],
+  },
+  { path: '*', element: <Navigate to="/404" replace /> },
+])
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
       <SiteBackgroundSync />
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="auth" element={<AuthPage />} />
-          <Route path="auth/callback" element={<AuthCallbackPage />} />
-          <Route path="auth/reset-password" element={<ResetPasswordPage />} />
-          <Route path="players" element={<PlayersPage />} />
-          <Route path="players/:username" element={<ProfilePage />} />
-          <Route path="profile/edit" element={<ProfileEditPage />} />
-          <Route path="contests" element={<ContestList />} />
-          <Route path="contests/:slug" element={<ContestPage />} />
-          <Route path="contests/:slug/submit" element={<SubmitPage />} />
-          <Route path="rules" element={<RulesPage />} />
-          <Route path="games" element={<GamesPage />} />
-          <Route path="games/:slug" element={<GamePage />} />
-          <Route path="404" element={<NotFoundPage />} />
-        </Route>
-        <Route path="admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="contests" replace />} />
-          <Route path="login" element={<AdminLogin />} />
-          <Route path="contests" element={<AdminContests />} />
-          <Route path="contests/:id" element={<AdminContestEdit />} />
-          <Route path="contests/:id/grade" element={<AdminGrading />} />
-          <Route path="games" element={<AdminGames />} />
-          <Route path="games/:id" element={<AdminGameEdit />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="users/:id" element={<AdminUserEdit />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      <RouterProvider router={router} />
+    </AuthProvider>
   )
 }

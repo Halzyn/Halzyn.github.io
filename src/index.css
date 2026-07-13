@@ -1415,6 +1415,11 @@ html[data-theme='light'] .banner.warn {
   margin-top: 0.4rem;
 }
 
+.contest-calendar-links {
+  display: inline;
+  white-space: nowrap;
+}
+
 .contest-card-head {
   display: flex;
   flex-wrap: wrap;

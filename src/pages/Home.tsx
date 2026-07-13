@@ -13,6 +13,7 @@ import { ContestCalendarLink } from '../components/ContestCalendarLink'
 import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
 import type { ContestWithHosts, ScheduledContestTeaser } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
+import { listStoredContestEntries } from '../lib/contestEntryStorage'
 
 export function Home() {
   useDocumentTitle(pageTitle('Home'))
@@ -85,6 +86,15 @@ export function Home() {
     scheduledTeasers.length <= 0 || (scheduledTeasers.length > 0 && openContests.length > 0)
   const showScheduledContests = scheduledTeasers.length > 0
 
+  const resumeEntries = useMemo(() => {
+    const stored = listStoredContestEntries()
+    return stored.flatMap(({ slug, editToken }) => {
+      const contest = openContests.find((row) => row.slug === slug)
+      if (!contest) return []
+      return [{ contest, editToken }]
+    })
+  }, [openContests])
+
   return (
     <div className="page">
       <section className="hero site-announce">
@@ -98,6 +108,20 @@ export function Home() {
           {' '}here.
         </p>
       </section>
+
+      {resumeEntries.length > 0 ? (
+        <section className="section">
+          {resumeEntries.map(({ contest, editToken }) => (
+            <p key={contest.id} className="banner" role="status">
+              You have an in-progress entry for{' '}
+              <Link to={`/contests/${contest.slug}?edit=${encodeURIComponent(editToken)}`}>
+                {contest.title}
+              </Link>
+              .
+            </p>
+          ))}
+        </section>
+      ) : null}
 
       {showCurrentContests && (<section className="section">
         <h2>Current contests</h2>

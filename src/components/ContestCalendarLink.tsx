@@ -1,47 +1,59 @@
+import type { MouseEvent } from 'react'
 import {
-  buildContestIcal,
-  downloadContestIcal,
-  slugifyIcalFilename,
+  contestCalendarEvent,
+  googleCalendarUrl,
+  outlookCalendarUrl,
   type ContestCalendarEventKind,
   type ContestCalendarInput,
-} from '../lib/contestIcal'
-import type { MouseEvent } from 'react'
+} from '../lib/contestCalendar'
 
 type Props = ContestCalendarInput & {
   events: ContestCalendarEventKind[]
-  label?: string
+}
+
+function openCalendarUrl(event: MouseEvent<HTMLButtonElement>, url: string) {
+  event.preventDefault()
+  event.stopPropagation()
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 export function ContestCalendarLink({
   events,
-  label = 'Add to calendar',
   contestId,
   contestTitle,
   contestSlug,
   deadlineIso,
   scheduledPublishAtIso,
 }: Props) {
-  const hasEvents =
-    (events.includes('deadline') && deadlineIso) ||
-    (events.includes('go-live') && scheduledPublishAtIso)
+  const eventKind = events.length === 1 ? events[0] : null
+  if (!eventKind) return null
 
-  if (!hasEvents) return null
+  const calendarEvent = contestCalendarEvent(
+    { contestId, contestTitle, contestSlug, deadlineIso, scheduledPublishAtIso },
+    eventKind,
+  )
+  if (!calendarEvent) return null
 
-  function handleClick(event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault()
-    event.stopPropagation()
-    const ics = buildContestIcal(
-      { contestId, contestTitle, contestSlug, deadlineIso, scheduledPublishAtIso },
-      events,
-    )
-    const slugPart = contestSlug ? slugifyIcalFilename(contestSlug) : contestId.slice(0, 8)
-    const eventPart = events.length === 1 ? events[0] : 'dates'
-    downloadContestIcal(`vgmgc-${slugPart}-${eventPart}.ics`, ics)
-  }
+  const googleUrl = googleCalendarUrl(calendarEvent)
+  const outlookUrl = outlookCalendarUrl(calendarEvent)
 
   return (
-    <button type="button" className="linkish small contest-calendar-link" onClick={handleClick}>
-      {label}
-    </button>
+    <span className="contest-calendar-links">
+      <button
+        type="button"
+        className="linkish small contest-calendar-link"
+        onClick={(event) => openCalendarUrl(event, googleUrl)}
+      >
+        Google Calendar
+      </button>
+      {' ◦ '}
+      <button
+        type="button"
+        className="linkish small contest-calendar-link"
+        onClick={(event) => openCalendarUrl(event, outlookUrl)}
+      >
+        Outlook
+      </button>
+    </span>
   )
 }

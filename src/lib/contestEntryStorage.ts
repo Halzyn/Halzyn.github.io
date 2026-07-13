@@ -43,3 +43,15 @@ export function clearStoredContestEntry(contestSlug: string): void {
   delete map[contestSlug]
   writeContests(map)
 }
+
+export function listStoredContestEntries(): { slug: string; editToken: string }[] {
+  const map = readContests()
+  return Object.entries(map)
+    .filter(([, editToken]) => editToken.length > 0)
+    .map(([slug, editToken]) => ({ slug, editToken }))
+}
+
+export function buildContestEditUrl(slug: string, editToken: string): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin
+  return `${origin}/contests/${encodeURIComponent(slug)}?edit=${encodeURIComponent(editToken)}`
+}

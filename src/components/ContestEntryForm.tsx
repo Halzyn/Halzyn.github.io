@@ -5,6 +5,26 @@ import { useContestEntry } from '../hooks/useContestEntry'
 import { countAnsweredGuesses } from '../lib/contestEntry'
 import type { Contest, Track } from '../lib/types'
 
+function CopyEditLinkButton({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <button type="button" className="linkish small" onClick={() => void handleCopy()}>
+      {copied ? 'Copied!' : 'Copy edit link'}
+    </button>
+  )
+}
+
 type ContestEntryFormProps = {
   contest: Contest
   tracks: Track[]
@@ -67,7 +87,17 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
 
     function renderIntroCopy(): ReactNode {
       if (entry.urlEditToken && !entry.adminSubmissionId) {
-        return <>Update your guesses below.</>
+        return (
+          <>
+            Update your guesses below.
+            {entry.canCopyEditLink ? (
+              <>
+                {' '}
+                Use your private edit link to return from another device: <CopyEditLinkButton url={entry.editUrl} />.
+              </>
+            ) : null}
+          </>
+        )
       }
       if (entry.useAdminApi) {
         return <>You are editing this entrant&apos;s submission.</>
@@ -81,8 +111,8 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       }
       return (
         <>
-          Play each track and enter your guesses. The first time you save, you will get a <strong>private edit link</strong>{' '}
-          in the address bar. This browser will remember your entry automatically. Bookmark it to edit from another device.
+          Play each track and enter your guesses. The first time you save, you will get a <strong>private edit link</strong>.
+          This browser will remember your entry automatically.
         </>
       )
     }
@@ -110,6 +140,18 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
             {renderIntroCopy()}
             {' '}
             You can leave tracks blank. If you&apos;d rather send submissions directly, DM @halzyn on Discord.
+            {entry.canCopyEditLink && !entry.urlEditToken ? (
+              <>
+                {' '}
+                <CopyEditLinkButton url={entry.editUrl} />.
+              </>
+            ) : null}
+          </p>
+        ) : null}
+
+        {entry.isDirty ? (
+          <p className="banner warn small" role="status">
+            You have unsaved changes.
           </p>
         ) : null}
 
@@ -193,6 +235,12 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
               {entry.saveNotice ? (
                 <p className="banner success" role="status">
                   {entry.saveNotice}
+                  {entry.canCopyEditLink ? (
+                    <>
+                      {' '}
+                      <CopyEditLinkButton url={entry.editUrl} />.
+                    </>
+                  ) : null}
                 </p>
               ) : null}
               {entry.pageError && !entry.showAdminDraftError ? (

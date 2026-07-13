@@ -4,6 +4,7 @@ import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { CONTEST_HOST_EMBED_SELECT, hostsMapFromContests } from '../lib/contestHosts'
+import { ContestCalendarLink } from '../components/ContestCalendarLink'
 import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
 import type { ContestWithHosts } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
@@ -41,20 +42,38 @@ export function ContestList() {
       <section className="section">
         <h2>Contest archive</h2>
         <ul className="card-list">
-          {contests.map((contest) => (
-            <li key={contest.id} className="card">
-              <Link to={`/contests/${contest.slug}`}>
-                <span className="contest-card-head">
-                  <ContestTitleWithHosts
-                    title={contest.title}
-                    hosts={hostsByContestId.get(contest.id)}
-                    hostsNestedInLink
-                  />
-                  <span className="pill">{contestClosed(contest.deadline) ? 'Closed' : 'Open'}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
+          {contests.map((contest) => {
+            const open = !contestClosed(contest.deadline)
+            return (
+              <li key={contest.id} className="card">
+                <Link to={`/contests/${contest.slug}`}>
+                  <span className="contest-card-head">
+                    <ContestTitleWithHosts
+                      title={contest.title}
+                      hosts={hostsByContestId.get(contest.id)}
+                      hostsNestedInLink
+                    />
+                    <span className="pill">{open ? 'Open' : 'Closed'}</span>
+                  </span>
+                  <span className="muted small contest-card-deadline">
+                    {open ? 'Deadline' : 'Concluded'} {new Date(contest.deadline).toLocaleString()}
+                    {open ? (
+                      <>
+                        {' ◦ '}
+                        <ContestCalendarLink
+                          contestId={contest.id}
+                          contestSlug={contest.slug}
+                          contestTitle={contest.title}
+                          deadlineIso={contest.deadline}
+                          events={['deadline']}
+                        />
+                      </>
+                    ) : null}
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       </section>
     </div>
