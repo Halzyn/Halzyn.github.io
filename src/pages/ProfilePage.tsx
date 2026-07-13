@@ -7,6 +7,7 @@ import type { ProfileContestStatsResult } from '../lib/profileContestStats'
 import { avatarPublicUrl } from '../lib/avatar'
 import type { PublicProfileJson } from '../lib/queries/players'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
+import { ProfileAchievements } from '../components/ProfileAchievements'
 import { usePublicProfile } from '../hooks/usePlayersQueries'
 
 function ProfileStatsPanel({ stats }: { stats: ProfileContestStatsResult }) {
@@ -134,6 +135,12 @@ export function ProfilePage() {
                       {ppRank != null ? `Rank #${ppRank}` : 'Rank -'} ◦ {(performancePoints ?? 0).toFixed(2)}pp
                     </span>
                   </div>
+                  <ProfileAchievements
+                    profile={profile}
+                    contestStats={contestStats}
+                    rpg={rpgStats}
+                    ppRank={ppRank}
+                  />
                   <div className="profile-rpg-ff-line">
                     <span className="profile-rpg-ff-k">Level</span>
                     <span className="profile-rpg-ff-v">{rpgStats.level}</span>

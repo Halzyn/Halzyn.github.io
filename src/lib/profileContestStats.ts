@@ -55,7 +55,16 @@ export type ProfileContestStatsResult = {
   totalSolo: number
   byDiff: Record<Difficulty, number>
   performancePoints?: number
-  contests: { contest: Contest; rank: number; total: number; score: number; pp?: number }[]
+  contests: {
+    contest: Contest
+    rank: number
+    total: number
+    score: number
+    pp?: number
+    correctGames?: number
+    solo?: number
+    trackCount?: number
+  }[]
 }
 
 export function computeProfileContestStats(
@@ -101,6 +110,7 @@ export function computeProfileContestStats(
 
     const rows = buildContestRankRows(submissions, trackOrder, contestMarks, contestTracks)
     const mySubmission = mySubmissionByContestId.get(contestId)
+    const myRow = mySubmission ? rows.find((row) => row.id === mySubmission.id) : undefined
     const rankIndex = mySubmission ? rows.findIndex((row) => row.id === mySubmission.id) : -1
     const rank = rankIndex >= 0 ? contestPlaceForIndex(rows, rankIndex) : 0
     const score = mySubmission ? scoreForSubmission(mySubmission.id, trackOrder, contestMarks) : 0
@@ -110,6 +120,9 @@ export function computeProfileContestStats(
       rank,
       total: rows.length,
       score,
+      correctGames: myRow?.correctGames,
+      solo: myRow?.solo,
+      trackCount: contestTracks.length,
     })
 
     if (!mySubmission) continue
