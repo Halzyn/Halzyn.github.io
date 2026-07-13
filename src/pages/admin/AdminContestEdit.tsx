@@ -12,6 +12,8 @@ import { parseTrackNumberFromFileName } from '../../lib/trackFileName'
 import { pageTitle } from '../../lib/pageTitle'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { AdminContestSubmissions } from './AdminContestSubmissions'
+import { AdminAnswerForm } from './AdminAnswerForm'
+import { AdminContestAccessPanel, useContestAccess } from './AdminContestAccessPanel'
 import { firstOf } from '../../lib/utils'
 import { tabButtonClass } from '../../lib/tabButtonClass'
 
@@ -289,83 +291,11 @@ export function AdminContestEdit() {
 
   useDocumentTitle(editContestDocTitle)
 
-  async function addModerator(e: FormEvent) {
-    e.preventDefault()
-    if (!contest) return
-    const normalizedUsername = modUsername.trim()
-    if (!normalizedUsername) return
-    setPageError(null)
-    const { data: profileRow, error: profileLookupError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', normalizedUsername)
-      .maybeSingle()
-    if (profileLookupError || !profileRow) {
-      setPageError('No profile with that username.')
-      return
-    }
-    const { error } = await supabase.from('contest_moderators').insert({
-      contest_id: contest.id,
-      user_id: (profileRow as { id: string }).id,
-    })
-    if (error) {
-      setPageError(error.message)
-      return
-    }
-    setModUsername('')
-    void load()
-  }
-
-  async function removeModerator(userId: string) {
-    if (!contest) return
-    setPageError(null)
-    const { error } = await supabase
-      .from('contest_moderators')
-      .delete()
-      .eq('contest_id', contest.id)
-      .eq('user_id', userId)
-    if (error) {
-      setPageError(error.message)
-      return
-    }
-    void load()
-  }
-
-  async function addGuestHost(e: FormEvent) {
-    e.preventDefault()
-    if (!contest) return
-    const name = guestHostName.trim()
-    if (!name) return
-    setPageError(null)
-    const nextOrder =
-      guestHosts.length === 0 ? 0 : Math.max(...guestHosts.map((row) => row.sort_order), -1) + 1
-    const { error } = await supabase.from('contest_guest_hosts').insert({
-      contest_id: contest.id,
-      display_name: name,
-      sort_order: nextOrder,
-    })
-    if (error) {
-      setPageError(error.message)
-      return
-    }
-    setGuestHostName('')
-    void load()
-  }
-
-  async function removeGuestHost(rowId: string) {
-    if (!contest) return
-    setPageError(null)
-    const { error } = await supabase
-      .from('contest_guest_hosts')
-      .delete()
-      .eq('id', rowId)
-      .eq('contest_id', contest.id)
-    if (error) {
-      setPageError(error.message)
-      return
-    }
-    void load()
-  }
+  const { addModerator, removeModerator, addGuestHost, removeGuestHost } = useContestAccess(
+    contest,
+    () => void load(),
+    setPageError,
+  )
 
   async function saveContest(e: FormEvent) {
     e.preventDefault()
@@ -912,7 +842,7 @@ export function AdminContestEdit() {
                     />
                     {isReuploading ? <span className="muted small">Uploading...</span> : null}
                   </label>
-                  <AnswerForm
+                  <AdminAnswerForm
                     key={track.id}
                     track={track}
                     initial={trackAnswer}
@@ -946,264 +876,22 @@ export function AdminContestEdit() {
           hidden={editTab !== 'access'}
           className="profile-edit-tab-panel"
         >
-          <section className="section">
-            <h2>Contest moderators</h2>
-            {moderators.length === 0 ? <p className="muted">None yet.</p> : null}
-            <ul className="stack">
-              {moderators.map((moderator) => (
-                <li key={moderator.user_id} className="row spread panel">
-                  <span>{moderator.username ?? moderator.user_id}</span>
-                  <button
-                    type="button"
-                    className="button ghost small"
-                    onClick={() => void removeModerator(moderator.user_id)}
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <form className="form row-form" onSubmit={addModerator}>
-              <label className="field">
-                <span>Add by username</span>
-                <input
-                  value={modUsername}
-                  onChange={(e) => setModUsername(e.target.value)}
-                  placeholder="playername"
-                />
-              </label>
-              <button type="submit" className="button">
-                Add
-              </button>
-            </form>
-          </section>
-
-          <section className="section">
-            <h2>Guest collaborators</h2>
-            <p className="muted small">
-              Hosts who don't have an account.
-            </p>
-            {guestHosts.length === 0 ? <p className="muted">None yet.</p> : null}
-            <ul className="stack">
-              {guestHosts.map((row) => (
-                <li key={row.id} className="row spread panel">
-                  <span>{row.display_name}</span>
-                  <button
-                    type="button"
-                    className="button ghost small"
-                    onClick={() => void removeGuestHost(row.id)}
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <form className="form row-form" onSubmit={addGuestHost}>
-              <label className="field">
-                <span>Add name</span>
-                <input
-                  value={guestHostName}
-                  onChange={(e) => setGuestHostName(e.target.value)}
-                  placeholder="Display name"
-                />
-              </label>
-              <button type="submit" className="button">
-                Add
-              </button>
-            </form>
-          </section>
+          <AdminContestAccessPanel
+            moderators={moderators}
+            guestHosts={guestHosts}
+            modUsername={modUsername}
+            guestHostName={guestHostName}
+            onModUsernameChange={setModUsername}
+            onGuestHostNameChange={setGuestHostName}
+            onAddModerator={(event) => void addModerator(event, modUsername, () => setModUsername(''))}
+            onRemoveModerator={removeModerator}
+            onAddGuestHost={(event) =>
+              void addGuestHost(event, guestHostName, guestHosts, () => setGuestHostName(''))
+            }
+            onRemoveGuestHost={removeGuestHost}
+          />
         </div>
       ) : null}
     </div>
-  )
-}
-
-function AnswerForm({
-  track,
-  initial,
-  gamesCatalog,
-  isAdminUser,
-  onSave,
-}: {
-  track: Track
-  initial?: TrackAnswer
-  gamesCatalog: Game[]
-  isAdminUser: boolean
-  onSave: (
-    sortOrderInput: string,
-    difficultyDraft: string,
-    primaryTitle: string,
-    sharedLines: string[],
-    song: string,
-    notes: string,
-  ) => Promise<boolean>
-}) {
-  const listId = `game-datalist-${initial?.track_id ?? track.id}`
-  const [sortOrderDraft, setSortOrderDraft] = useState(() => String(track.sort_order))
-  const [difficultyDraft, setDifficultyDraft] = useState(() => track.difficulty ?? '')
-  const [primaryTitle, setPrimaryTitle] = useState(() => (initial?.game_names ?? [])[0] ?? '')
-  const [sharedText, setSharedText] = useState(() => (initial?.shared_music_titles ?? []).join('\n'))
-  const [song, setSong] = useState(() => initial?.song_title ?? '')
-  const [notes, setNotes] = useState(() => initial?.notes ?? '')
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
-  const savedTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
-
-  useEffect(() => {
-    setSortOrderDraft(String(track.sort_order))
-    setDifficultyDraft(track.difficulty ?? '')
-  }, [track.id, track.sort_order, track.difficulty])
-
-  useEffect(() => {
-    setPrimaryTitle((initial?.game_names ?? [])[0] ?? '')
-    setSharedText((initial?.shared_music_titles ?? []).join('\n'))
-    setSong(initial?.song_title ?? '')
-    setNotes(initial?.notes ?? '')
-  }, [initial?.track_id, initial?.game_names, initial?.song_title, initial?.notes, initial?.shared_music_titles])
-
-  useEffect(() => {
-    return () => {
-      if (savedTimerRef.current != null) window.clearTimeout(savedTimerRef.current)
-    }
-  }, [])
-
-  function bumpSavedTimer() {
-    if (savedTimerRef.current != null) window.clearTimeout(savedTimerRef.current)
-    savedTimerRef.current = window.setTimeout(() => {
-      savedTimerRef.current = null
-      setSaveStatus((s) => (s === 'saved' ? 'idle' : s))
-    }, 2200)
-  }
-
-  function clearSavedOnEdit() {
-    setSaveStatus((s) => (s === 'saved' ? 'idle' : s))
-  }
-
-  return (
-    <form
-      className="form tight"
-      onSubmit={(e) => {
-        e.preventDefault()
-        const sharedMusicLines = sharedText
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean)
-        void (async () => {
-          setSaveStatus('saving')
-          const ok = await onSave(
-            sortOrderDraft,
-            difficultyDraft,
-            primaryTitle.trim(),
-            sharedMusicLines,
-            song,
-            notes,
-          )
-          if (!ok) {
-            setSaveStatus('idle')
-            return
-          }
-          setSaveStatus('saved')
-          bumpSavedTimer()
-        })()
-      }}
-    >
-      <div className="track-order-row">
-        <label className="field row tight">
-          <span className="muted">Track #</span>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={sortOrderDraft}
-            onChange={(e) => {
-              clearSavedOnEdit()
-              setSortOrderDraft(e.target.value)
-            }}
-            className="track-order-input"
-          />
-        </label>
-        <label className="field row tight">
-          <span className="muted">Difficulty</span>
-          <input
-            value={difficultyDraft}
-            onChange={(e) => {
-              clearSavedOnEdit()
-              setDifficultyDraft(e.target.value)
-            }}
-            placeholder="Easy / Medium / etc."
-            className="difficulty-input"
-          />
-        </label>
-      </div>
-      <datalist id={listId}>
-        {gamesCatalog.map((game) => (
-          <option key={game.id} value={game.primary_title} />
-        ))}
-      </datalist>
-      <label className="field">
-        <span>Game title</span>
-        <input
-          list={listId}
-          value={primaryTitle}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setPrimaryTitle(e.target.value)
-          }}
-          maxLength={300}
-          required
-          placeholder="e.g. Super Mario Bros."
-        />
-      </label>
-      {isAdminUser && initial?.primary_game_id ? (
-        <p className="muted small">
-          <Link to={`/admin/games/${initial.primary_game_id}`}>Edit alternate titles for this game...</Link>
-        </p>
-      ) : null}
-      <label className="field">
-        <span>Other games with the same music</span>
-        <textarea
-          value={sharedText}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setSharedText(e.target.value)
-          }}
-          rows={3}
-          placeholder={'List each game title on its own line'}
-        />
-      </label>
-      <label className="field">
-        <span>Song title</span>
-        <input
-          value={song}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setSong(e.target.value)
-          }}
-        />
-      </label>
-      <label className="field">
-        <span>Personal notes</span>
-        <input
-          value={notes}
-          onChange={(e) => {
-            clearSavedOnEdit()
-            setNotes(e.target.value)
-          }}
-        />
-      </label>
-      <div className="row tight save-answer-actions">
-        <button
-          type="submit"
-          className={`button small${saveStatus === 'saved' ? ' button-saved-ok' : ''}`}
-          disabled={saveStatus === 'saving'}
-        >
-          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save answer'}
-        </button>
-        {saveStatus === 'saved' ? (
-          <span className="save-answer-hint" role="status">
-            Saved.
-          </span>
-        ) : null}
-      </div>
-    </form>
   )
 }

@@ -2,25 +2,21 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type FormEvent,
 } from 'react'
 import { useBlocker, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useContestDraftLoad } from './useContestDraftLoad'
 import { contestClosed } from '../lib/deadline'
 import {
-  type AdminDraftPayload,
-  type EditDraftPayload,
   type SubmitContestPayload,
-  contestantNameFromDraft,
-  guessMapFromDraft,
-  mergeDraftIntoGuessesState,
-  submissionIdFromSearchParam,
   contestEntryLoadErrorMessage,
+  emptyGuessesForTracks,
+  entrySnapshot,
+  submissionIdFromSearchParam,
 } from '../lib/contestEntry'
 import {
-  clearStoredContestEntry,
   getStoredEditToken,
   setStoredContestEntry,
 } from '../lib/contestEntryStorage'
@@ -31,50 +27,6 @@ type UseContestEntryOptions = {
   contest: Contest
   tracks: Track[]
   slug: string
-}
-
-function emptyGuessesForTracks(trackList: Track[]): Record<string, string> {
-  const empty: Record<string, string> = {}
-  for (const track of trackList) empty[track.id] = ''
-  return empty
-}
-
-function parseEditDraftPayload(data: unknown): EditDraftPayload | null {
-  if (data === null || data === undefined) return null
-  if (typeof data === 'string') {
-    try {
-      return JSON.parse(data) as EditDraftPayload
-    } catch {
-      return null
-    }
-  }
-  return data as EditDraftPayload
-}
-
-function applyDraftToState(
-  row: EditDraftPayload,
-  trackList: Track[],
-): { name: string; guesses: Record<string, string> } {
-  const draftByTrack = guessMapFromDraft(row)
-  return {
-    name: contestantNameFromDraft(row),
-    guesses: mergeDraftIntoGuessesState(
-      draftByTrack,
-      trackList,
-      emptyGuessesForTracks(trackList),
-    ),
-  }
-}
-
-function entrySnapshot(
-  entryName: string,
-  entryGuesses: Record<string, string>,
-  trackList: Track[],
-): string {
-  const normalizedGuesses: Record<string, string> = {}
-  for (const track of trackList)
-    normalizedGuesses[track.id] = (entryGuesses[track.id] ?? '').trim()
-  return JSON.stringify({ name: entryName.trim(), guesses: normalizedGuesses })
 }
 
 export function useContestEntry({
@@ -116,7 +68,6 @@ export function useContestEntry({
   const [claiming, setClaiming] = useState(false)
   const [hasSubmission, setHasSubmission] = useState(false)
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
-  const loadedDraftKeyRef = useRef<string | null>(null)
   const commitSavedSnapshot = useCallback(
     (entryName: string, entryGuesses: Record<string, string>) => {
       setSavedSnapshot(entrySnapshot(entryName, entryGuesses, tracks))
@@ -131,7 +82,6 @@ export function useContestEntry({
   const sessionUserId = session?.user?.id ?? null
 
   useEffect(() => {
-    loadedDraftKeyRef.current = null
     setName('')
     setGuesses(emptyGuessesForTracks(tracks))
     setPageError(null)
@@ -143,7 +93,7 @@ export function useContestEntry({
     setDraftLoading(false)
     setHasSubmission(false)
     setSavedSnapshot(null)
-  }, [contest.id, trackIdsKey])
+  }, [contest.id, trackIdsKey, tracks])
 
   useEffect(() => {
     if (!ready || urlEditToken || adminSubmissionId || !userId) return
@@ -156,195 +106,30 @@ export function useContestEntry({
     profileDisplayNameForSubmit,
   ])
 
-  useEffect(() => {
-    if (tracks.length === 0) return
-
-    const loadKey = [
-      contest.id,
-      trackIdsKey,
-      adminSubmissionId,
-      urlEditToken,
-      anonymousEditToken,
-      sessionUserId ?? '',
-      isAdmin ? '1' : '0',
-      ready ? '1' : '0',
-    ].join('|')
-
-    if (loadedDraftKeyRef.current === loadKey) return
-    let cancelled = false
-
-    async function loadDraft() {
-      setDraftLoading(true)
-      setPageError(null)
-
-      const closed = contestClosed(contest.deadline)
-
-      try {
-        if (adminSubmissionId) {
-          if (!ready) return
-
-          if (!isAdmin) {
-            setNameReadOnly(false)
-            setUseAdminApi(false)
-            return
-          }
-
-          const { data, error } = await supabase.rpc(
-            'admin_get_submission_draft',
-            {
-              p_submission_id: adminSubmissionId,
-            },
-          )
-
-          if (cancelled) return
-
-          if (error) {
-            setNameReadOnly(false)
-            setUseAdminApi(false)
-            setPageError(
-              contestEntryLoadErrorMessage(error.message, contest.published),
-            )
-            return
-          }
-
-          const row = data as AdminDraftPayload
-          if (row.contest_id !== contest.id) {
-            setNameReadOnly(false)
-            setUseAdminApi(false)
-            setPageError('This submission is not for this contest.')
-            return
-          }
-
-          const applied = applyDraftToState(row, tracks)
-          setUseAdminApi(true)
-          setNameReadOnly(true)
-          setName(applied.name)
-          setGuesses(applied.guesses)
-          setHasSubmission(true)
-          commitSavedSnapshot(applied.name, applied.guesses)
-          loadedDraftKeyRef.current = loadKey
-          return
-        }
-
-        const editTokenToLoad = urlEditToken || anonymousEditToken
-        if (editTokenToLoad) {
-          if (closed && !ready) return
-          if (closed && !isAdmin && !editTokenToLoad) return
-
-          const { data, error } = await supabase.rpc(
-            'get_submission_for_edit',
-            {
-              p_contest_id: contest.id,
-              p_edit_token: editTokenToLoad,
-            },
-          )
-
-          if (cancelled) return
-          if (error) {
-            setNameReadOnly(false)
-            setPageError(
-              contestEntryLoadErrorMessage(error.message, contest.published),
-            )
-            if (!urlEditToken && anonymousEditToken)
-              clearStoredContestEntry(slug)
-            return
-          }
-
-          const row = parseEditDraftPayload(data)
-          if (!row) {
-            setHasSubmission(false)
-            commitSavedSnapshot('', emptyGuessesForTracks(tracks))
-            loadedDraftKeyRef.current = loadKey
-            return
-          }
-
-          const applied = applyDraftToState(row, tracks)
-          setNameReadOnly(true)
-          setName(applied.name)
-          setEditSubmissionUserId(row.user_id ?? null)
-          setGuesses(applied.guesses)
-          setHasSubmission(true)
-          if (closed && !isAdmin) setOwnerClosedOutcome('readonly')
-          else setOwnerClosedOutcome('unset')
-          if (!userId) setStoredContestEntry(slug, editTokenToLoad)
-          commitSavedSnapshot(applied.name, applied.guesses)
-          loadedDraftKeyRef.current = loadKey
-          return
-        }
-
-        if (!sessionUserId) {
-          setNameReadOnly(false)
-          if (closed && !isAdmin) setOwnerClosedOutcome('unset')
-          commitSavedSnapshot('', emptyGuessesForTracks(tracks))
-          loadedDraftKeyRef.current = loadKey
-          return
-        }
-
-        const { data: sessionData } = await supabase.auth.getSession()
-
-        if (cancelled) return
-        if (!sessionData.session?.user) return
-        const { data, error } = await supabase.rpc('get_submission_for_owner', {
-          p_contest_id: contest.id,
-        })
-
-        if (cancelled) return
-
-        if (error) {
-          setPageError(
-            contestEntryLoadErrorMessage(error.message, contest.published),
-          )
-          return
-        }
-
-        const row = parseEditDraftPayload(data)
-        if (!row) {
-          setHasSubmission(false)
-          if (closed && !isAdmin) setOwnerClosedOutcome('none')
-          else setOwnerClosedOutcome('unset')
-          commitSavedSnapshot(
-            profileDisplayNameForSubmit ?? '',
-            emptyGuessesForTracks(tracks),
-          )
-          loadedDraftKeyRef.current = loadKey
-          return
-        }
-
-        const applied = applyDraftToState(row, tracks)
-        setHasSubmission(true)
-        setNameReadOnly(true)
-        setName(applied.name)
-        setGuesses(applied.guesses)
-        if (closed && !isAdmin) setOwnerClosedOutcome('readonly')
-        else setOwnerClosedOutcome('unset')
-        commitSavedSnapshot(applied.name, applied.guesses)
-        loadedDraftKeyRef.current = loadKey
-      } finally {
-        if (!cancelled) setDraftLoading(false)
-      }
-    }
-
-    void loadDraft()
-    return () => {
-      cancelled = true
-    }
-  }, [
+  const { invalidateDraftLoad } = useContestDraftLoad({
+    contest,
+    tracks,
+    slug,
+    trackIdsKey,
     adminSubmissionId,
+    urlEditToken,
     anonymousEditToken,
-    contest.id,
-    contest.deadline,
+    sessionUserId,
+    userId,
     isAdmin,
     ready,
-    sessionUserId,
-    slug,
-    supabase,
-    trackIdsKey,
-    tracks,
-    urlEditToken,
-    userId,
     profileDisplayNameForSubmit,
+    setDraftLoading,
+    setPageError,
+    setNameReadOnly,
+    setUseAdminApi,
+    setName,
+    setGuesses,
+    setHasSubmission,
+    setEditSubmissionUserId,
+    setOwnerClosedOutcome,
     commitSavedSnapshot,
-  ])
+  })
 
   const persistEditToken = useCallback(
     (token: string) => {
@@ -374,7 +159,7 @@ export function useContestEntry({
         return
       }
       setEditSubmissionUserId(userId)
-      loadedDraftKeyRef.current = null
+      invalidateDraftLoad()
       const result = data as { already_claimed?: boolean } | null
       if (result?.already_claimed) {
         setSaveNotice('This submission is already linked to your account.')
@@ -386,7 +171,7 @@ export function useContestEntry({
     } finally {
       setClaiming(false)
     }
-  }, [contest.id, urlEditToken, supabase, userId])
+  }, [contest.id, contest.published, invalidateDraftLoad, urlEditToken, supabase, userId])
 
   const handleSubmit = useCallback(
     async (event: FormEvent) => {
@@ -446,7 +231,7 @@ export function useContestEntry({
             ? res.edit_token
             : null
         const nextEditToken = tokenFromResponse ?? submitEditToken
-        loadedDraftKeyRef.current = null
+        invalidateDraftLoad()
         if (nextEditToken && !userId) {
           persistEditToken(nextEditToken)
           setSaveNotice(
@@ -481,6 +266,7 @@ export function useContestEntry({
       anonymousEditToken,
       contest,
       guesses,
+      invalidateDraftLoad,
       isAdmin,
       name,
       navigate,

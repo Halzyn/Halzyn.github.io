@@ -14,7 +14,6 @@ import {
   type DisplayNameStyleCaps,
   type DisplayNameStyleInfo,
 } from '../lib/displayNameStyle'
-import { DisplayNameStyled } from '../components/DisplayNameStyled'
 import { contestClosed } from '../lib/deadline'
 import { tabButtonClass } from '../lib/tabButtonClass'
 import { useAuth } from '../auth/AuthContext'
@@ -22,64 +21,19 @@ import {
   DEFAULT_SITE_BACKGROUND_PATTERN,
   parseSiteBackgroundPattern,
 } from '../theme/siteBackground'
-
-type EditTab = 'basic' | 'private' | 'submissions' | 'appearance' | 'fun' | 'moderation'
-
-type MyContestSubmissionRow = {
-  submission_id: string
-  contest_id: string
-  contest_slug: string
-  contest_title: string
-  deadline: string
-  results_published: boolean
-}
-
-const USERNAME_REGEX = /^[a-zA-Z0-9_]{2,32}$/
-
-const PROFILE_SECTION_TABS: { tab: EditTab; label: string }[] = [
-  { tab: 'basic', label: 'Profile' },
-  { tab: 'private', label: 'Private info' },
-  { tab: 'submissions', label: 'Submissions' },
-  { tab: 'appearance', label: 'Site settings' },
-  { tab: 'fun', label: 'Fun' },
-]
-
-const SITE_BACKGROUND_OPTIONS: {
-  value: Exclude<SiteBackgroundPattern, 'none'>
-  label: string
-}[] = [
-  { value: 'candycavios', label: 'Candy Mountain / Planet Cavios' },
-  { value: 'cutestripes', label: 'Cute Stripes' },
-  { value: 'dk64', label: 'Donkey Kong 64' },
-  { value: 'furnacefun', label: "Grunty's Furnace Fun" },
-  { value: 'miningmelancholy', label: 'Mining Melancholy' },
-  { value: 'outer_wall', label: 'Outer Wall' },
-  { value: 'smwc', label: 'SMWCentral' },
-  { value: 'supermariokart', label: 'Super Mario Kart' },
-]
-
-const NAME_EFFECT_OPTIONS: { value: DisplayNameEffect; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'outline', label: 'Outline' },
-  { value: 'drop_shadow', label: 'Drop shadow' },
-  { value: 'glow', label: 'Glow' },
-]
-
-const NAME_COLOR_FALLBACK = '#4488cc'
-
-function parseEditTab(value: string | null): EditTab | null {
-  if (
-    value === 'basic' ||
-    value === 'private' ||
-    value === 'submissions' ||
-    value === 'appearance' ||
-    value === 'fun' ||
-    value === 'moderation'
-  ) {
-    return value
-  }
-  return null
-}
+import { ProfileEditAppearanceTab } from './profileEdit/ProfileEditAppearanceTab'
+import { ProfileEditBasicTab } from './profileEdit/ProfileEditBasicTab'
+import { ProfileEditFunTab } from './profileEdit/ProfileEditFunTab'
+import { ProfileEditModerationTab } from './profileEdit/ProfileEditModerationTab'
+import { ProfileEditPrivateTab } from './profileEdit/ProfileEditPrivateTab'
+import { ProfileEditSubmissionsTab } from './profileEdit/ProfileEditSubmissionsTab'
+import {
+  type EditTab,
+  type MyContestSubmissionRow,
+  PROFILE_SECTION_TABS,
+  USERNAME_REGEX,
+  parseEditTab,
+} from './profileEdit/shared'
 
 export function ProfileEditPage() {
   useDocumentTitle(pageTitle('Your profile'))
@@ -571,455 +525,91 @@ export function ProfileEditPage() {
         ) : null}
       </div>
 
-      <div
-        id="profile-panel-basic"
-        role="tabpanel"
-        aria-labelledby="profile-tab-basic"
-        hidden={editTab !== 'basic'}
-        className="profile-edit-tab-panel"
-      >
-        <section className="section">
-          <h2>Profile picture</h2>
-          <p className="muted small">Uploaded files will be resized to 150x150 pixels.</p>
-          <div className="profile-edit-avatar-row">
-            {avatarPreview ? (
-              <img
-                key={profile?.avatar_path ?? 'avatar'}
-                src={avatarPreview}
-                alt=""
-                className="profile-avatar-large"
-                width={150}
-                height={150}
-                decoding="async"
-              />
-            ) : (
-              <span className="profile-avatar-large profile-avatar-large--empty" aria-hidden />
-            )}
-            <div className="profile-edit-avatar-actions">
-              <label className="button small primary" style={{ cursor: avatarBusy ? 'wait' : 'pointer' }}>
-                {avatarBusy ? 'Working...' : 'Upload image'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="visually-hidden"
-                  disabled={avatarBusy || !profile}
-                  onChange={onAvatarFile}
-                />
-              </label>
-              {profile?.avatar_path ? (
-                <button type="button" className="button small ghost" disabled={avatarBusy} onClick={() => void removeAvatar()}>
-                  Remove
-                </button>
-              ) : null}
-            </div>
-          </div>
-        </section>
+      <ProfileEditBasicTab
+        active={editTab === 'basic'}
+        profile={profile}
+        avatarPreview={avatarPreview}
+        avatarBusy={avatarBusy}
+        username={username}
+        displayName={displayName}
+        bio={bio}
+        nameColor1={nameColor1}
+        nameColor2={nameColor2}
+        nameEffect={nameEffect}
+        styleCaps={styleCaps}
+        nameStylePreviewInfo={nameStylePreviewInfo}
+        submitBusy={submitBusy}
+        onUsernameChange={setUsername}
+        onDisplayNameChange={setDisplayName}
+        onBioChange={setBio}
+        onNameColor1Change={setNameColor1}
+        onNameColor2Change={setNameColor2}
+        onNameEffectChange={setNameEffect}
+        onAvatarFile={onAvatarFile}
+        onRemoveAvatar={removeAvatar}
+        onSavePublic={savePublic}
+      />
 
-        <section className="section">
-          <h2>Public profile</h2>
-          <form className="form" onSubmit={savePublic}>
-            <label className="field">
-              <span>Username (URL: /players/username)</span>
-              <input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" />
-            </label>
+      <ProfileEditPrivateTab
+        active={editTab === 'private'}
+        profile={profile}
+        email={email}
+        newPassword={newPassword}
+        passwordConfirm={passwordConfirm}
+        notifyNewContestEmail={notifyNewContestEmail}
+        submitBusy={submitBusy}
+        notifyEmailBusy={notifyEmailBusy}
+        onEmailChange={setEmail}
+        onNewPasswordChange={setNewPassword}
+        onPasswordConfirmChange={setPasswordConfirm}
+        onSaveEmail={saveEmail}
+        onSavePassword={savePassword}
+        onNotifyNewContestEmailChange={saveNotifyNewContestEmail}
+      />
 
-            <label className="field">
-              <span>Display name</span>
-              <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
-            </label>
+      <ProfileEditSubmissionsTab
+        active={editTab === 'submissions'}
+        submissionsLoadError={submissionsLoadError}
+        mySubmissions={mySubmissions}
+        openSubmissions={openSubmissions}
+        closedSubmissions={closedSubmissions}
+      />
 
-            <label className="field">
-              <span>Bio</span>
-              <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} />
-            </label>
+      <ProfileEditAppearanceTab
+        active={editTab === 'appearance'}
+        profile={profile}
+        alwaysRevealSpoilers={alwaysRevealSpoilers}
+        siteBackgroundPattern={siteBackgroundPattern}
+        behaviorBusy={behaviorBusy}
+        appearanceBusy={appearanceBusy}
+        onAlwaysRevealSpoilersChange={setAlwaysRevealSpoilers}
+        onSiteBackgroundPatternChange={setSiteBackgroundPattern}
+        onSaveBehavior={saveBehavior}
+        onSaveAppearance={saveAppearance}
+      />
 
-            <h3 className="profile-subhead">Name color</h3>
-            <label className="field">
-              <div className="row tight profile-edit-name-color-row">
-                <input
-                  type="color"
-                  aria-label="Pick name color"
-                  value={normalizeDisplayNameHex(nameColor1 || null) ?? NAME_COLOR_FALLBACK}
-                  onChange={(event) => setNameColor1(event.target.value)}
-                />
-                <button type="button" className="button small ghost" onClick={() => setNameColor1('')}>
-                  Clear
-                </button>
-              </div>
-              {!nameColor1 && <span className="muted small">
-                Uses the default link color until you choose a color.
-              </span>}
-            </label>
-
-            {styleCaps.canGradient ? (
-              <>
-                <h3 className="profile-subhead">Second name color</h3>
-                <label className="field">
-                  <div className="row tight profile-edit-name-color-row">
-                    <input
-                      type="color"
-                      aria-label="Pick second name color"
-                      value={normalizeDisplayNameHex(nameColor2 || null) ?? NAME_COLOR_FALLBACK}
-                      onChange={(event) => setNameColor2(event.target.value)}
-                    />
-                    <button type="button" className="button small ghost" onClick={() => setNameColor2('')}>
-                      Clear
-                    </button>
-                  </div>
-                </label>
-              </>
-            ) : null}
-
-            {styleCaps.canEffect ? (
-              <>
-                <h3 className="profile-subhead">Name effect</h3>
-                <label className="field">
-                  <select
-                    value={nameEffect}
-                    onChange={(event) => setNameEffect(parseDisplayNameEffect(event.target.value))}
-                  >
-                    {NAME_EFFECT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            ) : null}
-
-            <p className="profile-subhead">Name preview</p>
-            <p className="profile-edit-name-preview">
-              <DisplayNameStyled text={displayName.trim() || 'Your display name'} info={nameStylePreviewInfo} />
-            </p>
-
-            <button type="submit" className="button primary" disabled={submitBusy}>
-              Save profile
-            </button>
-          </form>
-          {profile?.username ? (
-            <p>
-              <Link to={`/players/${encodeURIComponent(profile.username)}`}>View public profile</Link>
-            </p>
-          ) : null}
-        </section>
-      </div>
-
-      <div
-        id="profile-panel-private"
-        role="tabpanel"
-        aria-labelledby="profile-tab-private"
-        hidden={editTab !== 'private'}
-        className="profile-edit-tab-panel"
-      >
-        <section className="section">
-          <h2>Email</h2>
-          <form className="form" onSubmit={saveEmail}>
-            <label className="field">
-              <span>Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-              />
-            </label>
-            <button type="submit" className="button primary" disabled={submitBusy}>
-              Update email
-            </button>
-          </form>
-
-          <p className="profile-subhead">Email notifications</p>
-          <label className="field row">
-            <input
-              type="checkbox"
-              checked={notifyNewContestEmail}
-              disabled={notifyEmailBusy || !profile}
-              onChange={(event) => void saveNotifyNewContestEmail(event.target.checked)}
-            />
-            <span>Email me when a new contest goes live</span>
-          </label>
-        </section>
-
-        <section className="section">
-          <h2>Password</h2>
-          <form className="form" onSubmit={savePassword}>
-            <label className="field">
-              <span>New password</span>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                autoComplete="new-password"
-              />
-            </label>
-            <label className="field">
-              <span>Confirm</span>
-              <input
-                type="password"
-                value={passwordConfirm}
-                onChange={(event) => setPasswordConfirm(event.target.value)}
-                autoComplete="new-password"
-              />
-            </label>
-            <button type="submit" className="button primary" disabled={submitBusy}>
-              Change password
-            </button>
-          </form>
-        </section>
-      </div>
-
-      <div
-        id="profile-panel-submissions"
-        role="tabpanel"
-        aria-labelledby="profile-tab-submissions"
-        hidden={editTab !== 'submissions'}
-        className="profile-edit-tab-panel"
-      >
-        <section className="section">
-          <h2>Contest submissions</h2>
-          <p className="muted small">
-            Entries linked to your account.
-          </p>
-          {submissionsLoadError ? <p className="banner warn">{submissionsLoadError}</p> : null}
-          {mySubmissions === null ? (
-            <p className="muted">Loading...</p>
-          ) : mySubmissions.length === 0 ? (
-            <p className="muted small">No submissions yet. If you've participated in past contests before signing up, you can go to your guest submission links and claim them while signed in. If you lost your link(s), DM me on Discord @halzyn.</p>
-          ) : (
-            <>
-              <h3 className="profile-subhead">Open</h3>
-              {openSubmissions.length > 0 ? (
-                <ul className="profile-moderation-links">
-                  {openSubmissions.map((submission) => (
-                    <li key={submission.submission_id}>
-                      <Link to={`/contests/${encodeURIComponent(submission.contest_slug)}/submit`}>
-                        {submission.contest_title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted small">None</p>
-              )}
-              <h3 className="profile-subhead">Closed</h3>
-              {closedSubmissions.length > 0 ? (
-                <ul className="profile-moderation-links">
-                  {closedSubmissions.map((submission) => (
-                    <li key={submission.submission_id}>
-                      <Link to={`/contests/${encodeURIComponent(submission.contest_slug)}/submit`}>
-                        {submission.contest_title}
-                      </Link>
-                      <span className="muted small"> View only</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted small">None</p>
-              )}
-            </>
-          )}
-        </section>
-      </div>
-
-      <div
-        id="profile-panel-appearance"
-        role="tabpanel"
-        aria-labelledby="profile-tab-appearance"
-        hidden={editTab !== 'appearance'}
-        className="profile-edit-tab-panel"
-      >
-        <section className="section">
-          <h2 id="profile-site-settings-behavior-heading">Behavior</h2>
-          <label className="field row">
-            <input
-              type="checkbox"
-              checked={alwaysRevealSpoilers}
-              disabled={behaviorBusy || !profile}
-              onChange={(event) => setAlwaysRevealSpoilers(event.target.checked)}
-            />
-            <span>Always reveal spoilers</span>
-          </label>
-          <button
-            type="button"
-            className="button primary profile-edit-appearance-save"
-            disabled={behaviorBusy || !profile}
-            onClick={() => void saveBehavior()}
-          >
-            Save behavior
-          </button>
-        </section>
-
-        <section className="section">
-          <h2 id="profile-appearance-bg-heading">Theme</h2>
-          <label className="field">
-            <span>Background</span>
-            <select
-              id="profile-appearance-bg-select"
-              value={siteBackgroundPattern}
-              disabled={!profile || appearanceBusy}
-              onChange={(event) =>
-                setSiteBackgroundPattern(parseSiteBackgroundPattern(event.target.value))
-              }
-            >
-              <option value="none">No background</option>
-              {SITE_BACKGROUND_OPTIONS.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            className="button primary profile-edit-appearance-save"
-            disabled={appearanceBusy || !profile}
-            onClick={() => void saveAppearance()}
-          >
-            Save theme
-          </button>
-        </section>
-      </div>
-
-      <div
-        id="profile-panel-fun"
-        role="tabpanel"
-        aria-labelledby="profile-tab-fun"
-        hidden={editTab !== 'fun'}
-        className="profile-edit-tab-panel"
-      >
-        <section className="section">
-          <h2>Favorite soundtrack</h2>
-          <p className="muted small">
-            This will appear on your profile page.
-          </p>
-          {gamesLoadError ? <p className="banner warn">{gamesLoadError}</p> : null}
-          {gamesLoading ? (
-            <p className="muted">Loading games...</p>
-          ) : (
-            <>
-              <label className="field">
-                <span>Search games</span>
-                <input
-                  value={gameSearch}
-                  onChange={(event) => setGameSearch(event.target.value)}
-                  placeholder="Type to filter..."
-                  autoComplete="off"
-                />
-              </label>
-              {favoriteGameId && !selectedGame ? (
-                <p className="muted small">
-                  Something went wrong with your saved game. Pick another one, I guess.
-                </p>
-              ) : selectedGame ? (
-                <div className="profile-edit-favorite-picked">
-                  {selectedGame.cover_image_url ? (
-                    <img
-                      src={selectedGame.cover_image_url}
-                      alt=""
-                      className="profile-edit-favorite-thumb"
-                      width={64}
-                      height={64}
-                      decoding="async"
-                    />
-                  ) : (
-                    <span className="profile-edit-favorite-thumb profile-edit-favorite-thumb--empty" aria-hidden />
-                  )}
-                  <span className="profile-edit-favorite-title">{selectedGame.primary_title}</span>
-                </div>
-              ) : (
-                <p className="muted small">No game selected.</p>
-              )}
-              <ul className="profile-edit-game-list" aria-label="Choose a game">
-                {filteredGames.map((game) => (
-                  <li key={game.id}>
-                    <button
-                      type="button"
-                      className={
-                        'profile-edit-game-option' +
-                        (favoriteGameId === game.id ? ' profile-edit-game-option--selected' : '')
-                      }
-                      onClick={() => setFavoriteGameId(game.id)}
-                    >
-                      {game.primary_title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {filteredGames.length === 0 && games.length > 0 ? (
-                <p className="muted small">No games match your search.</p>
-              ) : null}
-              {games.length === 0 && !gamesLoadError ? (
-                <p className="muted small">Loading games...</p>
-              ) : null}
-              <div className="row tight" style={{ marginTop: '0.75rem' }}>
-                <button
-                  type="button"
-                  className="button primary"
-                  disabled={favoriteBusy || !profile}
-                  onClick={() => void saveFavorite()}
-                >
-                  Save favorite
-                </button>
-                <button
-                  type="button"
-                  className="button ghost"
-                  disabled={favoriteBusy}
-                  onClick={() => setFavoriteGameId(null)}
-                >
-                  Clear selection
-                </button>
-              </div>
-            </>
-          )}
-        </section>
-      </div>
+      <ProfileEditFunTab
+        active={editTab === 'fun'}
+        profile={profile}
+        gamesLoadError={gamesLoadError}
+        gamesLoading={gamesLoading}
+        games={games}
+        gameSearch={gameSearch}
+        favoriteGameId={favoriteGameId}
+        selectedGame={selectedGame ?? null}
+        filteredGames={filteredGames}
+        favoriteBusy={favoriteBusy}
+        onGameSearchChange={setGameSearch}
+        onFavoriteGameIdChange={setFavoriteGameId}
+        onSaveFavorite={saveFavorite}
+      />
 
       {hasModerationAccess ? (
-        <div
-          id="profile-panel-moderation"
-          role="tabpanel"
-          aria-labelledby="profile-tab-moderation"
-          hidden={editTab !== 'moderation'}
-          className="profile-edit-tab-panel"
-        >
-          {profile?.is_admin ? (
-            <section className="section">
-              <h2>Site administration</h2>
-              <p className="muted small">
-                Manage contests, the games catalog, and registered accounts.
-              </p>
-              <ul className="profile-moderation-links">
-                <li>
-                  <Link to="/admin/contests">Contests</Link>
-                </li>
-                <li>
-                  <Link to="/admin/games">Games</Link>
-                </li>
-                <li>
-                  <Link to="/admin/users">Users</Link>
-                </li>
-              </ul>
-            </section>
-          ) : (
-            <section className="section">
-              <h2>Contests you moderate</h2>
-              <p className="muted small">
-                Open a contest to edit tracks and metadata, or open grading to score submissions.
-              </p>
-              <ul className="profile-moderation-links">
-                {moderatedContests.map((contest) => (
-                  <li key={contest.id}>
-                    <Link to={`/admin/contests/${contest.id}`}>{contest.title}</Link>{' '}
-                    <Link to={`/admin/contests/${contest.id}/grade`} className="muted small">
-                      Grade
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </div>
+        <ProfileEditModerationTab
+          active={editTab === 'moderation'}
+          profile={profile}
+          moderatedContests={moderatedContests}
+        />
       ) : null}
     </div>
   )

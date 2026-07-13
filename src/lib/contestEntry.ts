@@ -35,6 +35,12 @@ export function guessMapFromDraft(row: EditDraftPayload): Map<string, string> {
   return map
 }
 
+export function emptyGuessesForTracks(trackList: Track[]): Record<string, string> {
+  const empty: Record<string, string> = {}
+  for (const track of trackList) empty[track.id] = ''
+  return empty
+}
+
 export function mergeDraftIntoGuessesState(
   draftByTrack: Map<string, string>,
   trackList: Track[],
@@ -45,6 +51,44 @@ export function mergeDraftIntoGuessesState(
     next[t.id] = draftByTrack.get(t.id) ?? previous[t.id] ?? ''
   }
   return next
+}
+
+export function parseEditDraftPayload(data: unknown): EditDraftPayload | null {
+  if (data === null || data === undefined) return null
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data) as EditDraftPayload
+    } catch {
+      return null
+    }
+  }
+  return data as EditDraftPayload
+}
+
+export function applyDraftToState(
+  row: EditDraftPayload,
+  trackList: Track[],
+): { name: string; guesses: Record<string, string> } {
+  const draftByTrack = guessMapFromDraft(row)
+  return {
+    name: contestantNameFromDraft(row),
+    guesses: mergeDraftIntoGuessesState(
+      draftByTrack,
+      trackList,
+      emptyGuessesForTracks(trackList),
+    ),
+  }
+}
+
+export function entrySnapshot(
+  entryName: string,
+  entryGuesses: Record<string, string>,
+  trackList: Track[],
+): string {
+  const normalizedGuesses: Record<string, string> = {}
+  for (const track of trackList)
+    normalizedGuesses[track.id] = (entryGuesses[track.id] ?? '').trim()
+  return JSON.stringify({ name: entryName.trim(), guesses: normalizedGuesses })
 }
 
 export function countAnsweredGuesses(guesses: Record<string, string>): number {

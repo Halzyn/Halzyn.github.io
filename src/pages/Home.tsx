@@ -3,16 +3,13 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { pageTitle } from '../lib/pageTitle'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useContests } from '../hooks/useContests'
 import { getSupabase } from '../lib/supabase'
-import {
-  CONTEST_HOST_EMBED_SELECT,
-  contestHostsFromScheduledTeaser,
-  hostsMapFromContests,
-} from '../lib/contestHosts'
+import { contestHostsFromScheduledTeaser } from '../lib/contestHosts'
 import { ContestCalendarLink } from '../components/ContestCalendarLink'
 import { ContestCard } from '../components/ContestCard'
 import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
-import type { ContestWithHosts, ScheduledContestTeaser } from '../lib/types'
+import type { ScheduledContestTeaser } from '../lib/types'
 import { contestClosed } from '../lib/deadline'
 import { listStoredContestEntries } from '../lib/contestEntryStorage'
 
@@ -20,7 +17,7 @@ export function Home() {
   useDocumentTitle(pageTitle('Home'))
   const supabase = getSupabase()
   const { ready, userId, isAdmin } = useAuth()
-  const [contests, setContests] = useState<ContestWithHosts[]>([])
+  const { contests, hostsByContestId } = useContests()
   const [scheduledTeasers, setScheduledTeasers] = useState<ScheduledContestTeaser[]>([])
   const [modContestIds, setModContestIds] = useState<Set<string>>(new Set())
 
@@ -40,22 +37,13 @@ export function Home() {
       }
       setModContestIds(moderatedContestIds)
 
-      const [contestsResult, teaserResult] = await Promise.all([
-        supabase.from('contests').select(`*, ${CONTEST_HOST_EMBED_SELECT}`).order('deadline', { ascending: false }),
-        supabase.rpc('scheduled_contests_teaser'),
-      ])
-
-      const contestList = (contestsResult.error ? [] : (contestsResult.data ?? [])) as ContestWithHosts[]
+      const teaserResult = await supabase.rpc('scheduled_contests_teaser')
       const teaserList = (teaserResult.error ? [] : (teaserResult.data ?? [])) as ScheduledContestTeaser[]
-
-      setContests(contestList)
       setScheduledTeasers(teaserList)
     }
 
     void loadHomeData()
-  }, [supabase, ready, userId, isAdmin])
-
-  const hostsByContestId = useMemo(() => hostsMapFromContests(contests), [contests])
+  }, [supabase, ready, userId])
 
   const openContests = useMemo(
     () =>
