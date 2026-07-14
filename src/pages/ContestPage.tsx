@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useToast } from '../toast/ToastContext'
 import { ContestEntryForm } from '../components/ContestEntryForm'
 import { contestClosed } from '../lib/deadline'
 import { ContestCalendarLink } from '../components/ContestCalendarLink'
@@ -14,16 +15,100 @@ import { buildContestRankRows } from '../lib/scoring'
 import { buildContestHostsFromEmbed, emptyContestHosts } from '../lib/contestHosts'
 import { useContestCore, useContestReveal } from '../hooks/useContestPageQueries'
 
-function ContestPageTop({ editContestHref }: { editContestHref?: string }) {
+function EditIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={true}
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+  )
+}
+
+function ShareIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={true}
+    >
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="M8.59 13.51l6.83 3.98" />
+      <path d="M15.41 6.51l-6.82 3.98" />
+    </svg>
+  )
+}
+
+function ContestPageTop({
+  contestSlug,
+  editContestHref,
+}: {
+  contestSlug?: string
+  editContestHref?: string
+}) {
+  const { success: toastSuccess, toast } = useToast()
+
+  async function handleShare() {
+    if (!contestSlug) return
+    const url = `${window.location.origin}/contests/${encodeURIComponent(contestSlug)}`
+    try {
+      await navigator.clipboard.writeText(url)
+      toastSuccess('Contest link copied.')
+    } catch {
+      toast('Could not copy link.', { variant: 'warn' })
+    }
+  }
+
+  const showActions = Boolean(contestSlug || editContestHref)
+
   return (
     <div className="profile-page-top">
       <p className="muted small profile-page-top-back">
         <Link to="/contests">← Contests</Link>
       </p>
-      {editContestHref ? (
-        <Link to={editContestHref} className="profile-page-edit-link">
-          Edit contest
-        </Link>
+      {showActions ? (
+        <div className="profile-page-top-actions">
+          {contestSlug ? (
+            <button
+              type="button"
+              className="profile-page-icon-button"
+              onClick={() => void handleShare()}
+              aria-label="Copy contest link"
+              title="Copy contest link"
+            >
+              <ShareIcon />
+            </button>
+          ) : null}
+          {editContestHref ? (
+            <Link
+              to={editContestHref}
+              className="profile-page-icon-button"
+              aria-label="Edit contest"
+              title="Edit contest"
+            >
+              <EditIcon />
+            </Link>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )
@@ -111,7 +196,7 @@ export function ContestPage() {
   if (corePending && !core) {
     return (
       <div className="page">
-        <ContestPageTop />
+        <ContestPageTop contestSlug={slug} />
         <p className="muted">Loading...</p>
       </div>
     )
@@ -119,7 +204,7 @@ export function ContestPage() {
   if (contest === null) {
     return (
       <div className="page">
-        <ContestPageTop />
+        <ContestPageTop contestSlug={slug} />
         <p>Contest not found.</p>
         <Link to="/">Home</Link>
       </div>
@@ -128,7 +213,7 @@ export function ContestPage() {
 
   return (
     <div className="page">
-      <ContestPageTop editContestHref={editContestHref} />
+      <ContestPageTop contestSlug={slug} editContestHref={editContestHref} />
       <header className="page-head">
         <h1>{contest.title}</h1>
         {contestHosts.entries.length > 0 ? (

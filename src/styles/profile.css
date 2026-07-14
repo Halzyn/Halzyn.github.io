@@ -125,6 +125,40 @@
   margin-left: auto;
 }
 
+.profile-page-top-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profile-page-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--heading);
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.profile-page-icon-button:hover,
+.profile-page-icon-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.profile-page-icon-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 .profile-rpg-ff {
   --rpg-ff-face: 'Reactor7', ui-monospace, 'Consolas', 'Courier New', monospace;
   --rpg-ff-name-face: 'MSX BIOS Screen 0', var(--rpg-ff-face);
