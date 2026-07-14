@@ -12,7 +12,8 @@ const SCORING_BODY =
 
 const GUESSING_BODY = `There is no penalty for a wrong guess, so even if you're unsure or have no idea at all, it never hurts to try! I won't publish what you send me, only the final results.
 However, make sure your answer only contains one game or franchise, not multiple. I will only count the first game or franchise you mention in your answer. (e.g. if you write "Mario or Zelda", I will only count "Mario")
-Your guess does not have to be the original source if the exact same song also appears in a different game. (like with Super Smash Bros. Ultimate, for instance)`
+Your guess does not have to be the original source if the exact same song also appears in a different game. (like with Super Smash Bros. Ultimate, for instance)
+Please note that community-based music doesn't count! I know there's Super Mario Galaxy music in osu!, but that doesn't make it a valid guess.`
 
 const SUBMISSION_BODY = `When you submit answers for a contest, you receive a private edit link. Bookmark that page, or store the link somewhere! Only someone with that link can change that entry, so picking a display name that is already taken will be blocked unless you are updating your own entry. If you lose the link before the deadline, contact me on Discord @halzyn.`
 
