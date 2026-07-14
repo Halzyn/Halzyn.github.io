@@ -215,37 +215,41 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
         ) : null}
 
         <form className="form contest-entry-form" onSubmit={entry.handleSubmit}>
-          {activeTrack ? (
+          {tracks.length > 0 ? (
             <div className="contest-entry-focus">
-              <div className="contest-entry-focus-head">
-                <p className="contest-entry-focus-label">
-                  Track {activeTrack.sort_order}
-                  {activeTrack.difficulty ? (
-                    <span className="muted"> ◦ {activeTrack.difficulty}</span>
-                  ) : null}
-                </p>
-                {entry.showSubmissionFields ? (
-                  <p className="muted small contest-entry-progress">
-                    {answeredCount} / {tracks.length} answered
-                  </p>
-                ) : null}
-              </div>
+              {activeTrack ? (
+                <>
+                  <div className="contest-entry-focus-head">
+                    <p className="contest-entry-focus-label">
+                      Track {activeTrack.sort_order}
+                      {activeTrack.difficulty ? (
+                        <span className="muted"> ◦ {activeTrack.difficulty}</span>
+                      ) : null}
+                    </p>
+                    {entry.showSubmissionFields ? (
+                      <p className="muted small contest-entry-progress">
+                        {answeredCount} / {tracks.length} answered
+                      </p>
+                    ) : null}
+                  </div>
 
-              {entry.showSubmissionFields ? (
-                <label className="field contest-entry-guess-field">
-                  <span>Your guess for track {activeTrack.sort_order}</span>
-                  <input
-                    ref={guessInputRef}
-                    value={entry.guesses[activeTrack.id] ?? ''}
-                    onChange={(e) =>
-                      entry.setGuesses((previous) => ({ ...previous, [activeTrack.id]: e.target.value }))
-                    }
-                    maxLength={500}
-                    placeholder="Game title / notes"
-                    disabled={entry.draftLoading || entry.ownerClosedReadOnly}
-                    className={entry.ownerClosedReadOnly ? 'submit-name-locked' : undefined}
-                  />
-                </label>
+                  {entry.showSubmissionFields ? (
+                    <label className="field contest-entry-guess-field">
+                      <span>Your guess for track {activeTrack.sort_order}</span>
+                      <input
+                        ref={guessInputRef}
+                        value={entry.guesses[activeTrack.id] ?? ''}
+                        onChange={(e) =>
+                          entry.setGuesses((previous) => ({ ...previous, [activeTrack.id]: e.target.value }))
+                        }
+                        maxLength={500}
+                        placeholder="Game title / notes"
+                        disabled={entry.draftLoading || entry.ownerClosedReadOnly}
+                        className={entry.ownerClosedReadOnly ? 'submit-name-locked' : undefined}
+                      />
+                    </label>
+                  ) : null}
+                </>
               ) : null}
 
               <nav className="contest-entry-track-grid" aria-label="Jump to track">
@@ -274,11 +278,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
                   )
                 })}
               </nav>
-            </div>
-          ) : null}
 
-          {tracks.length > 0 ? (
-            <div className="sticky-page-player">
               <TrackAudioPlayer
                 ref={playerRef}
                 tracks={tracks}

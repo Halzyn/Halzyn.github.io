@@ -457,6 +457,13 @@
   display: contents;
 }
 
+.contest-entry-section--sticky-player .contest-entry-focus {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  margin-bottom: 1rem;
+}
+
 .contest-entry-section .sticky-page-player {
   margin-top: 0.75rem;
   margin-bottom: 0;
