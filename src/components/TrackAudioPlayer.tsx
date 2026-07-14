@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle } from 'react'
+import { forwardRef, useImperativeHandle, useMemo } from 'react'
 import { useTrackAudioEngine, type TrackPlaybackState } from '../hooks/useTrackAudioEngine'
 import type { Track } from '../lib/types'
 import { SiteAudioPlayer } from './SiteAudioPlayer'
@@ -17,11 +17,15 @@ type TrackAudioPlayerProps = {
   tracks: Track[]
   onPlaybackChange?: (state: TrackPlaybackState) => void
   onActiveTrackChange?: (trackId: string | null) => void
+  getNowPlayingLabel?: (track: Track) => string | null | undefined
   className?: string
 }
 
 export const TrackAudioPlayer = forwardRef<TrackAudioPlayerHandle, TrackAudioPlayerProps>(
-  function TrackAudioPlayer({ tracks, onPlaybackChange, onActiveTrackChange, className }, ref) {
+  function TrackAudioPlayer(
+    { tracks, onPlaybackChange, onActiveTrackChange, getNowPlayingLabel, className },
+    ref,
+  ) {
     const engine = useTrackAudioEngine({ tracks, onPlaybackChange, onActiveTrackChange })
 
     useImperativeHandle(
@@ -36,6 +40,16 @@ export const TrackAudioPlayer = forwardRef<TrackAudioPlayerHandle, TrackAudioPla
       [engine.playTrack, engine.selectTrack, engine.togglePlayPause, engine.goPrev, engine.goNext],
     )
 
+    const activeTrack = useMemo(
+      () => (engine.activeId ? (tracks.find((track) => track.id === engine.activeId) ?? null) : null),
+      [engine.activeId, tracks],
+    )
+
+    const nowPlayingText = useMemo(() => {
+      if (!activeTrack || !getNowPlayingLabel) return null
+      return getNowPlayingLabel(activeTrack) ?? null
+    }, [activeTrack, getNowPlayingLabel])
+
     if (tracks.length === 0) return null
 
     return (
@@ -49,6 +63,8 @@ export const TrackAudioPlayer = forwardRef<TrackAudioPlayerHandle, TrackAudioPla
             currentTime={engine.currentTime}
             duration={engine.duration}
             autoplay={engine.autoplayNext}
+            nowPlayingText={nowPlayingText}
+            nowPlayingKey={engine.activeId}
             onPlayPause={engine.togglePlayPause}
             onPrev={engine.goPrev}
             onNext={engine.goNext}

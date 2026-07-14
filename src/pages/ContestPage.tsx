@@ -95,6 +95,14 @@ export function ContestPage() {
   const alwaysRevealSpoilers = Boolean(profile?.always_reveal_spoilers)
   const playerRef = useRef<TrackAudioPlayerHandle>(null)
   const showEntrySection = Boolean(contest && tracks.length > 0)
+  const revealTrackDetails =
+    resultsPublished || (profileReady && isAdmin) || contestMod
+
+  const answersByTrackId = useMemo(() => {
+    const map = new Map<string, (typeof answers)[number]>()
+    for (const answer of answers) map.set(answer.track_id, answer)
+    return map
+  }, [answers])
 
   const loadError = coreError instanceof Error ? coreError.message : null
 
@@ -178,6 +186,8 @@ export function ContestPage() {
           tracks={tracks}
           slug={slug}
           stickyPlayerScope={showResults || showResultsPreviewBanner}
+          revealTrackDetails={revealTrackDetails}
+          answersByTrackId={answersByTrackId}
         >
           {showResultsPreviewBanner ? (
             <p className="banner" role="status">

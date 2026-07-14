@@ -4,7 +4,12 @@ import { TrackAudioPlayer, type TrackAudioPlayerHandle, type TrackPlaybackState 
 import { useContestEntry } from '../hooks/useContestEntry'
 import { useContestEntryKeyboard } from '../hooks/useContestEntryKeyboard'
 import { countAnsweredGuesses } from '../lib/contestEntry'
-import type { Contest, Track } from '../lib/types'
+import {
+  contestPageHiddenNowPlayingLabel,
+  contestPageRevealedNowPlayingLabel,
+  trackLineLabel,
+} from '../lib/trackDisplay'
+import type { Contest, Track, TrackAnswer } from '../lib/types'
 
 function CopyEditLinkButton({ url }: { url: string }) {
   const [copied, setCopied] = useState(false)
@@ -31,11 +36,24 @@ type ContestEntryFormProps = {
   tracks: Track[]
   slug: string
   stickyPlayerScope?: boolean
+  revealTrackDetails?: boolean
+  answersByTrackId?: ReadonlyMap<string, TrackAnswer>
   children?: ReactNode
 }
 
 export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryFormProps>(
-  function ContestEntryForm({ contest, tracks, slug, stickyPlayerScope = false, children }, ref) {
+  function ContestEntryForm(
+    {
+      contest,
+      tracks,
+      slug,
+      stickyPlayerScope = false,
+      revealTrackDetails = false,
+      answersByTrackId,
+      children,
+    },
+    ref,
+  ) {
     const entry = useContestEntry({ contest, tracks, slug })
     const playerRef = useRef<TrackAudioPlayerHandle>(null)
     const guessInputRef = useRef<HTMLInputElement>(null)
@@ -70,6 +88,21 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       if (play) playerRef.current?.playTrack(trackId)
       else playerRef.current?.selectTrack(trackId, { play: false })
     }, [])
+
+    const getNowPlayingLabel = useCallback(
+      (track: Track) => {
+        if (revealTrackDetails) {
+          const answer = answersByTrackId?.get(track.id)
+          if (answer) {
+            const gameTitle = answer.game_names[0] ?? 'Unknown'
+            const trackTitle = answer.song_title?.trim() || trackLineLabel(track)
+            return contestPageRevealedNowPlayingLabel(track.sort_order, gameTitle, trackTitle)
+          }
+        }
+        return contestPageHiddenNowPlayingLabel(track)
+      },
+      [answersByTrackId, revealTrackDetails],
+    )
 
     const canFocusGuess =
       entry.showSubmissionFields && !entry.ownerClosedReadOnly && !entry.draftLoading
@@ -249,6 +282,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
               <TrackAudioPlayer
                 ref={playerRef}
                 tracks={tracks}
+                getNowPlayingLabel={getNowPlayingLabel}
                 onPlaybackChange={setTrackPlayback}
                 className="contest-entry-player"
               />

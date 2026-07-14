@@ -19,12 +19,20 @@ type Props = {
   tracks: Track[]
   listRowContests?: ListContestLink[][]
   showTrackPicker?: boolean
+  getNowPlayingLabel?: (track: Track) => string | null | undefined
   onPlaybackChange?: (state: TrackPlaybackState) => void
   onActiveTrackChange?: (trackId: string | null) => void
 }
 
 export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(function ContestTrackAudio(
-  { tracks, listRowContests, showTrackPicker = true, onPlaybackChange, onActiveTrackChange },
+  {
+    tracks,
+    listRowContests,
+    showTrackPicker = true,
+    getNowPlayingLabel,
+    onPlaybackChange,
+    onActiveTrackChange,
+  },
   ref,
 ) {
   const playerRef = useRef<TrackAudioPlayerHandle>(null)
@@ -167,6 +175,7 @@ export const ContestTrackAudio = forwardRef<ContestTrackAudioHandle, Props>(func
       <TrackAudioPlayer
         ref={playerRef}
         tracks={tracks}
+        getNowPlayingLabel={getNowPlayingLabel}
         onPlaybackChange={handlePlaybackChange}
         onActiveTrackChange={onActiveTrackChange}
         className="tracks-player-audio"

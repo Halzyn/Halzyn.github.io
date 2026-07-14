@@ -1,4 +1,5 @@
 import { useGlobalAudioVolume } from '../hooks/useGlobalAudioVolume'
+import { ScrollingNowPlayingDisplay } from './ScrollingNowPlayingDisplay'
 
 type SiteAudioPlayerProps = {
   isPlaying: boolean
@@ -8,6 +9,8 @@ type SiteAudioPlayerProps = {
   currentTime: number
   duration: number
   autoplay: boolean
+  nowPlayingText?: string | null
+  nowPlayingKey?: string | null
   onPlayPause: () => void
   onPrev: () => void
   onNext: () => void
@@ -31,6 +34,8 @@ export function SiteAudioPlayer({
   currentTime,
   duration,
   autoplay,
+  nowPlayingText,
+  nowPlayingKey,
   onPlayPause,
   onPrev,
   onNext,
@@ -40,9 +45,13 @@ export function SiteAudioPlayer({
   const [volume, setVolume] = useGlobalAudioVolume()
   const scrubMax = duration > 0 ? duration : 0
   const scrubValue = scrubMax > 0 ? Math.min(currentTime, scrubMax) : 0
+  const nowPlaying = nowPlayingText?.trim() ?? ''
 
   return (
     <div className="site-audio-player" aria-disabled={disabled || undefined}>
+      {nowPlaying ? (
+        <ScrollingNowPlayingDisplay text={nowPlaying} scrollKey={nowPlayingKey} />
+      ) : null}
       <div className="site-audio-player-transport">
         <button
           type="button"
