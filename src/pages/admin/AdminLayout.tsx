@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { HeaderBrand } from '../../components/HeaderBrand'
+import { LoadingState } from '../../components/LoadingState'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { getSupabase } from '../../lib/supabase'
 import { signOutAndReloadHome } from '../../lib/auth'
@@ -101,7 +102,7 @@ function SiteShell({
           </div>
         </header>
         <main className="main main-shell">
-          <Suspense fallback={<p className="muted">Loading...</p>}>
+          <Suspense fallback={<LoadingState label="Loading..." size="page" />}>
             <Outlet />
           </Suspense>
         </main>
@@ -159,7 +160,7 @@ export function AdminLayout() {
   if (!ready) {
     return (
       <FloatingThemeLayout>
-        <p className="muted">Loading...</p>
+        <LoadingState label="Loading..." size="page" />
       </FloatingThemeLayout>
     )
   }

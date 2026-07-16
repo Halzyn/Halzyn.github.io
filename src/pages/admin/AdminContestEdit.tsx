@@ -17,6 +17,7 @@ import { AdminContestSubmissions } from './AdminContestSubmissions'
 import { AdminAnswerForm } from './AdminAnswerForm'
 import { AdminContestAccessPanel, useContestAccess } from './AdminContestAccessPanel'
 import { tabButtonClass } from '../../lib/tabButtonClass'
+import { LoadingState } from '../../components/LoadingState'
 
 type ContestEditTab = 'general' | 'submissions' | 'tracks' | 'access'
 
@@ -408,8 +409,8 @@ export function AdminContestEdit() {
 
   if (!id) return null
   if (pageError && !contest) return <p className="banner warn">{pageError}</p>
-  if (isLoading && !contest) return <p className="muted">Loading...</p>
-  if (!contest) return <p className="muted">Loading...</p>
+  if (isLoading && !contest) return <LoadingState label="Loading contest..." size="page" />
+  if (!contest) return <LoadingState label="Loading contest..." size="page" />
 
   return (
     <div className="page">

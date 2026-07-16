@@ -11,6 +11,7 @@ import {
   type GamesIndex,
 } from '../lib/gamesIndex'
 import { useGamesCatalog } from '../hooks/useGamesQueries'
+import { LoadingState } from '../components/LoadingState'
 import { prefetchGamePage, prefetchOnIntent } from '../lib/queryPrefetch'
 
 export function GamesPage() {
@@ -62,7 +63,7 @@ export function GamesPage() {
       {loadError ? <p className="banner warn">{loadError}</p> : null}
 
       {catalogPending && games.length === 0 && !loadError ? (
-        <p className="muted">Loading games...</p>
+        <LoadingState label="Loading games..." />
       ) : games.length === 0 && !loadError ? (
         <p className="muted">Could not load games. Whoops!</p>
       ) : (

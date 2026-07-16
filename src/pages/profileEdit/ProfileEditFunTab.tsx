@@ -1,4 +1,5 @@
 import type { Game, Profile } from '../../lib/types'
+import { LoadingState } from '../../components/LoadingState'
 
 type ProfileEditFunTabProps = {
   active: boolean
@@ -46,7 +47,7 @@ export function ProfileEditFunTab({
         </p>
         {gamesLoadError ? <p className="banner warn">{gamesLoadError}</p> : null}
         {gamesLoading ? (
-          <p className="muted">Loading games...</p>
+          <LoadingState label="Loading games..." />
         ) : (
           <>
             <label className="field">

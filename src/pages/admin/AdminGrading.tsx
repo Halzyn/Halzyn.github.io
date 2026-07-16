@@ -16,6 +16,7 @@ import {
 import { useResultsGridStickyLead } from '../../hooks/useResultsGridStickyLead'
 import { queryKeys } from '../../lib/queries/keys'
 import { useAdminGrading } from '../../hooks/useAdminQueries'
+import { LoadingState } from '../../components/LoadingState'
 
 type Mark = 'game' | 'franchise' | null
 
@@ -191,7 +192,7 @@ export function AdminGrading() {
 
   if (!contestId) return null
   if (displayError && !contest) return <p className="banner warn">{displayError}</p>
-  if (!contest) return <p className="muted">Loading...</p>
+  if (!contest) return <LoadingState label="Loading grading..." size="page" />
 
   return (
     <div className="page wide">

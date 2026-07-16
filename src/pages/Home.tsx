@@ -8,6 +8,7 @@ import { contestHostsFromScheduledTeaser } from '../lib/contestHosts'
 import { ContestCalendarLink } from '../components/ContestCalendarLink'
 import { ContestCard } from '../components/ContestCard'
 import { ContestTitleWithHosts } from '../components/ContestTitleWithHosts'
+import { LoadingState } from '../components/LoadingState'
 import { contestClosed } from '../lib/deadline'
 import { listStoredContestEntries } from '../lib/contestEntryStorage'
 
@@ -89,7 +90,9 @@ export function Home() {
 
       {showCurrentContests && (<section className="section">
         <h2>Current contests</h2>
-        {contestsLoading || teasersPending ? null : openContests.length === 0 ? (
+        {contestsLoading || teasersPending ? (
+          <LoadingState label="Loading contests..." />
+        ) : openContests.length === 0 ? (
           <p className="muted">No open contests right now. Check back soon.</p>
         ) : (
           <ul className="card-list">

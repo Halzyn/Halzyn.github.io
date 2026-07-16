@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { RpgItemStatCells, RpgItemStatHeaders, RpgItemStatInline } from '../components/RpgItemStatCells'
+import { LoadingState } from '../components/LoadingState'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { pageTitle } from '../lib/pageTitle'
 import {
@@ -134,10 +135,10 @@ export function RpgShopPage() {
     }
   }, [])
 
-  if (!sessionReady || !ready) return <p className="muted">Loading...</p>
+  if (!sessionReady || !ready) return <LoadingState label="Loading..." size="page" />
   if (!session) return <Navigate to="/auth" replace />
 
-  if (loading) return <p className="muted">Loading shop...</p>
+  if (loading) return <LoadingState label="Loading shop..." size="page" />
   if (!state) {
     return (
       <div className="page">
@@ -213,7 +214,7 @@ export function RpgShopPage() {
               <>
                 <h2>{selectedCategory.name}</h2>
                 {categoryLoading ? (
-                  <p className="muted">Loading items...</p>
+                  <LoadingState label="Loading items..." />
                 ) : categoryItems.length === 0 ? (
                   <p className="muted">No items in this category.</p>
                 ) : (

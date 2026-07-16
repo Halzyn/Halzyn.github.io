@@ -5,6 +5,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import type { Game } from '../../lib/types'
 import { compareGameTitles } from '../../lib/gamesIndex'
 import { useGamesCatalog } from '../../hooks/useGamesQueries'
+import { LoadingState } from '../../components/LoadingState'
 
 export function AdminGames() {
   useDocumentTitle(pageTitle('Admin', 'Games'))
@@ -31,7 +32,9 @@ export function AdminGames() {
           </Link>
         </p>
         {isLoading ? (
-          <p className="muted">Loading games...</p>
+          <LoadingState label="Loading games..." />
+        ) : sortedGames.length === 0 ? (
+          <p className="muted">No games yet.</p>
         ) : (
           <ul className="card-list">
             {sortedGames.map((game: Game) => (

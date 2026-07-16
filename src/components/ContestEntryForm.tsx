@@ -10,6 +10,7 @@ import {
   trackLineLabel,
 } from '../lib/trackDisplay'
 import type { Contest, Track, TrackAnswer } from '../lib/types'
+import { LoadingState } from './LoadingState'
 
 function CopyEditLinkButton({ url }: { url: string }) {
   const [copied, setCopied] = useState(false)
@@ -118,7 +119,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
 
     function renderTopBanner(): ReactNode {
       if (entry.showAdminChecking) {
-        return <p className="muted">Checking sign in...</p>
+        return <LoadingState label="Checking sign in..." size="inline" />
       }
       if (entry.showAdminSignIn) {
         return <p className="banner warn">You do not have access to this submission.</p>
@@ -130,7 +131,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
         !entry.urlEditToken &&
         !entry.adminSubmissionId
       ) {
-        return <p className="muted">Loading your entry...</p>
+        return <LoadingState label="Loading your entry..." />
       }
       if (entry.showAdminDraftError) {
         return <p className="banner warn">{entry.pageError}</p>
@@ -211,7 +212,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
         ) : null}
 
         {entry.draftLoading && entry.showSubmissionFields ? (
-          <p className="muted">Loading your saved entry...</p>
+          <LoadingState label="Loading your saved entry..." size="inline" />
         ) : null}
 
         <form className="form contest-entry-form" onSubmit={entry.handleSubmit}>

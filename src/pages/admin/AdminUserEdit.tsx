@@ -7,6 +7,7 @@ import { getSupabase } from '../../lib/supabase'
 import type { Profile } from '../../lib/types'
 import { useAuth } from '../../auth/AuthContext'
 import { useAdminUserProfile } from '../../hooks/useAdminQueries'
+import { LoadingState } from '../../components/LoadingState'
 import { useToast } from '../../toast/ToastContext'
 
 const SUBMISSION_UUID_RE = /^[0-9a-f-]{36}$/i
@@ -118,7 +119,7 @@ export function AdminUserEdit() {
   if ((pageError || loadError) && !profile) {
     return <p className="banner warn">{pageError ?? loadError}</p>
   }
-  if (!profile) return <p className="muted">Loading...</p>
+  if (!profile) return <LoadingState label="Loading user..." size="page" />
 
   return (
     <div className="page">
@@ -178,7 +179,7 @@ export function AdminUserEdit() {
           Deletes the Supabase auth account and profile. Contest submissions remain with no linked player.
         </p>
         {!sessionReady ? (
-          <p className="muted small">Loading...</p>
+          <LoadingState label="Loading..." size="inline" />
         ) : isEditingOwnProfile ? (
           <p className="muted small">What are you doing you dumbass</p>
         ) : (

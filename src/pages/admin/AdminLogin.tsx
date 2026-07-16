@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { pageTitle } from '../../lib/pageTitle'
 import { contestIdFromModeratorAdminPath, normalizePathname } from '../../lib/adminPaths'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { LoadingState } from '../../components/LoadingState'
 import { getSupabase } from '../../lib/supabase'
 
 export function AdminLogin() {
@@ -32,7 +33,7 @@ export function AdminLogin() {
   if (!ready) {
     return (
       <div className="admin-login-page">
-        <p className="muted">Loading...</p>
+        <LoadingState label="Loading..." size="page" />
       </div>
     )
   }

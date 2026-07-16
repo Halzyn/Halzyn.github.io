@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { ContestTrackAudio, type ContestTrackAudioHandle } from '../components/ContestTrackAudio'
+import { LoadingState } from '../components/LoadingState'
 import { tracksListMeta } from '../lib/siteMeta'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useTracksPage } from '../hooks/useTracksQueries'
@@ -46,7 +47,7 @@ export function TracksPage() {
         </section>
       ) : null}
       {isPending && rows.length === 0 && !loadError ? (
-        <p className="muted">Loading tracks...</p>
+        <LoadingState label="Loading tracks..." />
       ) : (
         <TracksGrid
           rows={rows}

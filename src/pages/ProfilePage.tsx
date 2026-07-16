@@ -7,6 +7,7 @@ import type { ProfileContestStatsResult } from '../lib/profileContestStats'
 import { avatarPublicUrl } from '../lib/avatar'
 import type { PublicProfileJson } from '../lib/queries/players'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
+import { LoadingState } from '../components/LoadingState'
 import { ProfileAchievements } from '../components/ProfileAchievements'
 import { usePublicProfile } from '../hooks/usePlayersQueries'
 import {
@@ -125,7 +126,7 @@ export function ProfilePage() {
   )
 
   if (isPending && !data) {
-    return <p className="muted">Loading...</p>
+    return <LoadingState label="Loading profile..." size="page" />
   }
 
   if (loadError || !profile) {

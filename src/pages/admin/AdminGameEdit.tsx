@@ -9,6 +9,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { slugifyGameTitle } from '../../lib/slugify'
 import { queryKeys } from '../../lib/queries/keys'
 import { useAdminGameEdit } from '../../hooks/useAdminQueries'
+import { LoadingState } from '../../components/LoadingState'
 
 function IgdbRow({
   label,
@@ -285,7 +286,7 @@ export function AdminGameEdit() {
 
   if (!id) return null
   if (!isNew && pageError && !game) return <p className="banner warn">{pageError}</p>
-  if (!isNew && !game) return <p className="muted">Loading...</p>
+  if (!isNew && !game) return <LoadingState label="Loading game..." size="page" />
 
   return (
     <div className="page">

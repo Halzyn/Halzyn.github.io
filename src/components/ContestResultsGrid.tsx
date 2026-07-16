@@ -17,6 +17,7 @@ import type { DisplayNameStyleInfo } from '../lib/displayNameStyle'
 import { useResultsGridStickyLead } from '../hooks/useResultsGridStickyLead'
 import { ResultsGridHoverTip } from './ContestResultsGridHoverTip'
 import { DisplayNameStyled } from './DisplayNameStyled'
+import { LoadingState } from './LoadingState'
 
 function ResultsGridNavLink({ to, children }: { to: string; children: ReactNode }) {
   return (
@@ -145,7 +146,7 @@ export function ContestResultsGrid({
   )
 
   if (tracks.length === 0) {
-    return <p className="muted">Loading tracks...</p>
+    return <LoadingState label="Loading tracks..." />
   }
 
   return (

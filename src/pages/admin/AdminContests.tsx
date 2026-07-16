@@ -10,13 +10,14 @@ import { slugifyUrlSegment } from '../../lib/slugify'
 import type { Contest } from '../../lib/types'
 import { queryKeys } from '../../lib/queries/keys'
 import { useAdminContestsList } from '../../hooks/useAdminQueries'
+import { LoadingState } from '../../components/LoadingState'
 
 export function AdminContests() {
   useDocumentTitle(pageTitle('Admin', 'Contests'))
   const supabase = getSupabase()
   const queryClient = useQueryClient()
   const { userId } = useAuth()
-  const { data: contests = [], error } = useAdminContestsList()
+  const { data: contests = [], error, isPending } = useAdminContestsList()
   const [pageError, setPageError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
@@ -124,20 +125,26 @@ export function AdminContests() {
 
       <section className="section">
         <h2>All contests</h2>
-        <ul className="card-list">
-          {contests.map((contest: Contest) => (
-            <li key={contest.id} className="card">
-              <Link to={`/admin/contests/${contest.id}`}>
-                <span className="card-title">{contest.title}</span>
-                <span className="muted small">{contest.slug}</span>
-                <span className="pill">{contest.published ? 'published' : 'draft'}</span>
-                {!contest.published && contest.scheduled_publish_at ? (
-                  <span className="pill">scheduled</span>
-                ) : null}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {isPending ? (
+          <LoadingState label="Loading contests..." />
+        ) : contests.length === 0 ? (
+          <p className="muted">No contests yet.</p>
+        ) : (
+          <ul className="card-list">
+            {contests.map((contest: Contest) => (
+              <li key={contest.id} className="card">
+                <Link to={`/admin/contests/${contest.id}`}>
+                  <span className="card-title">{contest.title}</span>
+                  <span className="muted small">{contest.slug}</span>
+                  <span className="pill">{contest.published ? 'published' : 'draft'}</span>
+                  {!contest.published && contest.scheduled_publish_at ? (
+                    <span className="pill">scheduled</span>
+                  ) : null}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   )

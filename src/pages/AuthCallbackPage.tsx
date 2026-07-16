@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import { LoadingState } from '../components/LoadingState'
 import { getSupabase } from '../lib/supabase'
 
 export function AuthCallbackPage() {
@@ -15,7 +16,7 @@ export function AuthCallbackPage() {
   }, [supabase])
 
   if (!sessionChecked) {
-    return <p className="muted">Confirming...</p>
+    return <LoadingState label="Confirming..." size="page" />
   }
 
   return <Navigate to="/" replace />

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { LoadingState } from '../../components/LoadingState'
 import type { MyContestSubmissionRow } from './shared'
 
 type ProfileEditSubmissionsTabProps = {
@@ -31,7 +32,7 @@ export function ProfileEditSubmissionsTab({
         </p>
         {submissionsLoadError ? <p className="banner warn">{submissionsLoadError}</p> : null}
         {mySubmissions === null ? (
-          <p className="muted">Loading...</p>
+          <LoadingState label="Loading submissions..." />
         ) : mySubmissions.length === 0 ? (
           <p className="muted small">No submissions yet. If you've participated in past contests before signing up, you can go to your guest submission links and claim them while signed in. If you lost your link(s), DM me on Discord @halzyn.</p>
         ) : (

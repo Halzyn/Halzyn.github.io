@@ -14,6 +14,7 @@ import {
 import { contestClosed } from '../lib/deadline'
 import { tabButtonClass } from '../lib/tabButtonClass'
 import { useAuth } from '../auth/AuthContext'
+import { LoadingState } from '../components/LoadingState'
 import {
   DEFAULT_SITE_BACKGROUND_PATTERN,
   parseSiteBackgroundPattern,
@@ -392,7 +393,7 @@ export function ProfileEditPage() {
   }
 
   if (!sessionReady) {
-    return <p className="muted">Loading...</p>
+    return <LoadingState label="Loading profile..." size="page" />
   }
   if (!userId) {
     return <Navigate to="/auth" replace />

@@ -5,6 +5,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { getSupabase } from '../lib/supabase'
 import { avatarPublicUrl } from '../lib/avatar'
 import { DisplayNameStyled } from '../components/DisplayNameStyled'
+import { LoadingState } from '../components/LoadingState'
 import { computePpRankByUserId, formatPlayerListPp } from '../lib/performancePoints'
 import { prefetchOnIntent, prefetchPublicProfile } from '../lib/queryPrefetch'
 import { usePlayersPublic } from '../hooks/usePlayersQueries'
@@ -63,44 +64,47 @@ export function PlayersPage() {
 
       <section className="section">
       <h2>Players</h2>
-        <ul className="card-list">
-          {sortedProfiles.map((profile) => {
-            const avatarSrc = avatarPublicUrl(supabase, profile.avatar_path)
-            return (
-              <li key={profile.id} className="card">
-                <Link
-                  to={`/players/${encodeURIComponent(profile.username)}`}
-                  className="player-card-link"
-                  {...prefetchOnIntent(() => prefetchPublicProfile(profile.username))}
-                >
-                  {avatarSrc ? (
-                    <img
-                      key={profile.avatar_path ?? profile.id}
-                      src={avatarSrc}
-                      alt=""
-                      className="player-card-avatar"
-                      width={40}
-                      height={40}
-                      decoding="async"
-                    />
-                  ) : (
-                    <span className="player-card-avatar player-card-avatar--placeholder" aria-hidden />
-                  )}
-                  <span className="player-card-text">
-                    <span className="player-card-rank">#{ppRankByUserId.get(profile.id) ?? '-'}.</span>
-                    <span className="card-title">
-                      <DisplayNameStyled text={profile.display_name} info={displayNameStyleByUserId.get(profile.id)} />
+        {isPending ? (
+          <LoadingState label="Loading players..." />
+        ) : sortedProfiles.length === 0 && !loadError ? (
+          <p className="muted">No players yet.</p>
+        ) : (
+          <ul className="card-list">
+            {sortedProfiles.map((profile) => {
+              const avatarSrc = avatarPublicUrl(supabase, profile.avatar_path)
+              return (
+                <li key={profile.id} className="card">
+                  <Link
+                    to={`/players/${encodeURIComponent(profile.username)}`}
+                    className="player-card-link"
+                    {...prefetchOnIntent(() => prefetchPublicProfile(profile.username))}
+                  >
+                    {avatarSrc ? (
+                      <img
+                        key={profile.avatar_path ?? profile.id}
+                        src={avatarSrc}
+                        alt=""
+                        className="player-card-avatar"
+                        width={40}
+                        height={40}
+                        decoding="async"
+                      />
+                    ) : (
+                      <span className="player-card-avatar player-card-avatar--placeholder" aria-hidden />
+                    )}
+                    <span className="player-card-text">
+                      <span className="player-card-rank">#{ppRankByUserId.get(profile.id) ?? '-'}.</span>
+                      <span className="card-title">
+                        <DisplayNameStyled text={profile.display_name} info={displayNameStyleByUserId.get(profile.id)} />
+                      </span>
                     </span>
-                  </span>
-                  <span className="player-card-pp">{formatPlayerListPp(profile.performance_points)}</span>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-        {isPending && sortedProfiles.length === 0 && !loadError ? (
-          <p className="muted">Loading profiles...</p>
-        ) : null}
+                    <span className="player-card-pp">{formatPlayerListPp(profile.performance_points)}</span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </section>
     </div>
   )

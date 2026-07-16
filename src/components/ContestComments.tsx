@@ -17,6 +17,7 @@ import { useCommentEdits, useContestComments } from '../hooks/useContestComments
 import { CommentMarkdownBody } from './CommentMarkdownBody'
 import { CommentMarkdownEditor, CommentMarkdownEditorHint } from './CommentMarkdownEditor'
 import { DisplayNameStyled } from './DisplayNameStyled'
+import { LoadingState } from './LoadingState'
 
 type Props = {
   contestId: string
@@ -90,7 +91,7 @@ function CommentEditHistory({ commentId, editCount }: { commentId: string; editC
       <summary className="linkish small">
         {editCount} edit{editCount === 1 ? '' : 's'}
       </summary>
-      {isLoading ? <p className="muted small">Loading edit history...</p> : null}
+      {isLoading ? <LoadingState label="Loading edit history..." size="inline" /> : null}
       {errorMessage ? <p className="banner warn small">{errorMessage}</p> : null}
       {edits ? (
         <ul className="comment-edit-list">
@@ -458,7 +459,7 @@ export function ContestComments({ contestId, commentsOpen, canModerate }: Props)
             </div>
           </div>
 
-          {isLoading ? <p className="muted">Loading comments...</p> : null}
+          {isLoading ? <LoadingState label="Loading comments..." /> : null}
           {error ? <p className="banner warn">{error}</p> : null}
           {!isLoading && tree.length === 0 ? <p className="muted">No comments yet.</p> : null}
 

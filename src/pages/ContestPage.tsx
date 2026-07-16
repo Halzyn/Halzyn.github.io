@@ -9,6 +9,7 @@ import { Countdown } from '../components/Countdown'
 import type { TrackAudioPlayerHandle } from '../components/TrackAudioPlayer'
 import { ContestResults } from '../components/ContestResults'
 import { ContestHostName } from '../components/ContestHostName'
+import { LoadingState } from '../components/LoadingState'
 import { contestPageMeta, contestsListMeta } from '../lib/siteMeta'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { buildContestRankRows } from '../lib/scoring'
@@ -197,7 +198,7 @@ export function ContestPage() {
     return (
       <div className="page">
         <ContestPageTop contestSlug={slug} />
-        <p className="muted">Loading...</p>
+        <LoadingState label="Loading contest..." size="page" />
       </div>
     )
   }
@@ -300,7 +301,7 @@ export function ContestPage() {
             ) : revealPending ? (
               <section className="section contest-results-section">
                 <h2>Results</h2>
-                <p className="muted">Loading...</p>
+                <LoadingState label="Loading results..." />
               </section>
             ) : null
           ) : null}

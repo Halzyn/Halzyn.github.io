@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ContestTrackAudio } from '../components/ContestTrackAudio'
+import { LoadingState } from '../components/LoadingState'
 import { gamePageMeta, gamesListMeta } from '../lib/siteMeta'
 import { usePageMeta } from '../hooks/usePageMeta'
 import type { Contest, Game, GameAlternateTitle, Track } from '../lib/types'
@@ -172,7 +173,7 @@ export function GamePage() {
 
   if (!slug) return null
   if (loadError && !game) return <p className="banner warn">{loadError}</p>
-  if (isPending && !data) return <p className="muted">Loading...</p>
+  if (isPending && !data) return <LoadingState label="Loading game..." size="page" />
   if (!game) return <p>Game not found.</p>
 
   return (
