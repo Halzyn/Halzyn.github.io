@@ -14,9 +14,14 @@ import {
   sortSubmissionsByContestRank,
 } from '../../lib/scoring'
 import { useResultsGridStickyLead } from '../../hooks/useResultsGridStickyLead'
+import {
+  resultsColClass,
+  useCollapsibleResultsColumns,
+} from '../../hooks/useCollapsibleResultsColumns'
 import { queryKeys } from '../../lib/queries/keys'
 import { useAdminGrading } from '../../hooks/useAdminQueries'
 import { LoadingState } from '../../components/LoadingState'
+import { ResultsColCollapseBtn } from '../../components/ResultsColCollapseBtn'
 
 type Mark = 'game' | 'franchise' | null
 
@@ -49,7 +54,12 @@ export function AdminGrading() {
   const [savingGrades, setSavingGrades] = useState(false)
 
   const gridScrollRef = useRef<HTMLDivElement>(null)
-  useResultsGridStickyLead(gridScrollRef, `${tracks.length}-${submissions.length}`)
+  const { collapsed, isCollapsed, toggle, layoutKey: collapseLayoutKey } =
+    useCollapsibleResultsColumns()
+  useResultsGridStickyLead(
+    gridScrollRef,
+    `${tracks.length}-${submissions.length}-${collapseLayoutKey}`,
+  )
 
   const refreshGrading = useCallback(() => {
     if (!contestId) return
@@ -242,11 +252,31 @@ export function AdminGrading() {
                   <th className="results-col-number" scope="col">
                     #
                   </th>
-                  <th className="results-col-game" scope="col">
-                    Game
+                  <th className={resultsColClass('results-col-game', isCollapsed('game'))} scope="col">
+                    <div className="results-col-head">
+                      <ResultsColCollapseBtn
+                        columnKey="game"
+                        label="Game"
+                        collapsed={isCollapsed('game')}
+                        onToggle={toggle}
+                      />
+                      {!isCollapsed('game') ? (
+                        <span className="results-col-head-label">Game</span>
+                      ) : null}
+                    </div>
                   </th>
-                  <th className="results-col-song" scope="col">
-                    Title
+                  <th className={resultsColClass('results-col-song', isCollapsed('song'))} scope="col">
+                    <div className="results-col-head">
+                      <ResultsColCollapseBtn
+                        columnKey="song"
+                        label="Title"
+                        collapsed={isCollapsed('song')}
+                        onToggle={toggle}
+                      />
+                      {!isCollapsed('song') ? (
+                        <span className="results-col-head-label">Title</span>
+                      ) : null}
+                    </div>
                   </th>
                   <th className="results-col-separator" scope="col" aria-hidden />
                   {submissionsForGrid.map((submission) => (
@@ -259,7 +289,9 @@ export function AdminGrading() {
                       >
                         Delete submission
                       </button>
-                      <div className="results-head-sub">{new Date(submission.created_at).toLocaleString()}</div>
+                      <div className="results-head-sub">
+                        {new Date(submission.created_at).toLocaleString()}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -278,12 +310,12 @@ export function AdminGrading() {
                       <td className={`results-col-number ${difficultyClass(track.difficulty)}`}>
                         <span className="results-num-value">{track.sort_order}</span>
                       </td>
-                      <td className="results-col-game results-stripe">
+                      <td className={resultsColClass('results-col-game', collapsed.has('game'), 'results-stripe')}>
                         <span className="results-cell-text" title={alternateGamesTooltip}>
                           {primaryGame}
                         </span>
                       </td>
-                      <td className="results-col-song results-stripe">
+                      <td className={resultsColClass('results-col-song', collapsed.has('song'), 'results-stripe')}>
                         <span className="results-cell-text">{songTitle}</span>
                       </td>
                       <td className="results-col-separator" aria-hidden />

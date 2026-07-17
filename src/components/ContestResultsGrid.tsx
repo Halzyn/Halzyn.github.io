@@ -20,7 +20,12 @@ import {
   type ContestHosts,
 } from '../lib/contestHosts'
 import { useResultsGridStickyLead } from '../hooks/useResultsGridStickyLead'
+import {
+  resultsColClass,
+  useCollapsibleResultsColumns,
+} from '../hooks/useCollapsibleResultsColumns'
 import { ResultsGridHoverTip } from './ContestResultsGridHoverTip'
+import { ResultsColCollapseBtn } from './ResultsColCollapseBtn'
 import { ContestHostName } from './ContestHostName'
 import { DisplayNameStyled } from './DisplayNameStyled'
 import { LoadingState } from './LoadingState'
@@ -44,6 +49,7 @@ type TrackRowProps = {
   showHostColumn: boolean
   hostEntry: ContestHostDisplayEntry | null
   hostStyleInfo?: DisplayNameStyleInfo | null
+  collapsed: ReadonlySet<string>
   onPlayTrack?: (trackId: string) => void
 }
 
@@ -58,6 +64,7 @@ function ContestResultsTrackRow({
   showHostColumn,
   hostEntry,
   hostStyleInfo,
+  collapsed,
   onPlayTrack,
 }: TrackRowProps) {
   const names = answer?.game_names ?? []
@@ -92,7 +99,7 @@ function ContestResultsTrackRow({
         )}
       </td>
       {showHostColumn ? (
-        <td className="results-col-host results-stripe">
+        <td className={resultsColClass('results-col-host', collapsed.has('host'), 'results-stripe')}>
           {hostEntry ? (
             <ContestHostName
               displayName={hostEntry.displayName}
@@ -104,13 +111,17 @@ function ContestResultsTrackRow({
           )}
         </td>
       ) : null}
-      <td className="results-col-game results-stripe">
+      <td className={resultsColClass('results-col-game', collapsed.has('game'), 'results-stripe')}>
         {gameTip ? <ResultsGridHoverTip content={gameTip}>{gameCell}</ResultsGridHoverTip> : gameCell}
       </td>
       <td
-        className={`results-col-song results-stripe${onPlayTrack ? ' results-col-song--playable' : ''}`}
-        onClick={onPlayTrack ? () => onPlayTrack(track.id) : undefined}
-        title={onPlayTrack ? 'Play this track in the player' : undefined}
+        className={resultsColClass(
+          'results-col-song',
+          collapsed.has('song'),
+          `results-stripe${onPlayTrack ? ' results-col-song--playable' : ''}`,
+        )}
+        onClick={onPlayTrack && !collapsed.has('song') ? () => onPlayTrack(track.id) : undefined}
+        title={onPlayTrack && !collapsed.has('song') ? 'Play this track in the player' : undefined}
       >
         <span className="results-cell-text">{song}</span>
       </td>
@@ -161,10 +172,12 @@ export function ContestResultsGrid({
 }: ResultsGridProps) {
   const showHostColumn = (contestHosts?.entries.length ?? 0) > 1
   const stickyColCount = showHostColumn ? 5 : 4
+  const { collapsed, isCollapsed, toggle, layoutKey: collapseLayoutKey } =
+    useCollapsibleResultsColumns()
   const gridScrollRef = useRef<HTMLDivElement>(null)
   useResultsGridStickyLead(
     gridScrollRef,
-    `${tracks.length}-${submissions.length}-${stickyColCount}`,
+    `${tracks.length}-${submissions.length}-${stickyColCount}-${collapseLayoutKey}`,
     stickyColCount,
   )
 
@@ -194,15 +207,39 @@ export function ContestResultsGrid({
               #
             </th>
             {showHostColumn ? (
-              <th className="results-col-host" scope="col">
-                By
+              <th className={resultsColClass('results-col-host', isCollapsed('host'))} scope="col">
+                <div className="results-col-head">
+                  <ResultsColCollapseBtn
+                    columnKey="host"
+                    label="By"
+                    collapsed={isCollapsed('host')}
+                    onToggle={toggle}
+                  />
+                  {!isCollapsed('host') ? <span className="results-col-head-label">By</span> : null}
+                </div>
               </th>
             ) : null}
-            <th className="results-col-game" scope="col">
-              Game
+            <th className={resultsColClass('results-col-game', isCollapsed('game'))} scope="col">
+              <div className="results-col-head">
+                <ResultsColCollapseBtn
+                  columnKey="game"
+                  label="Game"
+                  collapsed={isCollapsed('game')}
+                  onToggle={toggle}
+                />
+                {!isCollapsed('game') ? <span className="results-col-head-label">Game</span> : null}
+              </div>
             </th>
-            <th className="results-col-song" scope="col">
-              Title
+            <th className={resultsColClass('results-col-song', isCollapsed('song'))} scope="col">
+              <div className="results-col-head">
+                <ResultsColCollapseBtn
+                  columnKey="song"
+                  label="Title"
+                  collapsed={isCollapsed('song')}
+                  onToggle={toggle}
+                />
+                {!isCollapsed('song') ? <span className="results-col-head-label">Title</span> : null}
+              </div>
             </th>
             <th className="results-col-separator" scope="col" aria-hidden />
             {submissionsRanked.map((s) => {
@@ -244,6 +281,7 @@ export function ContestResultsGrid({
                 showHostColumn={showHostColumn}
                 hostEntry={hostEntry}
                 hostStyleInfo={hostStyleInfo}
+                collapsed={collapsed}
                 onPlayTrack={onPlayTrack}
               />
             )
