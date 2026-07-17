@@ -95,9 +95,11 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
 
     const getNowPlayingLabel = useCallback(
       (track: Track) => {
-        const hostLabel = contestHosts
-          ? resolveChosenHostDisplayName(track.chosen_by_host_key, contestHosts)
-          : null
+        const showHost = (contestHosts?.entries.length ?? 0) > 1
+        const hostLabel =
+          showHost && contestHosts
+            ? resolveChosenHostDisplayName(track.chosen_by_host_key, contestHosts)
+            : null
         if (revealTrackDetails) {
           const answer = answersByTrackId?.get(track.id)
           if (answer) {

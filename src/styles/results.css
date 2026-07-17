@@ -554,11 +554,14 @@
 }
 
 .tracks-grid-wrap .tracks-grid-contest-list {
-  display: inline;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
 }
 
 .tracks-grid-wrap .tracks-grid-contest-item {
-  display: inline;
+  display: block;
   white-space: normal;
 }
 
