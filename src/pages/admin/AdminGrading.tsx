@@ -123,16 +123,29 @@ export function AdminGrading() {
   const answersByTrack = useMemo(() => new Map(answers.map((answer) => [answer.track_id, answer])), [answers])
 
   async function saveGrades() {
-    if (draftOverrides.size === 0 || trackIds.length === 0) return
+    if (draftOverrides.size === 0) return
     setSavingGrades(true)
     setPageError(null)
     try {
-      const { error: deletionError } = await supabase.from('grading_marks').delete().in('track_id', trackIds)
-      if (deletionError) throw deletionError
-      if (effectiveMarks.length > 0) {
+      const toUpsert: GradingMark[] = []
+      const deleteOr: string[] = []
+      for (const [key, value] of draftOverrides) {
+        const [submission_id, track_id] = key.split(':', 2)
+        if (!submission_id || !track_id) continue
+        if (value === null) {
+          deleteOr.push(`and(submission_id.eq.${submission_id},track_id.eq.${track_id})`)
+        } else {
+          toUpsert.push({ submission_id, track_id, mark: value })
+        }
+      }
+      if (deleteOr.length > 0) {
+        const { error: deletionError } = await supabase.from('grading_marks').delete().or(deleteOr.join(','))
+        if (deletionError) throw deletionError
+      }
+      if (toUpsert.length > 0) {
         const { error: upsertError } = await supabase
           .from('grading_marks')
-          .upsert(effectiveMarks, { onConflict: 'submission_id,track_id' })
+          .upsert(toUpsert, { onConflict: 'submission_id,track_id' })
         if (upsertError) throw upsertError
       }
       setDraftOverrides(new Map())
