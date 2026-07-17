@@ -9,6 +9,7 @@ import {
   contestPageRevealedNowPlayingLabel,
   trackLineLabel,
 } from '../lib/trackDisplay'
+import { resolveChosenHostDisplayName, type ContestHosts } from '../lib/contestHosts'
 import type { Contest, Track, TrackAnswer } from '../lib/types'
 import { LoadingState } from './LoadingState'
 
@@ -39,6 +40,7 @@ type ContestEntryFormProps = {
   stickyPlayerScope?: boolean
   revealTrackDetails?: boolean
   answersByTrackId?: ReadonlyMap<string, TrackAnswer>
+  contestHosts?: ContestHosts
   children?: ReactNode
 }
 
@@ -51,6 +53,7 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
       stickyPlayerScope = false,
       revealTrackDetails = false,
       answersByTrackId,
+      contestHosts,
       children,
     },
     ref,
@@ -92,17 +95,25 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
 
     const getNowPlayingLabel = useCallback(
       (track: Track) => {
+        const hostLabel = contestHosts
+          ? resolveChosenHostDisplayName(track.chosen_by_host_key, contestHosts)
+          : null
         if (revealTrackDetails) {
           const answer = answersByTrackId?.get(track.id)
           if (answer) {
             const gameTitle = answer.game_names[0] ?? 'Unknown'
             const trackTitle = answer.song_title?.trim() || trackLineLabel(track)
-            return contestPageRevealedNowPlayingLabel(track.sort_order, gameTitle, trackTitle)
+            return contestPageRevealedNowPlayingLabel(
+              track.sort_order,
+              gameTitle,
+              trackTitle,
+              hostLabel,
+            )
           }
         }
-        return contestPageHiddenNowPlayingLabel(track)
+        return contestPageHiddenNowPlayingLabel(track, hostLabel)
       },
-      [answersByTrackId, revealTrackDetails],
+      [answersByTrackId, contestHosts, revealTrackDetails],
     )
 
     const canFocusGuess =

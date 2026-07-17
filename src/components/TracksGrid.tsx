@@ -5,6 +5,7 @@ import { difficulty } from '../lib/difficulty'
 import { trackAppearanceDedupeKey } from '../lib/trackDisplay'
 import type { TracksPageRow } from '../lib/queries/tracks'
 import { ResultsGridHoverTip } from './ContestResultsGridHoverTip'
+import { ContestHostName } from './ContestHostName'
 
 function TracksGridNavLink({ to, children }: { to: string; children: ReactNode }) {
   return (
@@ -63,6 +64,9 @@ export function TracksGrid({ rows, onPlayTrack }: TracksGridProps) {
             <th className="results-col-contest" scope="col">
               Appeared In
             </th>
+            <th className="results-col-host" scope="col">
+              By
+            </th>
             <th className="results-col-stat" scope="col">
               # X
             </th>
@@ -119,6 +123,23 @@ export function TracksGrid({ rows, onPlayTrack }: TracksGridProps) {
                         <TracksGridNavLink to={`/contests/${encodeURIComponent(contest.slug)}`}>
                           {contest.title}
                         </TracksGridNavLink>
+                      </span>
+                    ))}
+                  </span>
+                </td>
+                <td className="results-col-host results-stripe">
+                  <span className="tracks-grid-contest-list">
+                    {row.contests.map((contest) => (
+                      <span key={contest.id} className="tracks-grid-contest-item">
+                        {contest.chosenByDisplayName ? (
+                          <ContestHostName
+                            displayName={contest.chosenByDisplayName}
+                            profileUsername={contest.chosenByProfileUsername}
+                            styleInfo={contest.chosenByStyleInfo}
+                          />
+                        ) : (
+                          <span className="results-cell-text">—</span>
+                        )}
                       </span>
                     ))}
                   </span>

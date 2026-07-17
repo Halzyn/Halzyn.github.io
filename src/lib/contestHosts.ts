@@ -42,6 +42,22 @@ function moderatorLabel(row: ContestModeratorEmbed): string {
   return hostDisplayLabel(profile?.display_name, profile?.username)
 }
 
+export function resolveChosenHostEntry(
+  chosenByHostKey: string | null | undefined,
+  hosts: ContestHosts,
+): ContestHostDisplayEntry | null {
+  const key = chosenByHostKey?.trim()
+  if (!key) return null
+  return hosts.entries.find((entry) => entry.hostKey === key) ?? null
+}
+
+export function resolveChosenHostDisplayName(
+  chosenByHostKey: string | null | undefined,
+  hosts: ContestHosts,
+): string | null {
+  return resolveChosenHostEntry(chosenByHostKey, hosts)?.displayName ?? null
+}
+
 export function buildContestHostsFromEmbed(contest: ContestWithHosts): ContestHosts {
   const styles = new Map<string, DisplayNameStyleInfo>()
   const modRows = [...(contest.contest_moderators ?? [])]

@@ -18,10 +18,17 @@ export function TracksPage() {
     for (const [index, row] of rows.entries()) {
       const gameTitle = row.primaryGameTitle
       const trackTitle = row.answer?.song_title?.trim() || trackLineLabel(row.track)
-      const contestTitles = row.contests.map((contest) => contest.title)
       labelsByTrackId.set(
         row.track.id,
-        tracksPageNowPlayingLabel(index + 1, gameTitle, trackTitle, contestTitles),
+        tracksPageNowPlayingLabel(
+          index + 1,
+          gameTitle,
+          trackTitle,
+          row.contests.map((contest) => ({
+            title: contest.title,
+            chosenByDisplayName: contest.chosenByDisplayName,
+          })),
+        ),
       )
     }
     return (track: (typeof tracks)[number]) => labelsByTrackId.get(track.id) ?? null

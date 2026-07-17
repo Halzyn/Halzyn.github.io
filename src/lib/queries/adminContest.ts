@@ -47,7 +47,11 @@ function mergeAnswersFromTrackGameRows(
   }
 }
 
-export type AdminContestModerator = { user_id: string; username: string | null }
+export type AdminContestModerator = {
+  user_id: string
+  username: string | null
+  display_name: string | null
+}
 export type AdminContestGuestHost = { id: string; display_name: string; sort_order: number }
 
 export type AdminContestEditBundle = {
@@ -129,11 +133,16 @@ export async function fetchAdminContestEditBundle(contestId: string): Promise<Ad
   if (moderatorUserIds.length > 0) {
     const { data: profileRows } = await supabase
       .from('profiles')
-      .select('id, username')
+      .select('id, username, display_name')
       .in('id', moderatorUserIds)
-    moderators = ((profileRows ?? []) as { id: string; username: string | null }[]).map((profile) => ({
+    moderators = ((profileRows ?? []) as {
+      id: string
+      username: string | null
+      display_name: string | null
+    }[]).map((profile) => ({
       user_id: profile.id,
       username: profile.username,
+      display_name: profile.display_name,
     }))
   }
 

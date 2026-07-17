@@ -274,6 +274,7 @@ export function ContestPage() {
           stickyPlayerScope={showResults || showResultsPreviewBanner}
           revealTrackDetails={revealTrackDetails}
           answersByTrackId={answersByTrackId}
+          contestHosts={contestHosts}
         >
           {showResultsPreviewBanner ? (
             <p className="banner" role="status">
@@ -296,6 +297,7 @@ export function ContestPage() {
                 commentsOpen={commentsOpen}
                 canModerateComments={canModerateComments}
                 alwaysRevealSpoilers={alwaysRevealSpoilers}
+                contestHosts={contestHosts}
                 onPlayTrack={(trackId) => playerRef.current?.playTrack(trackId)}
               />
             ) : revealPending ? (

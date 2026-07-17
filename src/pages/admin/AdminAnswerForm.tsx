@@ -3,11 +3,17 @@ import { Link } from 'react-router-dom'
 import type { Game, Track, TrackAnswer } from '../../lib/types'
 import { useToast } from '../../toast/ToastContext'
 
+export type TrackChooserOption = {
+  hostKey: string
+  label: string
+}
+
 type AnswerFormProps = {
   track: Track
   initial?: TrackAnswer
   gamesCatalog: Game[]
   isAdminUser: boolean
+  chooserOptions?: TrackChooserOption[]
   onSave: (
     sortOrderInput: string,
     difficultyDraft: string,
@@ -15,6 +21,7 @@ type AnswerFormProps = {
     sharedLines: string[],
     song: string,
     notes: string,
+    chosenByHostKey: string | null,
   ) => Promise<boolean>
 }
 
@@ -23,22 +30,26 @@ export function AdminAnswerForm({
   initial,
   gamesCatalog,
   isAdminUser,
+  chooserOptions,
   onSave,
 }: AnswerFormProps) {
   const listId = `game-datalist-${initial?.track_id ?? track.id}`
   const { success: toastSuccess } = useToast()
   const [sortOrderDraft, setSortOrderDraft] = useState(() => String(track.sort_order))
   const [difficultyDraft, setDifficultyDraft] = useState(() => track.difficulty ?? '')
+  const [chosenByHostKey, setChosenByHostKey] = useState(() => track.chosen_by_host_key ?? '')
   const [primaryTitle, setPrimaryTitle] = useState(() => (initial?.game_names ?? [])[0] ?? '')
   const [sharedText, setSharedText] = useState(() => (initial?.shared_music_titles ?? []).join('\n'))
   const [song, setSong] = useState(() => initial?.song_title ?? '')
   const [notes, setNotes] = useState(() => initial?.notes ?? '')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving'>('idle')
+  const showChooser = (chooserOptions?.length ?? 0) > 1
 
   useEffect(() => {
     setSortOrderDraft(String(track.sort_order))
     setDifficultyDraft(track.difficulty ?? '')
-  }, [track.id, track.sort_order, track.difficulty])
+    setChosenByHostKey(track.chosen_by_host_key ?? '')
+  }, [track.id, track.sort_order, track.difficulty, track.chosen_by_host_key])
 
   useEffect(() => {
     setPrimaryTitle((initial?.game_names ?? [])[0] ?? '')
@@ -65,6 +76,11 @@ export function AdminAnswerForm({
             sharedMusicLines,
             song,
             notes,
+            showChooser
+              ? chosenByHostKey.trim() || null
+              : chooserOptions?.length === 1
+                ? chooserOptions[0]!.hostKey
+                : null,
           )
           if (!ok) {
             setSaveStatus('idle')
@@ -97,6 +113,19 @@ export function AdminAnswerForm({
           />
         </label>
       </div>
+      {showChooser ? (
+        <label className="field">
+          <span>Chosen by</span>
+          <select value={chosenByHostKey} onChange={(e) => setChosenByHostKey(e.target.value)}>
+            <option value="">Select host...</option>
+            {chooserOptions!.map((option) => (
+              <option key={option.hostKey} value={option.hostKey}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       <datalist id={listId}>
         {gamesCatalog.map((game) => (
           <option key={game.id} value={game.primary_title} />

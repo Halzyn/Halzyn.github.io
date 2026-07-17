@@ -14,8 +14,14 @@ import {
 } from '../lib/scoring'
 import type { GameTooltip } from '../lib/gameTooltip'
 import type { DisplayNameStyleInfo } from '../lib/displayNameStyle'
+import {
+  resolveChosenHostEntry,
+  type ContestHostDisplayEntry,
+  type ContestHosts,
+} from '../lib/contestHosts'
 import { useResultsGridStickyLead } from '../hooks/useResultsGridStickyLead'
 import { ResultsGridHoverTip } from './ContestResultsGridHoverTip'
+import { ContestHostName } from './ContestHostName'
 import { DisplayNameStyled } from './DisplayNameStyled'
 import { LoadingState } from './LoadingState'
 
@@ -35,6 +41,9 @@ type TrackRowProps = {
   markMap: Map<string, 'game' | 'franchise'>
   soloByTrack: Map<string, string>
   submissionsRanked: Submission[]
+  showHostColumn: boolean
+  hostEntry: ContestHostDisplayEntry | null
+  hostStyleInfo?: DisplayNameStyleInfo | null
   onPlayTrack?: (trackId: string) => void
 }
 
@@ -46,6 +55,9 @@ function ContestResultsTrackRow({
   markMap,
   soloByTrack,
   submissionsRanked,
+  showHostColumn,
+  hostEntry,
+  hostStyleInfo,
   onPlayTrack,
 }: TrackRowProps) {
   const names = answer?.game_names ?? []
@@ -79,6 +91,19 @@ function ContestResultsTrackRow({
           <span className="results-num-value">{track.sort_order}</span>
         )}
       </td>
+      {showHostColumn ? (
+        <td className="results-col-host results-stripe">
+          {hostEntry ? (
+            <ContestHostName
+              displayName={hostEntry.displayName}
+              profileUsername={hostEntry.profileUsername}
+              styleInfo={hostStyleInfo}
+            />
+          ) : (
+            <span className="results-cell-text">—</span>
+          )}
+        </td>
+      ) : null}
       <td className="results-col-game results-stripe">
         {gameTip ? <ResultsGridHoverTip content={gameTip}>{gameCell}</ResultsGridHoverTip> : gameCell}
       </td>
@@ -119,6 +144,7 @@ type ResultsGridProps = {
   displayNameByUserId?: Map<string, string>
   profileUsernameByUserId?: Map<string, string>
   displayNameStyleByUserId?: Map<string, DisplayNameStyleInfo>
+  contestHosts?: ContestHosts
 }
 
 export function ContestResultsGrid({
@@ -131,9 +157,16 @@ export function ContestResultsGrid({
   displayNameByUserId,
   profileUsernameByUserId,
   displayNameStyleByUserId,
+  contestHosts,
 }: ResultsGridProps) {
+  const showHostColumn = (contestHosts?.entries.length ?? 0) > 1
+  const stickyColCount = showHostColumn ? 5 : 4
   const gridScrollRef = useRef<HTMLDivElement>(null)
-  useResultsGridStickyLead(gridScrollRef, `${tracks.length}-${submissions.length}`)
+  useResultsGridStickyLead(
+    gridScrollRef,
+    `${tracks.length}-${submissions.length}-${stickyColCount}`,
+    stickyColCount,
+  )
 
   const byTrack = useMemo(() => new Map(answers.map((a) => [a.track_id, a])), [answers])
   const markMap = useMemo(() => markMapFromMarks(marks), [marks])
@@ -152,7 +185,7 @@ export function ContestResultsGrid({
   return (
     <div
       ref={gridScrollRef}
-      className="scoring-grid-root table-wrap results-grid-wrap grading-pivot-wrap--full grading-pivot-clip"
+      className={`scoring-grid-root table-wrap results-grid-wrap grading-pivot-wrap--full grading-pivot-clip${showHostColumn ? ' results-grid--with-host' : ''}`}
     >
       <table className="dense results-unified-grid">
         <thead>
@@ -160,6 +193,11 @@ export function ContestResultsGrid({
             <th className="results-col-number" scope="col">
               #
             </th>
+            {showHostColumn ? (
+              <th className="results-col-host" scope="col">
+                By
+              </th>
+            ) : null}
             <th className="results-col-game" scope="col">
               Game
             </th>
@@ -186,19 +224,30 @@ export function ContestResultsGrid({
           </tr>
         </thead>
         <tbody>
-          {tracks.map((track, rowIndex) => (
-            <ContestResultsTrackRow
-              key={track.id}
-              track={track}
-              rowIndex={rowIndex}
-              answer={byTrack.get(track.id)}
-              tooltip={gameTooltips?.[track.id]}
-              markMap={markMap}
-              soloByTrack={soloByTrack}
-              submissionsRanked={submissionsRanked}
-              onPlayTrack={onPlayTrack}
-            />
-          ))}
+          {tracks.map((track, rowIndex) => {
+            const hostEntry = contestHosts
+              ? resolveChosenHostEntry(track.chosen_by_host_key, contestHosts)
+              : null
+            const hostStyleInfo = hostEntry?.profileUserId
+              ? contestHosts?.styles.get(hostEntry.profileUserId) ?? null
+              : null
+            return (
+              <ContestResultsTrackRow
+                key={track.id}
+                track={track}
+                rowIndex={rowIndex}
+                answer={byTrack.get(track.id)}
+                tooltip={gameTooltips?.[track.id]}
+                markMap={markMap}
+                soloByTrack={soloByTrack}
+                submissionsRanked={submissionsRanked}
+                showHostColumn={showHostColumn}
+                hostEntry={hostEntry}
+                hostStyleInfo={hostStyleInfo}
+                onPlayTrack={onPlayTrack}
+              />
+            )
+          })}
         </tbody>
       </table>
       {submissionsRanked.length === 0 ? (

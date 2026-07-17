@@ -1,11 +1,11 @@
 /**
- * Janky ass code to stop the first 4 columns in the results grid from scrolling out of view.
+ * Janky ass code to stop the first N columns in the results grid from scrolling out of view.
  * It's a miracle this works at all.
  */
 
 import { useLayoutEffect, type RefObject } from 'react'
 
-const STICKY_COLS = 4
+const DEFAULT_STICKY_COLS = 4
 const GRID_SELECTOR = 'table.results-unified-grid'
 const HEADER_CELLS = 'thead tr th'
 const STICKY_LEAD_CLASS = 'results-grid-sticky-lead'
@@ -32,35 +32,38 @@ function nearestScrollHostForTable(table: HTMLTableElement): HTMLElement | null 
 }
 
 function setStickyVars(host: HTMLElement, leftPx: readonly number[]): void {
-  for (let i = 0; i < STICKY_COLS; i++) {
+  for (let i = 0; i < leftPx.length; i++) {
     host.style.setProperty(`--rg-sticky-left-${i}`, `${leftPx[i]}px`)
   }
 }
 
-function clearStickyVars(host: HTMLElement | null): void {
+function clearStickyVars(host: HTMLElement | null, stickyColCount: number): void {
   if (!host) return
-  for (let i = 0; i < STICKY_COLS; i++) {
+  for (let i = 0; i < stickyColCount; i++) {
     host.style.removeProperty(`--rg-sticky-left-${i}`)
   }
 }
 
-function leadStickyCells(table: HTMLTableElement): HTMLTableCellElement[] | null {
+function leadStickyCells(
+  table: HTMLTableElement,
+  stickyColCount: number,
+): HTMLTableCellElement[] | null {
   const bodyRow = table.querySelector('tbody tr:first-child')
   if (bodyRow) {
     const tds = bodyRow.querySelectorAll<HTMLTableCellElement>('td')
-    if (tds.length >= STICKY_COLS) {
-      return Array.from(tds).slice(0, STICKY_COLS)
+    if (tds.length >= stickyColCount) {
+      return Array.from(tds).slice(0, stickyColCount)
     }
   }
   const ths = table.querySelectorAll<HTMLTableCellElement>(HEADER_CELLS)
-  if (ths.length < STICKY_COLS) return null
-  return Array.from(ths).slice(0, STICKY_COLS)
+  if (ths.length < stickyColCount) return null
+  return Array.from(ths).slice(0, stickyColCount)
 }
 
-function leadWidthsFromRow(row: Element | null): number[] | null {
+function leadWidthsFromRow(row: Element | null, stickyColCount: number): number[] | null {
   if (!row) return null
-  const cells = Array.from(row.children).slice(0, STICKY_COLS) as HTMLTableCellElement[]
-  if (cells.length < STICKY_COLS) return null
+  const cells = Array.from(row.children).slice(0, stickyColCount) as HTMLTableCellElement[]
+  if (cells.length < stickyColCount) return null
 
   const widths = cells.map((cell) => cell.getBoundingClientRect().width)
   if (widths.some((width) => !Number.isFinite(width) || width < 0.5)) return null
@@ -68,12 +71,16 @@ function leadWidthsFromRow(row: Element | null): number[] | null {
   return widths
 }
 
-function measureStickyLeftPixels(table: HTMLTableElement, root: HTMLElement): number[] | null {
+function measureStickyLeftPixels(
+  table: HTMLTableElement,
+  root: HTMLElement,
+  stickyColCount: number,
+): number[] | null {
   const wasSticky = root.classList.contains(STICKY_LEAD_CLASS)
   if (wasSticky) setStickyLeadActive(root, false)
 
-  const bodyWidths = leadWidthsFromRow(table.querySelector('tbody tr:first-child'))
-  const headWidths = leadWidthsFromRow(table.querySelector('thead tr'))
+  const bodyWidths = leadWidthsFromRow(table.querySelector('tbody tr:first-child'), stickyColCount)
+  const headWidths = leadWidthsFromRow(table.querySelector('thead tr'), stickyColCount)
   const widthSets = [bodyWidths, headWidths].filter((widths): widths is number[] => widths != null)
 
   if (widthSets.length === 0) {
@@ -82,12 +89,12 @@ function measureStickyLeftPixels(table: HTMLTableElement, root: HTMLElement): nu
   }
 
   const widths: number[] = []
-  for (let i = 0; i < STICKY_COLS; i++) {
+  for (let i = 0; i < stickyColCount; i++) {
     widths.push(Math.max(...widthSets.map((set) => set[i]!)))
   }
 
   const leftPx: number[] = [0]
-  for (let i = 1; i < STICKY_COLS; i++) {
+  for (let i = 1; i < stickyColCount; i++) {
     leftPx.push(leftPx[i - 1]! + widths[i - 1]!)
   }
 
@@ -124,12 +131,12 @@ function applyStickyToHosts(root: HTMLElement, table: HTMLTableElement, leftPx: 
   }
 }
 
-function clearStickyFromHosts(root: HTMLElement): void {
+function clearStickyFromHosts(root: HTMLElement, stickyColCount: number): void {
   root.classList.remove(STICKY_LEAD_CLASS)
   const table = root.querySelector<HTMLTableElement>(GRID_SELECTOR)
   const scrollHost = table ? nearestScrollHostForTable(table) : null
   for (const host of [scrollHost, table, root]) {
-    clearStickyVars(host)
+    clearStickyVars(host, stickyColCount)
   }
 }
 
@@ -140,6 +147,7 @@ function setStickyLeadActive(root: HTMLElement, active: boolean): void {
 export function useResultsGridStickyLead(
   scrollRootRef: RefObject<HTMLElement | null>,
   layoutKey: number | string = 0,
+  stickyColCount: number = DEFAULT_STICKY_COLS,
 ) {
   useLayoutEffect(() => {
     const scrollRoot = scrollRootRef.current
@@ -152,19 +160,19 @@ export function useResultsGridStickyLead(
       const table = host.querySelector<HTMLTableElement>(GRID_SELECTOR)
       if (!table) return
       const scrollHost = nearestScrollHostForTable(table) ?? host
-      const cells = leadStickyCells(table)
+      const cells = leadStickyCells(table, stickyColCount)
       if (!cells) return
 
       if (!shouldEnableStickyLead(table, scrollHost, cells)) {
         lastLeftPx = null
-        clearStickyFromHosts(host)
+        clearStickyFromHosts(host, stickyColCount)
         return
       }
 
-      const leftPx = measureStickyLeftPixels(table, host)
+      const leftPx = measureStickyLeftPixels(table, host, stickyColCount)
       if (!leftPx) {
         lastLeftPx = null
-        clearStickyFromHosts(host)
+        clearStickyFromHosts(host, stickyColCount)
         return
       }
 
@@ -206,7 +214,7 @@ export function useResultsGridStickyLead(
       resizeObserver.disconnect()
       details?.removeEventListener('toggle', scheduleMeasure)
       window.removeEventListener('resize', scheduleMeasure)
-      clearStickyFromHosts(scrollRoot)
+      clearStickyFromHosts(scrollRoot, stickyColCount)
     }
-  }, [layoutKey])
+  }, [layoutKey, stickyColCount])
 }

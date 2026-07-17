@@ -1,9 +1,20 @@
 import type { GameTooltip } from '../gameTooltip'
+import {
+  CONTEST_HOST_EMBED_SELECT,
+  hostsMapFromContests,
+  resolveChosenHostEntry,
+} from '../contestHosts'
+import type { DisplayNameStyleInfo } from '../displayNameStyle'
 import { getSupabase } from '../supabase'
 import { trackAppearanceDedupeKey } from '../trackDisplay'
-import type { Contest, Track, TrackAnswer } from '../types'
+import type { Contest, ContestWithHosts, Track, TrackAnswer } from '../types'
 
-export type TracksPageContest = Pick<Contest, 'id' | 'slug' | 'title' | 'deadline'>
+export type TracksPageContest = Pick<Contest, 'id' | 'slug' | 'title' | 'deadline'> & {
+  chosenByHostKey: string | null
+  chosenByDisplayName: string | null
+  chosenByProfileUsername: string | null
+  chosenByStyleInfo: DisplayNameStyleInfo | null
+}
 
 export type TracksPageRow = {
   track: Track
@@ -30,6 +41,8 @@ type ListTracksPageRow = {
   sort_order: number
   difficulty: string | null
   audio_path: string
+  chosen_by_host_key: string | null
+  chosen_by_display_name: string | null
   contest_slug: string
   contest_title: string
   contest_deadline: string
@@ -69,12 +82,17 @@ function mapRpcRow(row: ListTracksPageRow): TracksPageAppearance {
       difficulty: row.difficulty,
       audio_path: row.audio_path,
       song_title: row.song_title,
+      chosen_by_host_key: row.chosen_by_host_key,
     },
     contest: {
       id: row.contest_id,
       slug: row.contest_slug,
       title: row.contest_title,
       deadline: row.contest_deadline,
+      chosenByHostKey: row.chosen_by_host_key?.trim() || null,
+      chosenByDisplayName: row.chosen_by_display_name?.trim() || null,
+      chosenByProfileUsername: null,
+      chosenByStyleInfo: null,
     },
     answer:
       gameNames.length > 0 || row.song_title || row.notes
@@ -168,8 +186,37 @@ export function mergeTracksPageRows(appearances: TracksPageAppearance[]): Tracks
 }
 
 export async function fetchTracksPageBundle(): Promise<TracksPageRow[]> {
-  const { data, error } = await getSupabase().rpc('list_tracks_page')
+  const supabase = getSupabase()
+  const { data, error } = await supabase.rpc('list_tracks_page')
   if (error) throw error
   const appearances = ((data ?? []) as ListTracksPageRow[]).map(mapRpcRow)
-  return mergeTracksPageRows(appearances)
+  const rows = mergeTracksPageRows(appearances)
+
+  const contestIds = [...new Set(rows.flatMap((row) => row.contests.map((contest) => contest.id)))]
+  if (contestIds.length === 0) return rows
+
+  const { data: contestHostRows, error: hostsError } = await supabase
+    .from('contests')
+    .select(`id, ${CONTEST_HOST_EMBED_SELECT}`)
+    .in('id', contestIds)
+  if (hostsError) throw hostsError
+
+  const hostsByContestId = hostsMapFromContests((contestHostRows ?? []) as ContestWithHosts[])
+
+  return rows.map((row) => ({
+    ...row,
+    contests: row.contests.map((contest) => {
+      const hosts = hostsByContestId.get(contest.id)
+      const entry = hosts ? resolveChosenHostEntry(contest.chosenByHostKey, hosts) : null
+      if (!entry) return contest
+      return {
+        ...contest,
+        chosenByDisplayName: entry.displayName,
+        chosenByProfileUsername: entry.profileUsername,
+        chosenByStyleInfo: entry.profileUserId
+          ? hosts?.styles.get(entry.profileUserId) ?? null
+          : null,
+      }
+    }),
+  }))
 }

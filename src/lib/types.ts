@@ -53,6 +53,7 @@ export type Track = {
   difficulty: string | null
   audio_path: string
   song_title?: string | null
+  chosen_by_host_key?: string | null
 }
 
 export type Game = {

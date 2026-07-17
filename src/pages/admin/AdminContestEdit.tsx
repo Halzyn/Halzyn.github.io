@@ -99,11 +99,33 @@ export function AdminContestEdit() {
   const [reuploadingTrackId, setReuploadingTrackId] = useState<string | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [gamesCatalog, setGamesCatalog] = useState<Game[]>([])
-  const [moderators, setModerators] = useState<{ user_id: string; username: string | null }[]>([])
+  const [moderators, setModerators] = useState<
+    { user_id: string; username: string | null; display_name: string | null }[]
+  >([])
   const [modUsername, setModUsername] = useState('')
   const [guestHosts, setGuestHosts] = useState<{ id: string; display_name: string; sort_order: number }[]>([])
   const [guestHostName, setGuestHostName] = useState('')
   const [editTab, setEditTab] = useState<ContestEditTab>('general')
+
+  const trackChooserOptions = useMemo(() => {
+    const mods = moderators
+      .map((mod) => {
+        const label = mod.display_name?.trim() || mod.username?.trim() || 'Player'
+        return { hostKey: mod.user_id, label, sort: label.toLowerCase() }
+      })
+      .sort((a, b) => a.sort.localeCompare(b.sort))
+      .map(({ hostKey, label }) => ({ hostKey, label }))
+    const guests = [...guestHosts]
+      .sort((a, b) => {
+        if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order
+        return a.display_name.localeCompare(b.display_name, undefined, { sensitivity: 'base' })
+      })
+      .map((guest) => ({
+        hostKey: `guest:${guest.id}`,
+        label: guest.display_name.trim() || 'Player',
+      }))
+    return [...mods, ...guests]
+  }, [moderators, guestHosts])
 
   const refreshContest = useCallback(() => {
     if (!id) return
@@ -247,6 +269,8 @@ export function AdminContestEdit() {
         sort_order: order,
         difficulty: difficultyForBatch,
         audio_path: objectPath,
+        chosen_by_host_key:
+          trackChooserOptions.length === 1 ? trackChooserOptions[0]!.hostKey : null,
       })
       if (insertTrackError) {
         await supabase.storage.from('contest-audio').remove([objectPath])
@@ -355,6 +379,7 @@ export function AdminContestEdit() {
     sharedLines: string[],
     song: string,
     notes: string,
+    chosenByHostKey: string | null,
   ): Promise<boolean> {
     const nextSortOrder = parseInt(sortOrderInput, 10)
     if (!Number.isFinite(nextSortOrder) || nextSortOrder < 1) {
@@ -367,11 +392,15 @@ export function AdminContestEdit() {
     }
     setPageError(null)
 
+    const resolvedChooser =
+      trackChooserOptions.length === 1 ? trackChooserOptions[0]!.hostKey : chosenByHostKey
+
     const { error: trackUpdateError } = await supabase
       .from('tracks')
       .update({
         sort_order: nextSortOrder,
         difficulty: difficultyDraft || null,
+        chosen_by_host_key: resolvedChooser,
       })
       .eq('id', trackId)
 
@@ -712,7 +741,16 @@ export function AdminContestEdit() {
                     initial={trackAnswer}
                     gamesCatalog={gamesCatalog}
                     isAdminUser={isAdminUser}
-                    onSave={(sortOrderInput, difficultyDraft, primaryTitle, sharedLines, songTitle, personalNotes) =>
+                    chooserOptions={trackChooserOptions}
+                    onSave={(
+                      sortOrderInput,
+                      difficultyDraft,
+                      primaryTitle,
+                      sharedLines,
+                      songTitle,
+                      personalNotes,
+                      chosenByHostKey,
+                    ) =>
                       saveTrackAndAnswer(
                         track.id,
                         sortOrderInput,
@@ -721,6 +759,7 @@ export function AdminContestEdit() {
                         sharedLines,
                         songTitle,
                         personalNotes,
+                        chosenByHostKey,
                       )
                     }
                   />

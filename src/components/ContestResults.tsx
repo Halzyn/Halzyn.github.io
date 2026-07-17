@@ -5,6 +5,7 @@ import { ContestResultsGrid } from './ContestResultsGrid'
 import type { ContestRankRow } from '../lib/scoring'
 import type { GameTooltip } from '../lib/gameTooltip'
 import type { DisplayNameStyleInfo } from '../lib/displayNameStyle'
+import type { ContestHosts } from '../lib/contestHosts'
 import type { GradingMark, Submission, Track, TrackAnswer } from '../lib/types'
 
 export type { ContestRankRow as LeaderboardRow }
@@ -20,6 +21,7 @@ type Props = {
   displayNameByUserId?: Map<string, string>
   profileUsernameByUserId?: Map<string, string>
   displayNameStyleByUserId?: Map<string, DisplayNameStyleInfo>
+  contestHosts?: ContestHosts
   contestId: string
   commentsOpen: boolean
   canModerateComments: boolean
@@ -37,6 +39,7 @@ export function ContestResults({
   displayNameByUserId,
   profileUsernameByUserId,
   displayNameStyleByUserId,
+  contestHosts,
   contestId,
   commentsOpen,
   canModerateComments,
@@ -72,6 +75,7 @@ export function ContestResults({
             displayNameByUserId={displayNameByUserId}
             profileUsernameByUserId={profileUsernameByUserId}
             displayNameStyleByUserId={displayNameStyleByUserId}
+            contestHosts={contestHosts}
           />
 
           <h3 className="reveal-subhead">Rankings</h3>

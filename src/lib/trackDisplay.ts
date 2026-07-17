@@ -15,27 +15,48 @@ function difficultyDisplayLabel(difficultyValue: string | null | undefined): str
   return key.charAt(0).toUpperCase() + key.slice(1)
 }
 
+export type TracksPageContestLabel = {
+  title: string
+  chosenByDisplayName?: string | null
+}
+
 export function tracksPageNowPlayingLabel(
   trackNumber: number,
   gameTitle: string,
   trackTitle: string,
-  contestTitles: string[],
+  contests: TracksPageContestLabel[],
 ): string {
   const base = `${trackNumber}. ${gameTitle} - ${trackTitle}`
-  const contests = contestTitles.map((title) => title.trim()).filter(Boolean)
-  return contests.length > 0 ? `${base} [${contests.join(', ')}]` : base
+  const parts = contests
+    .map((contest) => {
+      const title = contest.title.trim()
+      if (!title) return ''
+      const host = contest.chosenByDisplayName?.trim()
+      return host ? `${title}: ${host}` : title
+    })
+    .filter(Boolean)
+  return parts.length > 0 ? `${base} [${parts.join(', ')}]` : base
 }
 
 export function contestPageRevealedNowPlayingLabel(
   trackNumber: number,
   gameTitle: string,
   trackTitle: string,
+  chosenByDisplayName?: string | null,
 ): string {
-  return `${trackNumber}. ${gameTitle} - ${trackTitle}`
+  const base = `${trackNumber}. ${gameTitle} - ${trackTitle}`
+  const host = chosenByDisplayName?.trim()
+  return host ? `${base} [${host}]` : base
 }
 
-export function contestPageHiddenNowPlayingLabel(track: Track): string {
+export function contestPageHiddenNowPlayingLabel(
+  track: Track,
+  chosenByDisplayName?: string | null,
+): string {
   const diff = difficultyDisplayLabel(track.difficulty)
+  const host = chosenByDisplayName?.trim()
+  if (host && diff) return `${track.sort_order}. ${host} - ${diff}`
+  if (host) return `${track.sort_order}. ${host}`
   return diff ? `${track.sort_order}. ${diff}` : `${track.sort_order}`
 }
 

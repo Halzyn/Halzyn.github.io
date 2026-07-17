@@ -21,22 +21,46 @@
   left: var(--rg-sticky-left-0, 0px);
 }
 
-.results-grid-sticky-lead .results-unified-grid thead th.results-col-game,
-.results-grid-sticky-lead .results-unified-grid tbody td.results-col-game {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid thead th.results-col-game,
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid tbody td.results-col-game {
   position: sticky;
   left: var(--rg-sticky-left-1, 0px);
 }
 
-.results-grid-sticky-lead .results-unified-grid thead th.results-col-song,
-.results-grid-sticky-lead .results-unified-grid tbody td.results-col-song {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid thead th.results-col-song,
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid tbody td.results-col-song {
   position: sticky;
   left: var(--rg-sticky-left-2, 0px);
 }
 
-.results-grid-sticky-lead .results-unified-grid thead th.results-col-separator,
-.results-grid-sticky-lead .results-unified-grid tbody td.results-col-separator {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid thead th.results-col-separator,
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid tbody td.results-col-separator {
   position: sticky;
   left: var(--rg-sticky-left-3, 0px);
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-host,
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-host {
+  position: sticky;
+  left: var(--rg-sticky-left-1, 0px);
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-game,
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-game {
+  position: sticky;
+  left: var(--rg-sticky-left-2, 0px);
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-song,
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-song {
+  position: sticky;
+  left: var(--rg-sticky-left-3, 0px);
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-separator,
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-separator {
+  position: sticky;
+  left: var(--rg-sticky-left-4, 0px);
 }
 
 .results-grid-sticky-lead .results-unified-grid thead th.results-col-number {
@@ -44,35 +68,71 @@
   z-index: 6;
 }
 
-.results-grid-sticky-lead .results-unified-grid thead th.results-col-game {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid thead th.results-col-game {
   top: 0;
   z-index: 7;
 }
 
-.results-grid-sticky-lead .results-unified-grid thead th.results-col-song {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid thead th.results-col-song {
   top: 0;
   z-index: 8;
 }
 
-.results-grid-sticky-lead .results-unified-grid thead th.results-col-separator {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid thead th.results-col-separator {
   top: 0;
   z-index: 9;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-host {
+  top: 0;
+  z-index: 7;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-game {
+  top: 0;
+  z-index: 8;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-song {
+  top: 0;
+  z-index: 9;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid thead th.results-col-separator {
+  top: 0;
+  z-index: 10;
 }
 
 .results-grid-sticky-lead .results-unified-grid tbody td.results-col-number {
   z-index: 3;
 }
 
-.results-grid-sticky-lead .results-unified-grid tbody td.results-col-game {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid tbody td.results-col-game {
   z-index: 4;
 }
 
-.results-grid-sticky-lead .results-unified-grid tbody td.results-col-song {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid tbody td.results-col-song {
   z-index: 5;
 }
 
-.results-grid-sticky-lead .results-unified-grid tbody td.results-col-separator {
+.results-grid-sticky-lead:not(.results-grid--with-host) .results-unified-grid tbody td.results-col-separator {
   z-index: 6;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-host {
+  z-index: 4;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-game {
+  z-index: 5;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-song {
+  z-index: 6;
+}
+
+.results-grid-sticky-lead.results-grid--with-host .results-unified-grid tbody td.results-col-separator {
+  z-index: 7;
 }
 
 .results-unified-grid {
@@ -122,6 +182,7 @@
 }
 
 .results-unified-grid thead th.results-col-number,
+.results-unified-grid thead th.results-col-host,
 .results-unified-grid thead th.results-col-game,
 .results-unified-grid thead th.results-col-song {
   white-space: nowrap;
@@ -163,6 +224,11 @@
   text-align: center;
   font-weight: 700;
   min-width: 2.75rem;
+}
+
+.results-col-host {
+  min-width: 4.5rem;
+  max-width: 8rem;
 }
 
 .results-col-has-notes {
@@ -407,12 +473,17 @@
 }
 
 .tracks-grid-wrap .results-unified-grid thead th.results-col-contest,
+.tracks-grid-wrap .results-unified-grid thead th.results-col-host,
 .tracks-grid-wrap .results-unified-grid thead th.results-col-difficulty {
   white-space: nowrap;
 }
 
 .tracks-grid-wrap .results-col-contest {
   min-width: 8rem;
+}
+
+.tracks-grid-wrap .results-col-host {
+  min-width: 5.5rem;
 }
 
 .tracks-grid-wrap .results-col-stat {
