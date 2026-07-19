@@ -594,15 +594,29 @@
 }
 
 .contest-entry-section--sticky-player .contest-entry-focus {
-  position: sticky;
-  top: 0;
-  z-index: 25;
-  margin-bottom: 1rem;
+  display: contents;
+}
+
+.contest-entry-section--sticky-player .contest-entry-focus-body {
+  margin-top: 0.5rem;
+  padding: 0.85rem 0.9rem 0;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  background: var(--surface);
 }
 
 .contest-entry-section .sticky-page-player {
   margin-top: 0.75rem;
   margin-bottom: 0;
+}
+
+.contest-entry-section--sticky-player .sticky-page-player {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 0.9rem 0.85rem;
+  border: 1px solid var(--border);
+  border-top: none;
+  background: var(--surface);
 }
 
 .contest-page-sticky-scope .sticky-page-player {

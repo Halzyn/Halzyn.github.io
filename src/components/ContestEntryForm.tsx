@@ -231,75 +231,79 @@ export const ContestEntryForm = forwardRef<TrackAudioPlayerHandle, ContestEntryF
         <form className="form contest-entry-form" onSubmit={entry.handleSubmit}>
           {tracks.length > 0 ? (
             <div className="contest-entry-focus">
-              {activeTrack ? (
-                <>
-                  <div className="contest-entry-focus-head">
-                    <p className="contest-entry-focus-label">
-                      Track {activeTrack.sort_order}
-                      {activeTrack.difficulty ? (
-                        <span className="muted"> ◦ {activeTrack.difficulty}</span>
-                      ) : null}
-                    </p>
-                    {entry.showSubmissionFields ? (
-                      <p className="muted small contest-entry-progress">
-                        {answeredCount} / {tracks.length} answered
+              <div className="contest-entry-focus-body">
+                {activeTrack ? (
+                  <>
+                    <div className="contest-entry-focus-head">
+                      <p className="contest-entry-focus-label">
+                        Track {activeTrack.sort_order}
+                        {activeTrack.difficulty ? (
+                          <span className="muted"> ◦ {activeTrack.difficulty}</span>
+                        ) : null}
                       </p>
+                      {entry.showSubmissionFields ? (
+                        <p className="muted small contest-entry-progress">
+                          {answeredCount} / {tracks.length} answered
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {entry.showSubmissionFields ? (
+                      <label className="field contest-entry-guess-field">
+                        <span>Your guess for track {activeTrack.sort_order}</span>
+                        <input
+                          ref={guessInputRef}
+                          value={entry.guesses[activeTrack.id] ?? ''}
+                          onChange={(e) =>
+                            entry.setGuesses((previous) => ({ ...previous, [activeTrack.id]: e.target.value }))
+                          }
+                          maxLength={500}
+                          placeholder="Game title / notes"
+                          disabled={entry.draftLoading || entry.ownerClosedReadOnly}
+                          className={entry.ownerClosedReadOnly ? 'submit-name-locked' : undefined}
+                        />
+                      </label>
                     ) : null}
-                  </div>
+                  </>
+                ) : null}
 
-                  {entry.showSubmissionFields ? (
-                    <label className="field contest-entry-guess-field">
-                      <span>Your guess for track {activeTrack.sort_order}</span>
-                      <input
-                        ref={guessInputRef}
-                        value={entry.guesses[activeTrack.id] ?? ''}
-                        onChange={(e) =>
-                          entry.setGuesses((previous) => ({ ...previous, [activeTrack.id]: e.target.value }))
-                        }
-                        maxLength={500}
-                        placeholder="Game title / notes"
-                        disabled={entry.draftLoading || entry.ownerClosedReadOnly}
-                        className={entry.ownerClosedReadOnly ? 'submit-name-locked' : undefined}
-                      />
-                    </label>
-                  ) : null}
-                </>
-              ) : null}
+                <nav className="contest-entry-track-grid" aria-label="Jump to track">
+                  {tracks.map((track) => {
+                    const isActive = track.id === activeTrackId
+                    const isAnswered = (entry.guesses[track.id] ?? '').trim().length > 0
+                    const isPlaying = trackPlayback.activeId === track.id && trackPlayback.isPlaying
+                    return (
+                      <button
+                        key={track.id}
+                        type="button"
+                        className={[
+                          'contest-entry-track-pill',
+                          isActive ? 'contest-entry-track-pill-active' : '',
+                          entry.showSubmissionFields && isAnswered ? 'contest-entry-track-pill-answered' : '',
+                          isPlaying ? 'contest-entry-track-pill-playing' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        aria-current={isActive ? 'true' : undefined}
+                        aria-label={`Track ${track.sort_order}${isAnswered ? ', answered' : ''}`}
+                        onClick={() => selectTrack(track.id)}
+                      >
+                        {track.sort_order}
+                      </button>
+                    )
+                  })}
+                </nav>
+              </div>
 
-              <nav className="contest-entry-track-grid" aria-label="Jump to track">
-                {tracks.map((track) => {
-                  const isActive = track.id === activeTrackId
-                  const isAnswered = (entry.guesses[track.id] ?? '').trim().length > 0
-                  const isPlaying = trackPlayback.activeId === track.id && trackPlayback.isPlaying
-                  return (
-                    <button
-                      key={track.id}
-                      type="button"
-                      className={[
-                        'contest-entry-track-pill',
-                        isActive ? 'contest-entry-track-pill-active' : '',
-                        entry.showSubmissionFields && isAnswered ? 'contest-entry-track-pill-answered' : '',
-                        isPlaying ? 'contest-entry-track-pill-playing' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      aria-current={isActive ? 'true' : undefined}
-                      aria-label={`Track ${track.sort_order}${isAnswered ? ', answered' : ''}`}
-                      onClick={() => selectTrack(track.id)}
-                    >
-                      {track.sort_order}
-                    </button>
-                  )
-                })}
-              </nav>
-
-              <TrackAudioPlayer
-                ref={playerRef}
-                tracks={tracks}
-                getNowPlayingLabel={getNowPlayingLabel}
-                onPlaybackChange={setTrackPlayback}
-                className="contest-entry-player"
-              />
+              <div className={stickyPlayerTail ? 'sticky-page-player' : undefined}>
+                <TrackAudioPlayer
+                  ref={playerRef}
+                  tracks={tracks}
+                  getNowPlayingLabel={getNowPlayingLabel}
+                  onPlaybackChange={setTrackPlayback}
+                  className="contest-entry-player"
+                />
+              </div>
             </div>
           ) : null}
 

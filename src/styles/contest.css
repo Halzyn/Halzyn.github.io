@@ -234,6 +234,12 @@
   background: var(--surface);
 }
 
+.contest-entry-focus-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .contest-entry-focus-head {
   display: flex;
   flex-wrap: wrap;
